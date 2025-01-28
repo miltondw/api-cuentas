@@ -1,29 +1,44 @@
-import db from "../config/db.js";
+import db from "../config/db.js"; // Suponiendo que tienes tu configuración de DB en db.js
 
-// Función para obtener todos los costos fijos
-const getAllCostosFijos = async () => {
+// Función para obtener todos los costos fijos con paginación
+const getAllCostosFijos = async (page = 1, limit = 10) => {
+  try {
+    const offset = (page - 1) * limit; // Calculamos el offset según la página
+    const [rows] = await db
+      .promise()
+      .query("SELECT * FROM costos_fijos_del_mes LIMIT ? OFFSET ?", [
+        limit,
+        offset,
+      ]);
+    return rows;
+  } catch (err) {
+    throw new Error("Error al obtener los costos fijos: " + err.message);
+  }
+};
+
+// Función para obtener un costo fijo específico por ID
+const getCostoFijoById = async (id) => {
   try {
     const [rows] = await db
       .promise()
-      .query("SELECT * FROM costos_fijos_del_mes");
-    return rows;
+      .query("SELECT * FROM costos_fijos_del_mes WHERE id = ?", [id]);
+    return rows[0];
   } catch (err) {
-    throw new Error("Error fetching all fixed costs: " + err.message);
+    throw new Error("Error al obtener el costo fijo: " + err.message);
   }
 };
 
 // Función para agregar un nuevo costo fijo
-const addCostoFijo = async (data) => {
-  const {
-    mes_de_gastos,
-    pago_de_salarios,
-    pago_de_luz,
-    pago_de_arriendo,
-    pago_de_internet,
-    pago_de_salud,
-  } = data;
-
+const addCostoFijo = async (newCostoFijo) => {
   try {
+    const {
+      mes_de_gastos,
+      pago_de_salarios,
+      pago_de_luz,
+      pago_de_arriendo,
+      pago_de_internet,
+      pago_de_salud,
+    } = newCostoFijo;
     const [results] = await db
       .promise()
       .query(
@@ -39,35 +54,21 @@ const addCostoFijo = async (data) => {
       );
     return results;
   } catch (err) {
-    throw new Error("Error inserting fixed cost: " + err.message);
-  }
-};
-
-// Función para obtener un costo fijo por ID
-const getCostoFijoById = async (id) => {
-  try {
-    const [rows] = await db
-      .promise()
-      .query("SELECT * FROM costos_fijos_del_mes WHERE id = ?", [id]);
-    if (rows.length === 0) throw new Error("Costo fijo not found");
-    return rows[0];
-  } catch (err) {
-    throw new Error("Error fetching fixed cost by ID: " + err.message);
+    throw new Error("Error al insertar los datos: " + err.message);
   }
 };
 
 // Función para actualizar un costo fijo por ID
-const updateCostoFijo = async (id, data) => {
-  const {
-    mes_de_gastos,
-    pago_de_salarios,
-    pago_de_luz,
-    pago_de_arriendo,
-    pago_de_internet,
-    pago_de_salud,
-  } = data;
-
+const updateCostoFijo = async (id, updatedCostoFijo) => {
   try {
+    const {
+      mes_de_gastos,
+      pago_de_salarios,
+      pago_de_luz,
+      pago_de_arriendo,
+      pago_de_internet,
+      pago_de_salud,
+    } = updatedCostoFijo;
     const [results] = await db
       .promise()
       .query(
@@ -82,11 +83,9 @@ const updateCostoFijo = async (id, data) => {
           id,
         ]
       );
-
-    if (results.affectedRows === 0) throw new Error("Costo fijo not found");
     return results;
   } catch (err) {
-    throw new Error("Error updating fixed cost: " + err.message);
+    throw new Error("Error al actualizar el costo fijo: " + err.message);
   }
 };
 
@@ -96,17 +95,16 @@ const deleteCostoFijo = async (id) => {
     const [results] = await db
       .promise()
       .query("DELETE FROM costos_fijos_del_mes WHERE id = ?", [id]);
-    if (results.affectedRows === 0) throw new Error("Costo fijo not found");
     return results;
   } catch (err) {
-    throw new Error("Error deleting fixed cost: " + err.message);
+    throw new Error("Error al eliminar el costo fijo: " + err.message);
   }
 };
 
 export {
   getAllCostosFijos,
-  addCostoFijo,
   getCostoFijoById,
+  addCostoFijo,
   updateCostoFijo,
   deleteCostoFijo,
 };

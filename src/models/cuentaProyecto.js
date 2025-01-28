@@ -1,27 +1,37 @@
 import db from "../config/db.js";
 
 // Obtener todas las cuentas del proyecto
-const getAllCuentasProyecto = (callback) => {
-  db.query("SELECT * FROM cuenta_del_proyecto", (err, results) => {
-    if (err) return callback(err);
-    callback(null, results);
-  });
+const getAllCuentasProyecto = async (page = 1, limit = 10) => {
+  try {
+    const offset = (page - 1) * limit;
+    const [rows] = await db
+      .promise()
+      .query("SELECT * FROM cuenta_del_proyecto LIMIT ? OFFSET ?", [
+        limit,
+        offset,
+      ]);
+    return rows;
+  } catch (err) {
+    throw new Error(
+      "Error al obtener las cuentas del proyecto: " + err.message
+    );
+  }
 };
 
 // Obtener una cuenta del proyecto por ID
-const getCuentaProyectoById = (id, callback) => {
-  db.query(
-    "SELECT * FROM cuenta_del_proyecto WHERE id = ?",
-    [id],
-    (err, results) => {
-      if (err) return callback(err);
-      callback(null, results[0]); // Retorna solo el primer resultado
-    }
-  );
+const getCuentaProyectoById = async (id) => {
+  try {
+    const [rows] = await db
+      .promise()
+      .query("SELECT * FROM cuenta_del_proyecto WHERE id = ?", [id]);
+    return rows[0];
+  } catch (err) {
+    throw new Error("Error al obtener la cuenta del proyecto: " + err.message);
+  }
 };
 
 // Crear una nueva cuenta del proyecto
-const createCuentaProyecto = (data, callback) => {
+const createCuentaProyecto = async (data) => {
   const {
     fecha,
     solicitante,
@@ -40,36 +50,37 @@ const createCuentaProyecto = (data, callback) => {
     hospedaje,
   } = data;
 
-  db.query(
-    `INSERT INTO cuenta_del_proyecto 
-    (fecha, solicitante, nombreProyecto, obrero, costoServicio, abono, gastoCamioneta, gastosCampo, pagoObreros, comidas, transporte, gastosVarios, peajes, combustible, hospedaje)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      fecha,
-      solicitante,
-      nombreProyecto,
-      obrero,
-      costoServicio,
-      abono,
-      gastoCamioneta,
-      gastosCampo,
-      pagoObreros,
-      comidas,
-      transporte,
-      gastosVarios,
-      peajes,
-      combustible,
-      hospedaje,
-    ],
-    (err, results) => {
-      if (err) return callback(err);
-      callback(null, results);
-    }
-  );
+  try {
+    const [result] = await db.promise().query(
+      `INSERT INTO cuenta_del_proyecto 
+        (fecha, solicitante, nombreProyecto, obrero, costoServicio, abono, gastoCamioneta, gastosCampo, pagoObreros, comidas, transporte, gastosVarios, peajes, combustible, hospedaje)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        fecha,
+        solicitante,
+        nombreProyecto,
+        obrero,
+        costoServicio,
+        abono,
+        gastoCamioneta,
+        gastosCampo,
+        pagoObreros,
+        comidas,
+        transporte,
+        gastosVarios,
+        peajes,
+        combustible,
+        hospedaje,
+      ]
+    );
+    return result;
+  } catch (err) {
+    throw new Error("Error al crear la cuenta del proyecto: " + err.message);
+  }
 };
 
 // Actualizar una cuenta del proyecto por ID
-const updateCuentaProyecto = (id, data, callback) => {
+const updateCuentaProyecto = async (id, data) => {
   const {
     fecha,
     solicitante,
@@ -88,45 +99,48 @@ const updateCuentaProyecto = (id, data, callback) => {
     hospedaje,
   } = data;
 
-  db.query(
-    `UPDATE cuenta_del_proyecto SET 
-    fecha = ?, solicitante = ?, nombreProyecto = ?, obrero = ?, costoServicio = ?, abono = ?, gastoCamioneta = ?, gastosCampo = ?, pagoObreros = ?, comidas = ?, transporte = ?, gastosVarios = ?, peajes = ?, combustible = ?, hospedaje = ?
-    WHERE id = ?`,
-    [
-      fecha,
-      solicitante,
-      nombreProyecto,
-      obrero,
-      costoServicio,
-      abono,
-      gastoCamioneta,
-      gastosCampo,
-      pagoObreros,
-      comidas,
-      transporte,
-      gastosVarios,
-      peajes,
-      combustible,
-      hospedaje,
-      id,
-    ],
-    (err, results) => {
-      if (err) return callback(err);
-      callback(null, results);
-    }
-  );
+  try {
+    const [result] = await db.promise().query(
+      `UPDATE cuenta_del_proyecto SET 
+        fecha = ?, solicitante = ?, nombreProyecto = ?, obrero = ?, costoServicio = ?, abono = ?, gastoCamioneta = ?, gastosCampo = ?, pagoObreros = ?, comidas = ?, transporte = ?, gastosVarios = ?, peajes = ?, combustible = ?, hospedaje = ?
+        WHERE id = ?`,
+      [
+        fecha,
+        solicitante,
+        nombreProyecto,
+        obrero,
+        costoServicio,
+        abono,
+        gastoCamioneta,
+        gastosCampo,
+        pagoObreros,
+        comidas,
+        transporte,
+        gastosVarios,
+        peajes,
+        combustible,
+        hospedaje,
+        id,
+      ]
+    );
+    return result;
+  } catch (err) {
+    throw new Error(
+      "Error al actualizar la cuenta del proyecto: " + err.message
+    );
+  }
 };
 
 // Eliminar una cuenta del proyecto por ID
-const deleteCuentaProyecto = (id, callback) => {
-  db.query(
-    "DELETE FROM cuenta_del_proyecto WHERE id = ?",
-    [id],
-    (err, results) => {
-      if (err) return callback(err);
-      callback(null, results);
-    }
-  );
+const deleteCuentaProyecto = async (id) => {
+  try {
+    const [result] = await db
+      .promise()
+      .query("DELETE FROM cuenta_del_proyecto WHERE id = ?", [id]);
+    return result;
+  } catch (err) {
+    throw new Error("Error al eliminar la cuenta del proyecto: " + err.message);
+  }
 };
 
 export {

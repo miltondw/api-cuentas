@@ -97,7 +97,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fecha\": \"2025-01-28\",\n  \"solicitante\": \"milton updated\",\n  \"nombreProyecto\": \"casa updated\",\n  \"obrero\": \"daniel\",\n  \"costoServicio\": 1600000,\n  \"abono\": 600000\n}"
+              "raw": "{\n  \"fecha\": \"2025-01-28\",\n  \"solicitante\": \"milton updated\",\n  \"nombreProyecto\": \"casa updated\",\n  \"obrero\": \"daniel\",\n  \"costoServicio\": 1600000,\n  \"abono\": 600000,\n  \"gastoCamioneta\": 700000,\n  \"gastosCampo\": 30000,\n  \"pagoObreros\": 70000,\n  \"comidas\": 50000,\n  \"transporte\": 25000,\n  \"gastosVarios\": 15000,\n  \"peajes\": 20000,\n  \"combustible\": 120000,\n  \"hospedaje\": 80000\n}"
             },
             "url": {
               "raw": "http://localhost:5050/api/cuenta-proyecto/:id",

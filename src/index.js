@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import costosFijosRoutes from "./routes/costosFijosRoutes.js";
 import cuentaProyectoRoutes from "./routes/cuentaProyectoRoutes.js";
-import db from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -11,8 +11,8 @@ app.use(express.json());
 // Rutas principales
 app.use("/api/costos-fijos", costosFijosRoutes);
 app.use("/api/cuenta-proyecto", cuentaProyectoRoutes);
+app.use("/api/auth", authRoutes);
 
-// Manejo de rutas no encontradas
 app.use((req, res, next) => {
   res.status(404).json({ error: "Route not found" });
 });
