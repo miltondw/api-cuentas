@@ -1,27 +1,27 @@
 import express from "express";
 import {
-  getCostosFijos,
   createCostoFijo,
+  getCostosFijos,
   getCostoFijo,
-  updateCostoFijoData,
-  deleteCostoFijoData,
+  updateCostoFijoController,
+  deleteCostoFijoController,
 } from "../controllers/costosFijosController.js";
-
+import verificarToken from "../middleware/authMiddleware.js";
 const router = express.Router();
 
-// Obtener todos los costos fijos
-router.get("/", getCostosFijos);
+// Ruta para crear un nuevo costo fijo
+router.post("/", verificarToken, createCostoFijo);
 
-// Crear un nuevo costo fijo
-router.post("/", createCostoFijo);
+// Ruta para obtener todos los costos fijos con paginación
+router.get("/", verificarToken, getCostosFijos);
 
-// Obtener un costo fijo por ID
-router.get("/:id", getCostoFijo);
+// Ruta para obtener un costo fijo específico por ID
+router.get("/:id", verificarToken, getCostoFijo);
 
-// Actualizar un costo fijo por ID
-router.put("/:id", updateCostoFijoData);
+// Ruta para actualizar un costo fijo por ID
+router.put("/:id", verificarToken, updateCostoFijoController);
 
-// Eliminar un costo fijo por ID
-router.delete("/:id", deleteCostoFijoData);
+// Ruta para eliminar un costo fijo por ID
+router.delete("/:id", verificarToken, deleteCostoFijoController);
 
 export default router;

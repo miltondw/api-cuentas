@@ -6,22 +6,23 @@ import {
   updateCuenta,
   deleteCuenta,
 } from "../controllers/cuentaProyectoController.js";
+import verificarToken from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // Obtener todas las cuentas del proyecto
-router.get("/", getCuentasProyecto);
+router.get("/", verificarToken, getCuentasProyecto);
 
 // Obtener una cuenta del proyecto por ID
-router.get("/:id", getCuentaProyecto);
+router.get("/:id", verificarToken, getCuentaProyecto);
 
 // Crear una nueva cuenta del proyecto
-router.post("/", createCuenta);
+router.post("/", verificarToken, createCuenta);
 
 // Actualizar una cuenta del proyecto por ID
-router.put("/:id", updateCuenta);
+router.put("/:id", verificarToken, updateCuenta);
 
 // Eliminar una cuenta del proyecto por ID
-router.delete("/:id", deleteCuenta);
+router.delete("/:id", verificarToken, deleteCuenta);
 
 export default router;
