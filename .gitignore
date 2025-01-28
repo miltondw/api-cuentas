@@ -1,0 +1,40 @@
+# Node.js
+/node_modules/
+
+# Archivos de entorno
+.env
+
+# Logs
+*.log
+logs/
+
+# Archivos de configuración de IDEs y editores
+.idea/
+.vscode/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Dependencias de producción (si usas alguna carpeta específica para build)
+dist/
+build/
+
+# Archivos de test de cobertura
+coverage/
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Archivos generados por algunos IDEs (ej. JetBrains)
+*.iml
+
+# Archivos de configuración de NPM
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Base de datos local (si creas una base de datos localmente para pruebas)
+*.sql
+*.sqlite
