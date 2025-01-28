@@ -1,0 +1,128 @@
+{
+  "info": {
+    "name": "API Testing Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Costos Fijos",
+      "item": [
+        {
+          "name": "Get All Costos Fijos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5050/api/costos-fijos",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5050",
+              "path": ["api", "costos-fijos"]
+            }
+          }
+        },
+        {
+          "name": "Create Costo Fijo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mes_de_gastos\": \"2025-01-01\",\n  \"pago_de_salarios\": 1680000,\n  \"pago_de_luz\": 29000,\n  \"pago_de_arriendo\": 540000,\n  \"pago_de_internet\": 85000,\n  \"pago_de_salud\": 480000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5050/api/costos-fijos",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5050",
+              "path": ["api", "costos-fijos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cuenta Proyecto",
+      "item": [
+        {
+          "name": "Get All Cuentas Proyecto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5050/api/cuenta-proyecto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5050",
+              "path": ["api", "cuenta-proyecto"]
+            }
+          }
+        },
+        {
+          "name": "Get Cuenta Proyecto by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5050/api/cuenta-proyecto/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5050",
+              "path": ["api", "cuenta-proyecto", ":id"]
+            }
+          }
+        },
+        {
+          "name": "Create Cuenta Proyecto",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha\": \"2025-01-28\",\n  \"solicitante\": \"milton\",\n  \"nombreProyecto\": \"casa\",\n  \"obrero\": \"daniel\",\n  \"costoServicio\": 1500000,\n  \"abono\": 550000,\n  \"gastoCamioneta\": 650000,\n  \"gastosCampo\": null,\n  \"pagoObreros\": 60000,\n  \"comidas\": null,\n  \"transporte\": null,\n  \"gastosVarios\": null,\n  \"peajes\": 15000,\n  \"combustible\": null,\n  \"hospedaje\": null\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5050/api/cuenta-proyecto",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5050",
+              "path": ["api", "cuenta-proyecto"]
+            }
+          }
+        },
+        {
+          "name": "Update Cuenta Proyecto",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha\": \"2025-01-28\",\n  \"solicitante\": \"milton updated\",\n  \"nombreProyecto\": \"casa updated\",\n  \"obrero\": \"daniel\",\n  \"costoServicio\": 1600000,\n  \"abono\": 600000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5050/api/cuenta-proyecto/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5050",
+              "path": ["api", "cuenta-proyecto", ":id"]
+            }
+          }
+        },
+        {
+          "name": "Delete Cuenta Proyecto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5050/api/cuenta-proyecto/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5050",
+              "path": ["api", "cuenta-proyecto", ":id"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
