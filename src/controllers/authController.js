@@ -1,35 +1,30 @@
+import { createUsuario, getUsuarioByEmail } from "../models/usuario.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { createUsuario, getUsuarioByEmail } from "../models/usuario.js";
-
 // Registrar un nuevo usuario
 const registrarUsuario = async (req, res) => {
   const { name, email, password, jwt2 } = req.body;
 
-  // Verificar el token de seguridad
   if (jwt2 !== process.env.JWT_SECRET_2) {
-    return res.status(403).json({ error: "Acceso denegado: JWT incorrecto" });
-  }
+    return res.json({ error: "Error al registrar el usuario" });
+  } else {
+    try {
+      // Hashear la contraseña antes de guardarla
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-  try {
-    // Hashear la contraseña antes de guardarla
-    const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = { name, email, password: hashedPassword };
 
-    const newUser = {
-      name,
-      email,
-      password: hashedPassword,
-    };
+      // Crear el usuario
+      const result = await createUsuario(newUser);
 
-    // Crear usuario
-    const result = await createUsuario(newUser);
-
-    // Enviar respuesta exitosa
-    return res
-      .status(201)
-      .json({ message: "Usuario registrado exitosamente", user: result });
-  } catch (err) {
-    return res.status(500).json({ error: "Error al registrar el usuario" });
+      res
+        .status(201)
+        .json({ message: "Usuario registrado exitosamente", user: result });
+    } catch (err) {
+      res
+        .status(500)
+        .json({ error: "Error al registrar el usuario", details: err });
+    }
   }
 };
 
@@ -38,19 +33,15 @@ const loginUsuario = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Obtener el usuario por email
-    const user = await getUsuarioByEmail(email);
+    // Obtener usuario por email
+    const user = await getUsuarioByEmail(email); // Usamos la promesa
 
-    if (!user) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
-    }
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
 
     // Comparar la contraseña proporcionada con la almacenada
     const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
+    if (!isMatch)
       return res.status(401).json({ error: "Contraseña incorrecta" });
-    }
 
     // Crear el token JWT
     const payload = { id: user.id, email: user.email };
@@ -58,11 +49,12 @@ const loginUsuario = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
 
-    // Enviar respuesta exitosa
-    return res.status(200).json({ message: "Inicio de sesión exitoso", token });
+    res.status(200).json({ message: "Inicio de sesión exitoso", token });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Error al iniciar sesión" });
+    console.error("Error en loginUsuario:", err); // Agregar un log detallado
+    res
+      .status(500)
+      .json({ error: "Error al iniciar sesión", details: err.message || err });
   }
 };
 
