@@ -1,152 +1,101 @@
 import db from "../config/db.js";
 
-// Obtener todas las cuentas del proyecto
-const getAllCuentasProyecto = async (page = 1, limit = 10) => {
+// Helper reutilizable para ejecutar consultas
+const executeQuery = async (query, params = []) => {
   try {
-    const offset = (page - 1) * limit;
-    const [rows] = await db
-      .promise()
-      .query("SELECT * FROM cuenta_del_proyecto LIMIT ? OFFSET ?", [
-        limit,
-        offset,
-      ]);
-    return rows;
-  } catch (err) {
-    throw new Error(
-      "Error al obtener las cuentas del proyecto: " + err.message
-    );
+    const [results] = await db.query(query, params);
+    return results;
+  } catch (error) {
+    console.error(`Error en consulta: ${query}`, error);
+    throw new Error(`Database Error: ${error.message}`);
   }
 };
 
-// Obtener una cuenta del proyecto por ID
-const getCuentaProyectoById = async (id) => {
-  try {
-    const [rows] = await db
-      .promise()
-      .query("SELECT * FROM cuenta_del_proyecto WHERE id = ?", [id]);
-    return rows[0];
-  } catch (err) {
-    throw new Error("Error al obtener la cuenta del proyecto: " + err.message);
+// Campos y validaciones
+const CUENTA_FIELDS = [
+  "fecha",
+  "solicitante",
+  "nombreProyecto",
+  "obrero",
+  "costoServicio",
+  "abono",
+  "gastoCamioneta",
+  "gastosCampo",
+  "pagoObreros",
+  "comidas",
+  "transporte",
+  "gastosVarios",
+  "peajes",
+  "combustible",
+  "hospedaje",
+];
+
+const validateCuentaData = (data) => {
+  const missingFields = CUENTA_FIELDS.filter((field) => !(field in data));
+  if (missingFields.length > 0) {
+    throw new Error(`Campos faltantes: ${missingFields.join(", ")}`);
   }
 };
 
-// Crear una nueva cuenta del proyecto
-const createCuentaProyecto = async (data) => {
-  const {
-    fecha,
-    solicitante,
-    nombreProyecto,
-    obrero,
-    costoServicio,
-    abono,
-    gastoCamioneta,
-    gastosCampo,
-    pagoObreros,
-    comidas,
-    transporte,
-    gastosVarios,
-    peajes,
-    combustible,
-    hospedaje,
-  } = data;
+export const getAllCuentasProyecto = async (page = 1, limit = 10) => {
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
 
-  try {
-    const [result] = await db.promise().query(
-      `INSERT INTO cuenta_del_proyecto 
-        (fecha, solicitante, nombreProyecto, obrero, costoServicio, abono, gastoCamioneta, gastosCampo, pagoObreros, comidas, transporte, gastosVarios, peajes, combustible, hospedaje)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        fecha,
-        solicitante,
-        nombreProyecto,
-        obrero,
-        costoServicio,
-        abono,
-        gastoCamioneta,
-        gastosCampo,
-        pagoObreros,
-        comidas,
-        transporte,
-        gastosVarios,
-        peajes,
-        combustible,
-        hospedaje,
-      ]
-    );
-    return result;
-  } catch (err) {
-    throw new Error("Error al crear la cuenta del proyecto: " + err.message);
+  if (isNaN(pageNumber) || isNaN(limitNumber)) {
+    throw new Error("Parámetros de paginación inválidos");
   }
+
+  const offset = (pageNumber - 1) * limitNumber;
+  const query = `
+    SELECT 
+      id,
+      DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,  -- Formato directo en SQL
+      solicitante,
+      nombreProyecto,
+      obrero,
+      costoServicio,
+      abono,
+      gastoCamioneta,
+      gastosCampo,
+      pagoObreros,
+      comidas,
+      transporte,
+      gastosVarios,
+      peajes,
+      combustible,
+      hospedaje
+    FROM cuenta_del_proyecto 
+    ORDER BY fecha DESC 
+    LIMIT ? OFFSET ?
+  `;
+  return executeQuery(query, [limit, offset]);
 };
 
-// Actualizar una cuenta del proyecto por ID
-const updateCuentaProyecto = async (id, data) => {
-  const {
-    fecha,
-    solicitante,
-    nombreProyecto,
-    obrero,
-    costoServicio,
-    abono,
-    gastoCamioneta,
-    gastosCampo,
-    pagoObreros,
-    comidas,
-    transporte,
-    gastosVarios,
-    peajes,
-    combustible,
-    hospedaje,
-  } = data;
-
-  try {
-    const [result] = await db.promise().query(
-      `UPDATE cuenta_del_proyecto SET 
-        fecha = ?, solicitante = ?, nombreProyecto = ?, obrero = ?, costoServicio = ?, abono = ?, gastoCamioneta = ?, gastosCampo = ?, pagoObreros = ?, comidas = ?, transporte = ?, gastosVarios = ?, peajes = ?, combustible = ?, hospedaje = ?
-        WHERE id = ?`,
-      [
-        fecha,
-        solicitante,
-        nombreProyecto,
-        obrero,
-        costoServicio,
-        abono,
-        gastoCamioneta,
-        gastosCampo,
-        pagoObreros,
-        comidas,
-        transporte,
-        gastosVarios,
-        peajes,
-        combustible,
-        hospedaje,
-        id,
-      ]
-    );
-    return result;
-  } catch (err) {
-    throw new Error(
-      "Error al actualizar la cuenta del proyecto: " + err.message
-    );
-  }
+export const getTotalCuentas = async () => {
+  const query = "SELECT COUNT(*) AS total FROM cuenta_del_proyecto";
+  const result = await executeQuery(query);
+  return result[0].total;
 };
 
-// Eliminar una cuenta del proyecto por ID
-const deleteCuentaProyecto = async (id) => {
-  try {
-    const [result] = await db
-      .promise()
-      .query("DELETE FROM cuenta_del_proyecto WHERE id = ?", [id]);
-    return result;
-  } catch (err) {
-    throw new Error("Error al eliminar la cuenta del proyecto: " + err.message);
-  }
+export const getCuentaProyectoById = async (id) => {
+  const query = "SELECT * FROM cuenta_del_proyecto WHERE id = ? LIMIT 1";
+  const result = await executeQuery(query, [id]);
+  return result[0] || null;
 };
 
-export {
-  getAllCuentasProyecto,
-  getCuentaProyectoById,
-  createCuentaProyecto,
-  updateCuentaProyecto,
-  deleteCuentaProyecto,
+export const createCuentaProyecto = async (data) => {
+  validateCuentaData(data);
+  const query = "INSERT INTO cuenta_del_proyecto SET ?";
+  return executeQuery(query, [data]);
+};
+
+export const updateCuentaProyecto = async (id, data) => {
+  validateCuentaData(data);
+  const query = "UPDATE cuenta_del_proyecto SET ? WHERE id = ?";
+  return executeQuery(query, [data, id]);
+};
+
+export const deleteCuentaProyecto = async (id) => {
+  const query = "DELETE FROM cuenta_del_proyecto WHERE id = ?";
+  return executeQuery(query, [id]);
 };

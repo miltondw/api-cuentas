@@ -31,31 +31,33 @@ const registrarUsuario = async (req, res) => {
 // Iniciar sesión y generar el JWT
 const loginUsuario = async (req, res) => {
   const { email, password } = req.body;
-
   try {
-    // Obtener usuario por email
-    const user = await getUsuarioByEmail(email); // Usamos la promesa
-
-    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
-
-    // Comparar la contraseña proporcionada con la almacenada
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(401).json({ error: "Contraseña incorrecta" });
-
-    // Crear el token JWT
-    const payload = { id: user.id, email: user.email };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
+    const user = await getUsuarioByEmail(email).catch((err) => {
+      throw err; // Propaga el error para capturarlo en el bloque catch externo
     });
 
-    res.status(200).json({ message: "Inicio de sesión exitoso", token });
+    if (!user) {
+      console.log("Usuario no encontrado");
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Comparar contraseña
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Contraseña incorrecta" });
+    }
+
+    // Generar token JWT
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    res.status(200).json({ message: "Login exitoso", token });
   } catch (err) {
-    console.error("Error en loginUsuario:", err); // Agregar un log detallado
-    res
-      .status(500)
-      .json({ error: "Error al iniciar sesión", details: err.message || err });
+    console.error("🔥 Error en loginUsuario:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 };
-
 export { registrarUsuario, loginUsuario };

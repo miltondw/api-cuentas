@@ -1,122 +1,164 @@
-import { validationResult, body } from "express-validator";
+import { body, validationResult } from "express-validator";
 import {
   getAllCuentasProyecto,
   getCuentaProyectoById,
   createCuentaProyecto,
   updateCuentaProyecto,
   deleteCuentaProyecto,
+  getTotalCuentas,
 } from "../models/cuentaProyecto.js";
+import { handleError } from "../middleware/errorHandler.js";
 
-// Validación de datos de entrada para crear y actualizar cuenta del proyecto
+// Validación avanzada
 const validateCuentaProyecto = [
-  body("fecha")
-    .isDate()
-    .withMessage("La fecha es obligatoria y debe ser válida"),
-  body("solicitante").notEmpty().withMessage("El solicitante es obligatorio"),
+  body("fecha").isISO8601().toDate().withMessage("Fecha inválida (YYYY-MM-DD)"),
+  body("solicitante")
+    .trim()
+    .isLength({ min: 3 })
+    .withMessage("Mínimo 3 caracteres"),
   body("nombreProyecto")
-    .notEmpty()
-    .withMessage("El nombre del proyecto es obligatorio"),
-  // Se pueden agregar validaciones adicionales para otros campos
+    .trim()
+    .isLength({ min: 3 })
+    .withMessage("Mínimo 3 caracteres"),
+  body("costoServicio")
+    .isFloat({ min: 0 })
+    .withMessage("Debe ser un número positivo"),
+  body("abono").isFloat({ min: 0 }).withMessage("Debe ser un número positivo"),
+  body("gastoCamioneta").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  body("gastosCampo").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  body("pagoObreros").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  body("comidas").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  body("transporte").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  body("gastosVarios").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  body("peajes").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  body("combustible").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  body("hospedaje").isFloat({ min: 0 }).withMessage("Valor inválido"),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          type: "VALIDATION_ERROR",
+          details: errors.array().map((err) => ({
+            field: err.param,
+            message: err.msg,
+          })),
+        },
+      });
+    }
+    next();
+  },
 ];
 
-// Manejar errores de validación
-const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  next();
-};
-
-// Obtener todas las cuentas del proyecto
 const getCuentasProyecto = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const cuentas = await getAllCuentasProyecto(Number(page), Number(limit));
-    res.status(200).json(cuentas);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      message: "Error al obtener las cuentas del proyecto",
-      error: err.message,
+
+    const [data, total] = await Promise.all([
+      getAllCuentasProyecto(page, limit),
+      getTotalCuentas(),
+    ]);
+
+    res.json({
+      success: true,
+      data,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
+  } catch (error) {
+    handleError(res, error, "Error al obtener cuentas");
   }
 };
 
-// Obtener una cuenta del proyecto por ID
 const getCuentaProyecto = async (req, res) => {
-  const { id } = req.params;
   try {
-    const cuenta = await getCuentaProyectoById(id);
-    if (!cuenta) {
-      return res.status(404).json({ message: "Cuenta no encontrada" });
+    const { id } = req.params;
+    const data = await getCuentaProyectoById(id);
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: "Cuenta no encontrada",
+      });
     }
-    res.status(200).json(cuenta);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      message: "Error al obtener la cuenta del proyecto",
-      error: err.message,
+
+    res.json({
+      success: true,
+      data: {
+        ...data,
+        fecha: data.fecha.toISOString().split("T")[0], // Formatear fecha
+      },
     });
+  } catch (error) {
+    handleError(res, error, "Error al obtener cuenta");
   }
 };
 
-// Crear una nueva cuenta del proyecto
 const createCuenta = [
   validateCuentaProyecto,
-  handleValidationErrors,
   async (req, res) => {
-    const data = req.body;
     try {
-      const result = await createCuentaProyecto(data);
-      res
-        .status(201)
-        .json({ message: "Cuenta creada exitosamente", id: result.insertId });
-    } catch (err) {
-      console.error(err);
-      res
-        .status(500)
-        .json({ message: "Error al crear la cuenta", error: err.message });
+      const result = await createCuentaProyecto(req.body);
+      res.status(201).json({
+        success: true,
+        data: { id: result.insertId, ...req.body },
+        message: "Cuenta creada exitosamente",
+      });
+    } catch (error) {
+      handleError(res, error, "Error al crear cuenta");
     }
   },
 ];
 
-// Actualizar una cuenta del proyecto por ID
 const updateCuenta = [
   validateCuentaProyecto,
-  handleValidationErrors,
   async (req, res) => {
-    const { id } = req.params;
-    const data = req.body;
     try {
-      const result = await updateCuentaProyecto(id, data);
+      const { id } = req.params;
+      const result = await updateCuentaProyecto(id, req.body);
+
       if (result.affectedRows === 0) {
-        return res.status(404).json({ message: "Cuenta no encontrada" });
+        return res.status(404).json({
+          success: false,
+          message: "Cuenta no encontrada",
+        });
       }
-      res.status(200).json({ message: "Cuenta actualizada exitosamente" });
-    } catch (err) {
-      console.error(err);
-      res
-        .status(500)
-        .json({ message: "Error al actualizar la cuenta", error: err.message });
+
+      res.json({
+        success: true,
+        message: "Cuenta actualizada",
+        data: { id, ...req.body },
+      });
+    } catch (error) {
+      handleError(res, error, "Error al actualizar cuenta");
     }
   },
 ];
 
-// Eliminar una cuenta del proyecto por ID
 const deleteCuenta = async (req, res) => {
-  const { id } = req.params;
   try {
+    const { id } = req.params;
     const result = await deleteCuentaProyecto(id);
+
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Cuenta no encontrada" });
+      return res.status(404).json({
+        success: false,
+        message: "Cuenta no encontrada",
+      });
     }
-    res.status(200).json({ message: "Cuenta eliminada exitosamente" });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ message: "Error al eliminar la cuenta", error: err.message });
+
+    res.json({
+      success: true,
+      message: "Cuenta eliminada",
+      deletedId: id,
+    });
+  } catch (error) {
+    handleError(res, error, "Error al eliminar cuenta");
   }
 };
 
