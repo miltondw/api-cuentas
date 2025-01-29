@@ -3,9 +3,18 @@ import dotenv from "dotenv";
 import costosFijosRoutes from "./routes/costosFijosRoutes.js";
 import cuentaProyectoRoutes from "./routes/cuentaProyectoRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import cors from "cors";
 
 dotenv.config();
 const app = express();
+// Configurar CORS
+app.use(
+  cors({
+    origin: "*",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
+  })
+);
 app.use(express.json());
 
 // Rutas principales
