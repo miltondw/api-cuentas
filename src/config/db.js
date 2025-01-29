@@ -33,7 +33,7 @@ const poolConfig = {
   queueLimit: 30,
   timezone: "UTC",
   charset: "utf8mb4",
-  ...sslOptions,
+  ...ssl,
 };
 
 class Database {
