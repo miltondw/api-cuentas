@@ -1,6 +1,6 @@
 import mysql from "mysql2";
 import dotenv from "dotenv";
-
+import { readFileSync } from "fs";
 dotenv.config();
 
 // Validación de variables de entorno
@@ -9,13 +9,15 @@ requiredEnv.forEach((varName) => {
   if (!process.env[varName]) throw new Error(`❌ ${varName} es requerido`);
 });
 
-// Configuración SSL para producción
-const sslOptions =
+const ssl =
   process.env.NODE_ENV === "production"
     ? {
         ssl: {
           rejectUnauthorized: true,
-          ca: process.env.DB_SSL_CA,
+          ca: [
+            readFileSync(process.env.DB_SSL_CA_1, "utf8"), // DigiCert
+            readFileSync(process.env.DB_SSL_CA_2, "utf8"), // Baltimore
+          ],
         },
       }
     : {};
