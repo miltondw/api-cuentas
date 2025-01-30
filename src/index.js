@@ -21,7 +21,7 @@ app.use(helmet());
 app.use(
   cors({
     origin: process.env.CORS_ORIGINS?.split(",") || "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: NODE_ENV === "production" ? true : false,
   })
