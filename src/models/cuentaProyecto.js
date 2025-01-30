@@ -101,7 +101,10 @@ export const updateCuentaProyecto = async (id, data) => {
   const query = "UPDATE cuenta_del_proyecto SET ? WHERE id = ?";
   return executeQuery(query, [data, id]);
 };
-
+export const abonarProyecto = async (id, nuevoAbono) => {
+  const query = "UPDATE cuenta_del_proyecto SET abono = ? WHERE id = ?";
+  return executeQuery(query, [nuevoAbono, id]);
+};
 export const deleteCuentaProyecto = async (id) => {
   const query = "DELETE FROM cuenta_del_proyecto WHERE id = ?";
   return executeQuery(query, [id]);

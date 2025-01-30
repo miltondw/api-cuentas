@@ -5,6 +5,7 @@ import {
   createCuenta,
   updateCuenta,
   deleteCuenta,
+  abonarCuenta,
 } from "../controllers/cuentaProyectoController.js";
 import verificarToken from "../middleware/authMiddleware.js";
 
@@ -21,7 +22,8 @@ router.post("/", verificarToken, createCuenta);
 
 // Actualizar una cuenta del proyecto por ID
 router.put("/:id", verificarToken, updateCuenta);
-
+// Ruta para abonar a una cuenta
+router.patch("/:id/abonar", verificarToken, abonarCuenta);
 // Eliminar una cuenta del proyecto por ID
 router.delete("/:id", verificarToken, deleteCuenta);
 

@@ -6,6 +6,7 @@ import {
   updateCuentaProyecto,
   deleteCuentaProyecto,
   getTotalCuentas,
+  abonarProyecto,
 } from "../models/cuentaProyecto.js";
 import { handleError } from "../middleware/errorHandler.js";
 
@@ -98,6 +99,44 @@ const getCuentaProyecto = async (req, res) => {
     handleError(res, error, "Error al obtener cuenta");
   }
 };
+const abonarCuenta = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { abono } = req.body;
+
+    // Validar que el abono sea un número positivo
+    const abonoFloat = parseFloat(abono);
+    if (isNaN(abonoFloat) || abonoFloat <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "El abono debe ser un número positivo",
+      });
+    }
+
+    // Obtener la cuenta antes de actualizar
+    const cuenta = await getCuentaProyectoById(id);
+    if (!cuenta) {
+      return res.status(404).json({
+        success: false,
+        message: "Cuenta no encontrada",
+      });
+    }
+
+    // Calcular el nuevo abono
+    const nuevoAbono = parseFloat(cuenta.abono) + abonoFloat;
+
+    // Actualizar la cuenta con el nuevo abono
+    await abonarProyecto(id, nuevoAbono);
+
+    res.json({
+      success: true,
+      message: "Abono realizado con éxito",
+      data: { id, nuevoAbono },
+    });
+  } catch (error) {
+    handleError(res, error, "Error al abonar a la cuenta");
+  }
+};
 
 const createCuenta = [
   validateCuentaProyecto,
@@ -168,4 +207,5 @@ export {
   createCuenta,
   updateCuenta,
   deleteCuenta,
+  abonarCuenta,
 };
