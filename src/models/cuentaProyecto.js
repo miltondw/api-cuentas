@@ -38,18 +38,24 @@ const validateCuentaData = (data) => {
 };
 
 export const getAllCuentasProyecto = async (page = 1, limit = 10) => {
-  const pageNumber = Number(page);
-  const limitNumber = Number(limit);
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
 
-  if (isNaN(pageNumber) || isNaN(limitNumber)) {
+  if (
+    isNaN(pageNumber) ||
+    isNaN(limitNumber) ||
+    pageNumber < 1 ||
+    limitNumber < 1
+  ) {
     throw new Error("Parámetros de paginación inválidos");
   }
 
   const offset = (pageNumber - 1) * limitNumber;
+
   const query = `
     SELECT 
       id,
-      DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,  -- Formato directo en SQL
+      DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,  
       solicitante,
       nombreProyecto,
       obrero,
@@ -68,7 +74,8 @@ export const getAllCuentasProyecto = async (page = 1, limit = 10) => {
     ORDER BY fecha DESC 
     LIMIT ? OFFSET ?
   `;
-  return executeQuery(query, [limit, offset]);
+
+  return executeQuery(query, [limitNumber, offset]);
 };
 
 export const getTotalCuentas = async () => {
