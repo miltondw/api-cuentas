@@ -99,14 +99,15 @@ const getCuentaProyecto = async (req, res) => {
     handleError(res, error, "Error al obtener cuenta");
   }
 };
+
 const abonarCuenta = async (req, res) => {
   try {
     const { id } = req.params;
     const { abono } = req.body;
 
     // Validar que el abono sea un número positivo
-    const abonoFloat = parseFloat(abono);
-    if (isNaN(abonoFloat) || abonoFloat <= 0) {
+    const abonoNUmber = parseFloat(abono);
+    if (isNaN(abonoNUmber) || abonoNUmber <= 0) {
       return res.status(400).json({
         success: false,
         message: "El abono debe ser un número positivo",
@@ -123,7 +124,13 @@ const abonarCuenta = async (req, res) => {
     }
 
     // Calcular el nuevo abono
-    const nuevoAbono = parseFloat(cuenta.abono) + abonoFloat;
+    const nuevoAbono = parseFloat(cuenta.abono) + abonoNUmber;
+    if (nuevoAbono > parseFloat(cuenta.costoServicio)) {
+      return res.status(400).json({
+        success: false,
+        message: "El abono no debe ser un número mayor al costo del servicio",
+      });
+    }
 
     // Actualizar la cuenta con el nuevo abono
     await abonarProyecto(id, nuevoAbono);
