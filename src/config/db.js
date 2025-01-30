@@ -9,19 +9,6 @@ requiredEnv.forEach((varName) => {
   if (!process.env[varName]) throw new Error(`❌ ${varName} es requerido`);
 });
 
-const ssl =
-  process.env.NODE_ENV === "production"
-    ? {
-        ssl: {
-          rejectUnauthorized: true,
-          ca: [
-            readFileSync(process.env.DB_SSL_CA_1, "utf8"), // DigiCert
-            readFileSync(process.env.DB_SSL_CA_2, "utf8"), // Baltimore
-          ],
-        },
-      }
-    : {};
-
 const poolConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -33,7 +20,6 @@ const poolConfig = {
   queueLimit: 30,
   timezone: "UTC",
   charset: "utf8mb4",
-  ...ssl,
 };
 
 class Database {
