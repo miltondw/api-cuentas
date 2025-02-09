@@ -9,6 +9,7 @@ import morgan from "morgan";
 import projects from "./routes/project.routes.js";
 import gastosEmpresa from "./routes/gastos-empresa.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import resumen from "./routes/resumen-financiero.routes.js";
 //middleware
 import { notFoundHandler, handleError } from "./middleware/errorHandler.js";
 
@@ -62,6 +63,7 @@ app.use("/api/health", (req, res) => res.json({ status: "ok" }));
 
 app.use("/api/projects", projects);
 app.use("/api/gastos-mes", gastosEmpresa);
+app.use("/api/resumen", resumen);
 
 app.use("/api/auth", authRoutes);
 

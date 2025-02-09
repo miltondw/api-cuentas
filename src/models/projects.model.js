@@ -28,6 +28,8 @@ const validateProyectoData = (data) => {
 };
 
 export const getAllProyectos = async (page = 1, limit = 10) => {
+  page = Number(page) || 1; // Convertir a número y manejar valores inválidos
+  limit = Number(limit) || 10;
   const offset = (page - 1) * limit;
 
   // Obtener los proyectos paginados

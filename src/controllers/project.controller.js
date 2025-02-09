@@ -12,7 +12,8 @@ import { handleError } from "../middleware/errorHandler.js";
 // Controlador de Proyectos
 export const obtenerProyectos = async (req, res) => {
   try {
-    const proyectos = await getAllProyectos();
+    const { page, limit } = req.query;
+    const proyectos = await getAllProyectos(page, limit);
     res.json({ success: true, data: proyectos });
   } catch (error) {
     handleError(res, error, "Error al obtener proyectos");
