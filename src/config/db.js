@@ -1,6 +1,5 @@
 import mysql from "mysql2";
 import dotenv from "dotenv";
-import { readFileSync } from "fs";
 dotenv.config();
 
 // Validación de variables de entorno

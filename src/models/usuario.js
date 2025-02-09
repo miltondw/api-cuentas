@@ -2,12 +2,12 @@ import db from "../config/db.js";
 
 // Crear un nuevo usuario
 const createUsuario = async (data) => {
-  const { name, email, password } = data;
+  const { name, email, password, rol } = data;
 
   try {
     const [results] = await db.query(
-      "INSERT INTO usuarios (name, email, password) VALUES (?, ?, ?)",
-      [name, email, password]
+      "INSERT INTO usuarios (name, email, password, rol) VALUES (?, ?, ?, ?)",
+      [name, email, password, rol]
     );
 
     return results; // Retorna el resultado de la inserción

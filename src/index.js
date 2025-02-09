@@ -5,9 +5,11 @@ import cors from "cors";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
-import costosFijosRoutes from "./routes/costosFijosRoutes.js";
-import cuentaProyectoRoutes from "./routes/cuentaProyectoRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
+//Routes
+import projects from "./routes/project.routes.js";
+import gastosEmpresa from "./routes/gastos-empresa.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+//middleware
 import { notFoundHandler, handleError } from "./middleware/errorHandler.js";
 
 // Configuración inicial
@@ -57,8 +59,10 @@ requiredEnvVars.forEach((varName) => {
 // 6. Configuración de rutas
 app.use("/api", apiLimiter);
 app.use("/api/health", (req, res) => res.json({ status: "ok" }));
-app.use("/api/costos-fijos", costosFijosRoutes);
-app.use("/api/cuenta-proyecto", cuentaProyectoRoutes);
+
+app.use("/api/projects", projects);
+app.use("/api/gastos-mes", gastosEmpresa);
+
 app.use("/api/auth", authRoutes);
 
 // 7. Manejo de errores (DEBE ir después de las rutas)

@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 // Registrar un nuevo usuario
 const registrarUsuario = async (req, res) => {
-  const { name, email, password, jwt2 } = req.body;
+  const { name, email, password, rol, jwt2 } = req.body;
 
   if (jwt2 !== process.env.JWT_SECRET_2) {
     return res.json({ error: "Error al registrar el usuario" });
@@ -12,7 +12,7 @@ const registrarUsuario = async (req, res) => {
       // Hashear la contraseña antes de guardarla
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      const newUser = { name, email, password: hashedPassword };
+      const newUser = { name, email, password: hashedPassword, rol };
 
       // Crear el usuario
       const result = await createUsuario(newUser);
