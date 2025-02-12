@@ -16,39 +16,69 @@ export const getGastosByProyectoId = async (proyecto_id) => {
   return executeQuery(query, [proyecto_id]);
 };
 
-export const createGastoProyecto = async (proyecto_id, gastos) => {
+/**
+ * Extrae los campos adicionales (no fijos) de un objeto gasto.
+ * Los campos fijos son: camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje
+ */
+const extractExtras = (gasto) => {
+  const fixedFields = [
+    "camioneta",
+    "campo",
+    "obreros",
+    "comidas",
+    "transporte",
+    "otros",
+    "peajes",
+    "combustible",
+    "hospedaje",
+  ];
+  const extras = {};
+  for (const key in gasto) {
+    if (!fixedFields.includes(key)) {
+      extras[key] = gasto[key];
+    }
+  }
+  return Object.keys(extras).length > 0 ? extras : null;
+};
+
+export const createGastoProyecto = async (proyecto_id, gasto) => {
+  // Extraer los campos extras (si existen)
+  const extras = extractExtras(gasto);
   const query = `INSERT INTO gastos_proyectos 
-    (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje, otros_campos) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   const params = [
     proyecto_id,
-    gastos.camioneta,
-    gastos.campo,
-    gastos.obreros,
-    gastos.comidas,
-    gastos.transporte,
-    gastos.otros,
-    gastos.peajes,
-    gastos.combustible,
-    gastos.hospedaje,
+    gasto.camioneta,
+    gasto.campo,
+    gasto.obreros,
+    gasto.comidas,
+    gasto.transporte,
+    gasto.otros,
+    gasto.peajes,
+    gasto.combustible,
+    gasto.hospedaje,
+    extras ? JSON.stringify(extras) : null,
   ];
   return executeQuery(query, params);
 };
 
-export const updateGastoProyecto = async (id, gastos) => {
+export const updateGastoProyecto = async (id, gasto) => {
+  const extras = extractExtras(gasto);
   const query = `UPDATE gastos_proyectos SET 
-    camioneta = ?, campo = ?, obreros = ?, comidas = ?, transporte = ?, otros = ?, peajes = ?, combustible = ?, hospedaje = ? 
+    camioneta = ?, campo = ?, obreros = ?, comidas = ?, transporte = ?, otros = ?, peajes = ?, combustible = ?, hospedaje = ?, otros_campos = ?
     WHERE gasto_proyecto_id = ?`;
   const params = [
-    gastos.camioneta,
-    gastos.campo,
-    gastos.obreros,
-    gastos.comidas,
-    gastos.transporte,
-    gastos.otros,
-    gastos.peajes,
-    gastos.combustible,
-    gastos.hospedaje,
+    gasto.camioneta,
+    gasto.campo,
+    gasto.obreros,
+    gasto.comidas,
+    gasto.transporte,
+    gasto.otros,
+    gasto.peajes,
+    gasto.combustible,
+    gasto.hospedaje,
+    extras ? JSON.stringify(extras) : null,
     id,
   ];
   return executeQuery(query, params);

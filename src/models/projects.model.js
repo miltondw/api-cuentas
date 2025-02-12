@@ -11,7 +11,6 @@ const executeQuery = async (query, params = []) => {
   }
 };
 
-// Definimos los campos requeridos (los nuevos campos son opcionales)
 const REQUIRED_PROYECTO_FIELDS = [
   "fecha",
   "solicitante",
@@ -121,23 +120,46 @@ export const createProyecto = async (data) => {
   const proyectoId = result.insertId;
 
   if (gastos && gastos.length > 0) {
-    const gastosQuery = `
-      INSERT INTO gastos_proyectos (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje) 
-      VALUES ?
-    `;
-    const gastosValues = gastos.map((g) => [
-      proyectoId,
-      g.camioneta,
-      g.campo,
-      g.obreros,
-      g.comidas,
-      g.transporte,
-      g.otros,
-      g.peajes,
-      g.combustible,
-      g.hospedaje,
-    ]);
-    await executeQuery(gastosQuery, [gastosValues]);
+    // Procesamos cada gasto para separar extras
+    const fixedFields = [
+      "camioneta",
+      "campo",
+      "obreros",
+      "comidas",
+      "transporte",
+      "otros",
+      "peajes",
+      "combustible",
+      "hospedaje",
+    ];
+    for (const gasto of gastos) {
+      // Extraer extras
+      const extras = {};
+      for (const key in gasto) {
+        if (!fixedFields.includes(key)) {
+          extras[key] = gasto[key];
+        }
+      }
+      const gastosQuery = `
+        INSERT INTO gastos_proyectos 
+        (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje, otros_campos) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      const params = [
+        proyectoId,
+        gasto.camioneta,
+        gasto.campo,
+        gasto.obreros,
+        gasto.comidas,
+        gasto.transporte,
+        gasto.otros,
+        gasto.peajes,
+        gasto.combustible,
+        gasto.hospedaje,
+        Object.keys(extras).length > 0 ? JSON.stringify(extras) : null,
+      ];
+      await executeQuery(gastosQuery, params);
+    }
   }
 
   return { proyectoId, message: "Proyecto creado con éxito" };
@@ -160,10 +182,28 @@ export const updateProyecto = async (id, data) => {
   await executeQuery(proyectoQuery, values);
 
   if (gastos && gastos.length > 0) {
-    for (const g of gastos) {
+    const fixedFields = [
+      "camioneta",
+      "campo",
+      "obreros",
+      "comidas",
+      "transporte",
+      "otros",
+      "peajes",
+      "combustible",
+      "hospedaje",
+    ];
+    for (const gasto of gastos) {
+      const extras = {};
+      for (const key in gasto) {
+        if (!fixedFields.includes(key)) {
+          extras[key] = gasto[key];
+        }
+      }
       const gastoQuery = `
-        INSERT INTO gastos_proyectos (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO gastos_proyectos 
+          (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje, otros_campos)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
           camioneta = VALUES(camioneta), 
           campo = VALUES(camioneta), 
@@ -173,19 +213,21 @@ export const updateProyecto = async (id, data) => {
           otros = VALUES(otros), 
           peajes = VALUES(peajes), 
           combustible = VALUES(combustible), 
-          hospedaje = VALUES(hospedaje)
+          hospedaje = VALUES(hospedaje), 
+          otros_campos = VALUES(otros_campos)
       `;
       await executeQuery(gastoQuery, [
         id,
-        g.camioneta,
-        g.campo,
-        g.obreros,
-        g.comidas,
-        g.transporte,
-        g.otros,
-        g.peajes,
-        g.combustible,
-        g.hospedaje,
+        gasto.camioneta,
+        gasto.campo,
+        gasto.obreros,
+        gasto.comidas,
+        gasto.transporte,
+        gasto.otros,
+        gasto.peajes,
+        gasto.combustible,
+        gasto.hospedaje,
+        Object.keys(extras).length > 0 ? JSON.stringify(extras) : null,
       ]);
     }
   }
