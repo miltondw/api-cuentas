@@ -24,6 +24,7 @@ const registrarUsuario = async (req, res) => {
 
 const loginUsuario = async (req, res) => {
   const { email, password } = req.body;
+  const isProd = process.env.NODE_ENV === "production";
   try {
     const user = await getUsuarioByEmail(email);
     if (!user) {
@@ -51,14 +52,14 @@ const loginUsuario = async (req, res) => {
     // Envía ambos tokens en cookies httpOnly
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProd, // secure: true solo en producción
+      sameSite: isProd ? "None" : "Lax", // en desarrollo puedes usar Lax
       maxAge: 15 * 60 * 1000, // 15 minutos
     });
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProd, // secure: true solo en producción
+      sameSite: isProd ? "None" : "Lax", // en desarrollo puedes usar Lax
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 días
     });
 
@@ -84,8 +85,8 @@ const refreshToken = (req, res) => {
     );
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProd, // secure: true solo en producción
+      sameSite: isProd ? "None" : "Lax", // en desarrollo puedes usar Lax
       maxAge: 15 * 60 * 1000,
     });
     return res.status(200).json({ message: "Access token renovado" });
