@@ -6,10 +6,13 @@ import {
   updateProyecto,
   deleteProyecto,
 } from "../models/projects.model.js";
-import { getGastosByProyectoId } from "../models/gastosProjects.model.js";
+import {
+  getGastosByProyectoId,
+  deleteGastosByProyectoId,
+} from "../models/gastosProjects.model.js";
 import { handleError } from "../middleware/errorHandler.js";
 
-// Controlador de Proyectos
+// Controlador para obtener todos los proyectos
 export const obtenerProyectos = async (req, res) => {
   try {
     const { page, limit } = req.query;
@@ -20,6 +23,7 @@ export const obtenerProyectos = async (req, res) => {
   }
 };
 
+// Controlador para obtener un proyecto por ID
 export const obtenerProyecto = async (req, res) => {
   try {
     const proyecto = await getProyectoById(req.params.id);
@@ -35,12 +39,13 @@ export const obtenerProyecto = async (req, res) => {
   }
 };
 
+// Controlador para crear un proyecto
 export const crearProyecto = async (req, res) => {
   try {
     const result = await createProyecto(req.body);
     res.status(201).json({
       success: true,
-      data: { id: result.insertId, ...req.body },
+      data: { id: result.proyectoId, ...req.body },
       message: "Proyecto creado",
     });
   } catch (error) {
@@ -48,22 +53,22 @@ export const crearProyecto = async (req, res) => {
   }
 };
 
+// Controlador para actualizar un proyecto
 export const actualizarProyecto = async (req, res) => {
   try {
     const result = await updateProyecto(req.params.id, req.body);
-    if (result.affectedRows === 0)
-      return res
-        .status(404)
-        .json({ success: false, message: "Proyecto no encontrado" });
     res.json({ success: true, message: "Proyecto actualizado" });
   } catch (error) {
     handleError(res, error, "Error al actualizar proyecto");
   }
 };
 
+// Controlador para eliminar un proyecto y sus gastos asociados
 export const eliminarProyecto = async (req, res) => {
   try {
-    await deleteGastoProyecto(req.params.id); // Eliminar gastos asociados primero
+    // Eliminar primero todos los gastos asociados al proyecto
+    await deleteGastosByProyectoId(req.params.id);
+    // Luego eliminar el proyecto
     const result = await deleteProyecto(req.params.id);
     if (result.affectedRows === 0)
       return res
@@ -75,6 +80,7 @@ export const eliminarProyecto = async (req, res) => {
   }
 };
 
+// Controlador para abonar a un proyecto
 export const abonarProyecto = async (req, res) => {
   try {
     const { abono } = req.body;
@@ -83,14 +89,12 @@ export const abonarProyecto = async (req, res) => {
         .status(400)
         .json({ success: false, message: "El abono es requerido" });
     }
-
     const result = await abonar(req.params.id, abono);
     if (result.affectedRows === 0) {
       return res
         .status(404)
         .json({ success: false, message: "Proyecto no encontrado" });
     }
-
     res.json({ success: true, message: "Abono actualizado correctamente" });
   } catch (error) {
     handleError(res, error, "Error al abonar al proyecto");

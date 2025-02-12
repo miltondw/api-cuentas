@@ -3,7 +3,7 @@
 
 # Archivos de entorno
 .env
-
+.todo
 # Logs
 *.log
 logs/

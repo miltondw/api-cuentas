@@ -3,6 +3,7 @@ import {
   create,
   update,
   deleteEmpresa,
+  getGastoById,
 } from "../models/gastosDeLaEmpresa.model.js";
 import { handleError } from "../middleware/errorHandler.js";
 
@@ -15,7 +16,22 @@ export const obtenerGastosEmpresa = async (req, res) => {
     handleError(res, error, "Error al obtener los gastos de la empresa");
   }
 };
+// Controlador para obtener gasto de la empresa
 
+export const obtenerGastoEmpresa = async (req, res) => {
+  try {
+    const gasto = await getGastoById(req.params.id);
+    if (!gasto)
+      return res
+        .status(404)
+        .json({ success: false, message: "Gasto no encontrado" });
+
+    const gastos = await getGastosByProyectoId(req.params.id);
+    res.json({ success: true, data: { ...gasto, gastos } });
+  } catch (error) {
+    handleError(res, error, "Error al obtener gasto");
+  }
+};
 // Controlador para crear un nuevo gasto de empresa
 export const crearGastoEmpresa = async (req, res) => {
   try {

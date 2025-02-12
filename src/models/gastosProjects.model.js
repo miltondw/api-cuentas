@@ -1,3 +1,4 @@
+// gastosProjects.model.js
 import db from "../config/db.js";
 
 const executeQuery = async (query, params = []) => {
@@ -56,4 +57,10 @@ export const updateGastoProyecto = async (id, gastos) => {
 export const deleteGastoProyecto = async (id) => {
   const query = "DELETE FROM gastos_proyectos WHERE gasto_proyecto_id = ?";
   return executeQuery(query, [id]);
+};
+
+// Nueva función: elimina TODOS los gastos asociados a un proyecto
+export const deleteGastosByProyectoId = async (proyecto_id) => {
+  const query = "DELETE FROM gastos_proyectos WHERE proyecto_id = ?";
+  return executeQuery(query, [proyecto_id]);
 };

@@ -26,7 +26,7 @@ app.use(
     origin: process.env.CORS_ORIGINS?.split(",") || "*",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: NODE_ENV === "production" ? true : false,
+    credentials: true,
   })
 );
 
