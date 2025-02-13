@@ -2,7 +2,7 @@ import { createUsuario, getUsuarioByEmail } from "../models/usuario.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
-// Registrar un nuevo usuario (sin cambios)
+// Registrar un nuevo usuario (se mantiene igual)
 const registrarUsuario = async (req, res) => {
   const { name, email, password, rol, jwt2 } = req.body;
   if (jwt2 !== process.env.JWT_SECRET_2) {
@@ -18,12 +18,13 @@ const registrarUsuario = async (req, res) => {
   } catch (err) {
     res
       .status(500)
-      .json({ error: "Error al registrar el usuario", details: err.message });
+      .json({ error: "Error al registrar el usuario", details: err });
   }
 };
 
 const loginUsuario = async (req, res) => {
   const { email, password } = req.body;
+  const isProd = process.env.NODE_ENV === "production";
   try {
     const user = await getUsuarioByEmail(email);
     if (!user) {
@@ -41,25 +42,25 @@ const loginUsuario = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
-    // Genera el refresh token (14 días)
+    // Genera el refresh token (14 días, por ejemplo)
     const refreshToken = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: "14d" }
     );
 
-    // Establece las cookies sin restricciones estrictas (flexible para desarrollo)
+    // Envía ambos tokens en cookies httpOnly
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: false, // Fijo en false para que no se requiera HTTPS
-      sameSite: "None", // "None" para permitir sitios cruzados
-      maxAge: 15 * 60 * 1000,
+      secure: isProd, // secure: true solo en producción
+      sameSite: isProd ? "None" : "Lax", // en desarrollo puedes usar Lax
+      maxAge: 15 * 60 * 1000, // 15 minutos
     });
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "None",
-      maxAge: 14 * 24 * 60 * 60 * 1000,
+      secure: isProd, // secure: true solo en producción
+      sameSite: isProd ? "None" : "Lax", // en desarrollo puedes usar Lax
+      maxAge: 14 * 24 * 60 * 60 * 1000, // 14 días
     });
 
     res.status(200).json({ message: "Login exitoso" });
@@ -74,6 +75,7 @@ const refreshToken = (req, res) => {
   if (!refreshToken) {
     return res.status(401).json({ error: "Refresh token no proporcionado" });
   }
+
   try {
     const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const newAccessToken = jwt.sign(
@@ -83,8 +85,8 @@ const refreshToken = (req, res) => {
     );
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "None",
+      secure: isProd, // secure: true solo en producción
+      sameSite: isProd ? "None" : "Lax", // en desarrollo puedes usar Lax
       maxAge: 15 * 60 * 1000,
     });
     return res.status(200).json({ message: "Access token renovado" });
