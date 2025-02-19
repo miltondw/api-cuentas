@@ -26,12 +26,18 @@ export const obtenerGastoEmpresa = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Gasto no encontrado" });
 
-   
-    res.json({ success: true, data: { gasto } });
+    // Asegurar la estructura correcta en la respuesta
+    const responseData = {
+      ...gasto,
+      otros_campos: gasto.otros_campos || []
+    };
+
+    res.json({ success: true, data: responseData });
   } catch (error) {
     handleError(res, error, "Error al obtener gasto");
   }
 };
+
 // Controlador para crear un nuevo gasto de empresa
 export const crearGastoEmpresa = async (req, res) => {
   try {

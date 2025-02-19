@@ -12,22 +12,15 @@ const executeQuery = async (query, params = []) => {
 
 // Función para extraer campos adicionales
 const extractExtras = (gasto) => {
-  const fixedFields = [
-    "mes",
-    "salarios",
-    "luz",
-    "agua",
-    "arriendo",
-    "internet",
-    "salud"
-  ];
+  if (!gasto.otros_campos) return null;
   
+  // Debe recibir un array y convertirlo a objeto plano
   const extras = {};
-  for (const key in gasto) {
-    if (!fixedFields.includes(key) && gasto[key] !== undefined) {
-      extras[key] = gasto[key];
-    }
-  }
+  gasto.otros_campos.forEach(item => {
+    const [key] = Object.keys(item);
+    extras[key] = item[key];
+  });
+  
   return Object.keys(extras).length > 0 ? extras : null;
 };
 
@@ -59,7 +52,6 @@ export const getAll = async (page = 1, limit = 10) => {
     limit,
   };
 };
-
 export const getGastoById = async (id) => {
   const query = `
     SELECT *, 
@@ -69,12 +61,20 @@ export const getGastoById = async (id) => {
   `;
   
   const result = await executeQuery(query, [id]);
-  return result[0] ? {
-    ...result[0],
-    otros_campos: result[0].otros_campos ? JSON.parse(result[0].otros_campos) : null
-  } : null;
-};
+  
+  if (!result[0]) return null;
 
+  // Convertir el objeto plano de vuelta a array
+  const otrosCampos = result[0].otros_campos 
+    ? Object.entries(JSON.parse(result[0].otros_campos))
+        .map(([nombre, monto]) => ({ [nombre]: monto }))
+    : [];
+
+  return {
+    ...result[0],
+    otros_campos: otrosCampos
+  };
+};
 export const create = async (gasto) => {
   const extras = extractExtras(gasto);
   
