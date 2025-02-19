@@ -1,6 +1,5 @@
 import db from "../config/db.js";
 
-// Helper reutilizable para ejecutar consultas
 const executeQuery = async (query, params = []) => {
   try {
     const [results] = await db.query(query, params);
@@ -11,22 +10,50 @@ const executeQuery = async (query, params = []) => {
   }
 };
 
+// Función para extraer campos adicionales
+const extractExtras = (gasto) => {
+  const fixedFields = [
+    "mes",
+    "salarios",
+    "luz",
+    "agua",
+    "arriendo",
+    "internet",
+    "salud"
+  ];
+  
+  const extras = {};
+  for (const key in gasto) {
+    if (!fixedFields.includes(key) && gasto[key] !== undefined) {
+      extras[key] = gasto[key];
+    }
+  }
+  return Object.keys(extras).length > 0 ? extras : null;
+};
+
 export const getAll = async (page = 1, limit = 10) => {
   const offset = (page - 1) * limit;
 
-  // Consultas SQL
-  const query =
-    "SELECT * FROM gastos_empresa ORDER BY mes DESC LIMIT ? OFFSET ?";
+  const query = `
+    SELECT *, 
+           JSON_UNQUOTE(JSON_EXTRACT(otros_campos, '$')) AS otros_campos 
+    FROM gastos_empresa 
+    ORDER BY mes DESC 
+    LIMIT ? OFFSET ?
+  `;
+  
   const totalQuery = "SELECT COUNT(*) AS total FROM gastos_empresa";
 
-  // Ejecutar consultas en paralelo
   const [gastos, totalResult] = await Promise.all([
     executeQuery(query, [limit, offset]),
     executeQuery(totalQuery),
   ]);
 
   return {
-    gastos,
+    gastos: gastos.map(g => ({
+      ...g,
+      otros_campos: g.otros_campos ? JSON.parse(g.otros_campos) : null
+    })),
     total: totalResult[0].total,
     page,
     limit,
@@ -34,37 +61,67 @@ export const getAll = async (page = 1, limit = 10) => {
 };
 
 export const getGastoById = async (id) => {
-  const query = "SELECT * FROM gastos_empresa WHERE gasto_empresa_id = ?";
-  return executeQuery(query, [id]);
+  const query = `
+    SELECT *, 
+           JSON_UNQUOTE(JSON_EXTRACT(otros_campos, '$')) AS otros_campos 
+    FROM gastos_empresa 
+    WHERE gasto_empresa_id = ?
+  `;
+  
+  const result = await executeQuery(query, [id]);
+  return result[0] ? {
+    ...result[0],
+    otros_campos: result[0].otros_campos ? JSON.parse(result[0].otros_campos) : null
+  } : null;
 };
+
 export const create = async (gasto) => {
-  const { mes, salarios, luz, agua, arriendo, internet, salud } = gasto;
-  const query =
-    "INSERT INTO gastos_empresa (mes, salarios, luz, agua, arriendo, internet, salud) VALUES (?, ?, ?, ?, ?, ?, ?)";
+  const extras = extractExtras(gasto);
+  
+  const query = `
+    INSERT INTO gastos_empresa 
+    (mes, salarios, luz, agua, arriendo, internet, salud, otros_campos) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+  
   return executeQuery(query, [
-    mes,
-    salarios,
-    luz,
-    agua,
-    arriendo,
-    internet,
-    salud,
+    gasto.mes,
+    gasto.salarios,
+    gasto.luz,
+    gasto.agua,
+    gasto.arriendo,
+    gasto.internet,
+    gasto.salud,
+    extras ? JSON.stringify(extras) : null
   ]);
 };
 
 export const update = async (id, gasto) => {
-  const { mes, salarios, luz, agua, arriendo, internet, salud } = gasto;
-  const query =
-    "UPDATE gastos_empresa SET mes = ?, salarios = ?, luz = ?, agua = ?, arriendo = ?, internet = ?, salud = ? WHERE gasto_empresa_id = ?";
+  const extras = extractExtras(gasto);
+  
+  const query = `
+    UPDATE gastos_empresa 
+    SET mes = ?, 
+        salarios = ?, 
+        luz = ?, 
+        agua = ?, 
+        arriendo = ?, 
+        internet = ?, 
+        salud = ?, 
+        otros_campos = ? 
+    WHERE gasto_empresa_id = ?
+  `;
+  
   return executeQuery(query, [
-    mes,
-    salarios,
-    luz,
-    agua,
-    arriendo,
-    internet,
-    salud,
-    id,
+    gasto.mes,
+    gasto.salarios,
+    gasto.luz,
+    gasto.agua,
+    gasto.arriendo,
+    gasto.internet,
+    gasto.salud,
+    extras ? JSON.stringify(extras) : null,
+    id
   ]);
 };
 
