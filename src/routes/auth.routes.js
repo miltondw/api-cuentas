@@ -4,9 +4,9 @@ import {
   loginUsuario,
   refreshToken,
   logoutUsuario,
-  verificarToken
+  verifyAuth
 } from "../controllers/auth.controller.js";
-
+import verificarToken from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Registrar un nuevo usuario
