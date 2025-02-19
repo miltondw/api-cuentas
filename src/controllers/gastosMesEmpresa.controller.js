@@ -3,7 +3,7 @@ import {
   create,
   update,
   deleteEmpresa,
-  getGastoById,
+  getGastoById
 } from "../models/gastosDeLaEmpresa.model.js";
 import { handleError } from "../middleware/errorHandler.js";
 
@@ -26,8 +26,8 @@ export const obtenerGastoEmpresa = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Gasto no encontrado" });
 
-    const gastos = await getGastosByProyectoId(req.params.id);
-    res.json({ success: true, data: { ...gasto, gastos } });
+   
+    res.json({ success: true, data: { gasto } });
   } catch (error) {
     handleError(res, error, "Error al obtener gasto");
   }

@@ -33,9 +33,9 @@ export const getAll = async (page = 1, limit = 10) => {
   };
 };
 
-export const getGastoById = async (empresa_id) => {
+export const getGastoById = async (id) => {
   const query = "SELECT * FROM gastos_empresa WHERE gasto_empresa_id = ?";
-  return executeQuery(query, [empresa_id]);
+  return executeQuery(query, [id]);
 };
 export const create = async (gasto) => {
   const { mes, salarios, luz, agua, arriendo, internet, salud } = gasto;
