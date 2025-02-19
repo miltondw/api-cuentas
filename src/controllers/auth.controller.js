@@ -117,5 +117,5 @@ const logoutUsuario = (req, res) => {
   });
 
   res.status(200).json({ message: "Sesión cerrada exitosamente" });
-};
+}; 
 export { registrarUsuario, loginUsuario, refreshToken,verifyAuth,logoutUsuario };
