@@ -20,7 +20,7 @@ const registrarUsuario = async (req, res) => {
       .status(500)
       .json({ error: "Error al registrar el usuario", details: err });
   }
-};
+}; 
 
 const loginUsuario = async (req, res) => {
   const { email, password } = req.body;
@@ -63,7 +63,10 @@ const loginUsuario = async (req, res) => {
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 días
     });
 
-    res.status(200).json({ message: "Login exitoso" });
+    res.status(200).json({ 
+  message: "Login exitoso",
+  user: { id: user.id, name: user.name, rol: user.rol } // Datos públicos del usuario
+});
   } catch (err) {
     console.error("🔥 Error en loginUsuario:", err);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -71,6 +74,7 @@ const loginUsuario = async (req, res) => {
 };
 
 const refreshToken = (req, res) => {
+  const isProd = process.env.NODE_ENV === "production";
   const { refreshToken } = req.cookies;
   if (!refreshToken) {
     return res.status(401).json({ error: "Refresh token no proporcionado" });
@@ -95,5 +99,23 @@ const refreshToken = (req, res) => {
     return res.status(403).json({ error: "Refresh token inválido o expirado" });
   }
 };
+const verifyAuth = (req, res) => {
+  res.status(200).json({ message: "Autenticado" });
+};
+const logoutUsuario = (req, res) => {
+  // Eliminar cookies
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax"
+  });
+  
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax"
+  });
 
-export { registrarUsuario, loginUsuario, refreshToken };
+  res.status(200).json({ message: "Sesión cerrada exitosamente" });
+};
+export { registrarUsuario, loginUsuario, refreshToken,verifyAuth,logoutUsuario };

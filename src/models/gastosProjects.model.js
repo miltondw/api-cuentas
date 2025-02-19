@@ -12,7 +12,7 @@ const executeQuery = async (query, params = []) => {
 };
 
 export const getGastosByProyectoId = async (id) => {
-  const query = "SELECT * FROM gastos_proyectos WHERE gasto_proyecto_id = ?";
+  const query = "SELECT * FROM gastos_proyectos WHERE gasto_proyecto_id  = ?";
   return executeQuery(query, [id]);
 };
 
