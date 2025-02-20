@@ -32,8 +32,7 @@ export const obtenerProyecto = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Proyecto no encontrado" });
 
-    const gastos = await getGastosByProyectoId(req.params.id);
-    res.json({ success: true, data: { ...proyecto, gastos } });
+    res.json({ success: true, data: { ...proyecto } });
   } catch (error) {
     handleError(res, error, "Error al obtener proyecto");
   }
