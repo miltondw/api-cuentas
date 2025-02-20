@@ -15,6 +15,7 @@ const REQUIRED_PROYECTO_FIELDS = [
   "fecha",
   "solicitante",
   "nombre_proyecto",
+  "obrero",
   "costo_servicio",
   "abono",
 ];
@@ -33,6 +34,7 @@ const PROYECTO_FIELDS = [
   "fecha",
   "solicitante",
   "nombre_proyecto",
+  "obrero",
   "costo_servicio",
   "abono",
   "factura",
@@ -111,8 +113,8 @@ export const createProyecto = async (data) => {
 
   const { gastos, ...proyectoData } = data; // Separamos gastos si se incluyen
   const proyectoQuery = `
-    INSERT INTO proyectos (fecha, solicitante, nombre_proyecto, costo_servicio, abono, factura, valor_iva, metodo_de_pago) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO proyectos (fecha, solicitante, nombre_proyecto,obrero, costo_servicio, abono, factura, valor_iva, metodo_de_pago) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
   `;
   const values = PROYECTO_FIELDS.map((field) => proyectoData[field] || null);
 
@@ -169,7 +171,7 @@ export const updateProyecto = async (id, data) => {
   const { gastos, ...proyectoData } = data;
   const proyectoQuery = `
     UPDATE proyectos 
-    SET fecha = ?, solicitante = ?, nombre_proyecto = ?, costo_servicio = ?, abono = ?, factura = ?, valor_iva = ?, metodo_de_pago = ?
+    SET fecha = ?, solicitante = ?, nombre_proyecto = ?, obrero = ? costo_servicio = ?, abono = ?, factura = ?, valor_iva = ?, metodo_de_pago = ?
     WHERE proyecto_id = ?
   `;
   const values = [
