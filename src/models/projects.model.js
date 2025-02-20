@@ -87,6 +87,8 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
 };
 
 export const getProyectoById = async (id) => {
+  id = Number(id); // Asegúrate de que sea un número
+
   const proyectoQuery = "SELECT * FROM proyectos WHERE proyecto_id = ?";
   const proyectoResult = await executeQuery(proyectoQuery, [id]);
 
@@ -94,14 +96,21 @@ export const getProyectoById = async (id) => {
     return null;
   }
 
-  const gastosQuery = "SELECT * FROM gastos_proyectos WHERE proyecto_id = ?";
+  const gastosQuery = `
+    SELECT * FROM gastos_proyectos 
+    WHERE proyecto_id = ? 
+    ORDER BY gasto_proyecto_id ASC
+  `;
   const gastosResult = await executeQuery(gastosQuery, [id]);
+
+  console.log("Gastos Result para ID", id, ":", gastosResult); // Verifica si devuelve algo
 
   return {
     ...proyectoResult[0],
-    gastos: gastosResult,
+    gastos: gastosResult || [], // Devuelve un array vacío si no hay gastos
   };
 };
+
 
 export const abonar = async (id, abono) => {
   const query = "UPDATE proyectos SET abono = abono + ? WHERE proyecto_id = ?";
