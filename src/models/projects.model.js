@@ -126,7 +126,6 @@ export const createProyecto = async (data) => {
       "campo",
       "obreros",
       "comidas",
-      "transporte",
       "otros",
       "peajes",
       "combustible",
@@ -142,8 +141,8 @@ export const createProyecto = async (data) => {
       }
       const gastosQuery = `
         INSERT INTO gastos_proyectos 
-        (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje, otros_campos) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
         proyectoId,
@@ -151,7 +150,6 @@ export const createProyecto = async (data) => {
         gasto.campo,
         gasto.obreros,
         gasto.comidas,
-        gasto.transporte,
         gasto.otros,
         gasto.peajes,
         gasto.combustible,
@@ -187,7 +185,6 @@ export const updateProyecto = async (id, data) => {
       "campo",
       "obreros",
       "comidas",
-      "transporte",
       "otros",
       "peajes",
       "combustible",
@@ -202,14 +199,13 @@ export const updateProyecto = async (id, data) => {
       }
       const gastoQuery = `
         INSERT INTO gastos_proyectos 
-          (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje, otros_campos)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
           camioneta = VALUES(camioneta), 
           campo = VALUES(camioneta), 
           obreros = VALUES(obreros), 
           comidas = VALUES(comidas), 
-          transporte = VALUES(transporte), 
           otros = VALUES(otros), 
           peajes = VALUES(peajes), 
           combustible = VALUES(combustible), 
@@ -222,7 +218,6 @@ export const updateProyecto = async (id, data) => {
         gasto.campo,
         gasto.obreros,
         gasto.comidas,
-        gasto.transporte,
         gasto.otros,
         gasto.peajes,
         gasto.combustible,

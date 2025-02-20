@@ -18,7 +18,7 @@ export const getGastosByProyectoId = async (id) => {
 
 /**
  * Extrae los campos adicionales (no fijos) de un objeto gasto.
- * Los campos fijos son: camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje
+ * Los campos fijos son: camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje
  */
 const extractExtras = (gasto) => {
   const fixedFields = [
@@ -26,7 +26,6 @@ const extractExtras = (gasto) => {
     "campo",
     "obreros",
     "comidas",
-    "transporte",
     "otros",
     "peajes",
     "combustible",
@@ -45,15 +44,14 @@ export const createGastoProyecto = async (proyecto_id, gasto) => {
   // Extraer los campos extras (si existen)
   const extras = extractExtras(gasto);
   const query = `INSERT INTO gastos_proyectos 
-    (proyecto_id, camioneta, campo, obreros, comidas, transporte, otros, peajes, combustible, hospedaje, otros_campos) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   const params = [
     proyecto_id,
     gasto.camioneta,
     gasto.campo,
     gasto.obreros,
     gasto.comidas,
-    gasto.transporte,
     gasto.otros,
     gasto.peajes,
     gasto.combustible,
@@ -66,14 +64,13 @@ export const createGastoProyecto = async (proyecto_id, gasto) => {
 export const updateGastoProyecto = async (id, gasto) => {
   const extras = extractExtras(gasto);
   const query = `UPDATE gastos_proyectos SET 
-    camioneta = ?, campo = ?, obreros = ?, comidas = ?, transporte = ?, otros = ?, peajes = ?, combustible = ?, hospedaje = ?, otros_campos = ?
+    camioneta = ?, campo = ?, obreros = ?, comidas = ?, otros = ?, peajes = ?, combustible = ?, hospedaje = ?, otros_campos = ?
     WHERE gasto_proyecto_id = ?`;
   const params = [
     gasto.camioneta,
     gasto.campo,
     gasto.obreros,
     gasto.comidas,
-    gasto.transporte,
     gasto.otros,
     gasto.peajes,
     gasto.combustible,
