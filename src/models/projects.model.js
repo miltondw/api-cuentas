@@ -175,11 +175,11 @@ export const createProyecto = async (data) => {
 
 export const updateProyecto = async (id, data) => {
   validateProyectoData(data);
-
+ 
   const { gastos, ...proyectoData } = data;
   const proyectoQuery = `
     UPDATE proyectos 
-    SET fecha = ?, solicitante = ?, nombre_proyecto = ?, obrero = ? costo_servicio = ?, abono = ?, factura = ?, valor_iva = ?, metodo_de_pago = ?
+    SET fecha = ?, solicitante = ?, nombre_proyecto = ?, obrero = ?, costo_servicio = ?, abono = ?, factura = ?, valor_iva = ?, metodo_de_pago = ?
     WHERE proyecto_id = ?
   `;
   const values = [
@@ -213,7 +213,7 @@ export const updateProyecto = async (id, data) => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
           camioneta = VALUES(camioneta), 
-          campo = VALUES(camioneta), 
+          campo = VALUES(campo), 
           obreros = VALUES(obreros), 
           comidas = VALUES(comidas), 
           otros = VALUES(otros), 
@@ -239,6 +239,7 @@ export const updateProyecto = async (id, data) => {
 
   return { proyectoId: id, message: "Proyecto actualizado con éxito" };
 };
+
 
 export const deleteProyecto = async (id) => {
   const query = "DELETE FROM proyectos WHERE proyecto_id = ?";
