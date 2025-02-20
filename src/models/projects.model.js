@@ -98,8 +98,7 @@ export const getProyectoById = async (id) => {
 
   const gastosQuery = `
     SELECT * FROM gastos_proyectos 
-    WHERE proyecto_id = ? 
-    ORDER BY gasto_proyecto_id ASC
+    WHERE proyecto_id = ?
   `;
   const gastosResult = await executeQuery(gastosQuery, [id]);
 
@@ -110,7 +109,6 @@ export const getProyectoById = async (id) => {
     gastos: gastosResult, // Devuelve un array vacío si no hay gastos
   };
 };
-
 
 export const abonar = async (id, abono) => {
   const query = "UPDATE proyectos SET abono = abono + ? WHERE proyecto_id = ?";
