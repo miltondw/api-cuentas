@@ -99,6 +99,7 @@ export const getProyectoById = async (id) => {
   const gastosQuery = `
     SELECT * FROM gastos_proyectos 
     WHERE proyecto_id = ?
+    LIMIT 1
   `;
   const gastosResult = await executeQuery(gastosQuery, [id]);
 
