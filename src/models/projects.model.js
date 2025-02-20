@@ -107,7 +107,7 @@ export const getProyectoById = async (id) => {
 
   return {
     ...proyectoResult[0],
-    gastos: gastosResult || [], // Devuelve un array vacío si no hay gastos
+    gastos: gastosResult, // Devuelve un array vacío si no hay gastos
   };
 };
 
