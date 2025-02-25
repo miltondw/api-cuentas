@@ -14,11 +14,12 @@ const executeQuery = async (query, params = []) => {
 const extractExtras = (gasto) => {
   if (!gasto.otros_campos) return null;
   
-  // Debe recibir un array y convertirlo a objeto plano
+  // Convertir array de { field, value } a objeto plano
   const extras = {};
   gasto.otros_campos.forEach(item => {
-    const [key] = Object.keys(item);
-    extras[key] = item[key];
+    if (item.field && item.value !== undefined) {
+      extras[item.field] = Number(item.value);
+    }
   });
   
   return Object.keys(extras).length > 0 ? extras : null;
@@ -42,16 +43,20 @@ export const getAll = async (page = 1, limit = 10) => {
     executeQuery(totalQuery),
   ]);
 
-  return {
+ return {
     gastos: gastos.map(g => ({
       ...g,
-      otros_campos: g.otros_campos ? JSON.parse(g.otros_campos) : null
+      otros_campos: g.otros_campos 
+        ? Object.entries(JSON.parse(g.otros_campos))
+            .map(([field, value]) => ({ field, value }))
+        : []
     })),
     total: totalResult[0].total,
     page,
     limit,
   };
 };
+
 export const getGastoById = async (id) => {
   const query = `
     SELECT *, 
@@ -64,10 +69,10 @@ export const getGastoById = async (id) => {
   
   if (!result[0]) return null;
 
-  // Convertir el objeto plano de vuelta a array
+  // Convertir objeto plano a array de { field, value }
   const otrosCampos = result[0].otros_campos 
     ? Object.entries(JSON.parse(result[0].otros_campos))
-        .map(([nombre, monto]) => ({ [nombre]: monto }))
+        .map(([field, value]) => ({ field, value }))
     : [];
 
   return {
@@ -75,6 +80,7 @@ export const getGastoById = async (id) => {
     otros_campos: otrosCampos
   };
 };
+
 export const create = async (gasto) => {
   const extras = extractExtras(gasto);
   
