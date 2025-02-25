@@ -71,12 +71,31 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
     .join(", ")})`;
   const gastos = await executeQuery(gastosQuery, proyectosIds);
 
-  const proyectosMap = proyectos.map((proyecto) => ({
-    ...proyecto,
-    gastos: gastos.filter(
-      (gasto) => gasto.proyecto_id === proyecto.proyecto_id
-    ),
-  }));
+const proyectosMap = proyectos.map((proyecto) => ({
+  ...proyecto,
+  gastos: gastos
+    .filter((gasto) => gasto.proyecto_id === proyecto.proyecto_id)
+    .map((gasto) => {
+      let otrosCampos = null;
+      if (gasto.otros_campos) {
+        if (typeof gasto.otros_campos === "string") {
+          try {
+            otrosCampos = JSON.parse(gasto.otros_campos);
+          } catch (error) {
+            console.error("Error al parsear otros_campos:", error);
+            otrosCampos = null;
+          }
+        } else {
+          otrosCampos = gasto.otros_campos;
+        }
+      }
+      return {
+        ...gasto,
+        otros_campos: otrosCampos,
+      };
+    }),
+}));
+
 
   return {
     proyectos: proyectosMap,
@@ -103,7 +122,7 @@ export const getProyectoById = async (id) => {
   `;
   const gastosResult = await executeQuery(gastosQuery, [id]);
 
-  console.log("Gastos Result para ID", id, ":", gastosResult); // Verifica si devuelve algo
+  console.log("Gastos Result para ID", id, ":", gastosResult);
 
   return {
     ...proyectoResult[0],
@@ -120,17 +139,20 @@ export const createProyecto = async (data) => {
   validateProyectoData(data);
 
   const { gastos, ...proyectoData } = data; // Separamos gastos si se incluyen
+
+  // Insertar el proyecto
   const proyectoQuery = `
-    INSERT INTO proyectos (fecha, solicitante, nombre_proyecto,obrero, costo_servicio, abono, factura, valor_iva, metodo_de_pago) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
+    INSERT INTO proyectos 
+    (fecha, solicitante, nombre_proyecto, obrero, costo_servicio, abono, factura, valor_iva, metodo_de_pago) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const values = PROYECTO_FIELDS.map((field) => proyectoData[field] || null);
 
   const result = await executeQuery(proyectoQuery, values);
   const proyectoId = result.insertId;
 
-  if (gastos && gastos.length > 0) {
-    // Procesamos cada gasto para separar extras
+  // Insertar los gastos si existen
+  if (gastos && Object.keys(gastos).length > 0) {
     const fixedFields = [
       "camioneta",
       "campo",
@@ -141,41 +163,53 @@ export const createProyecto = async (data) => {
       "combustible",
       "hospedaje",
     ];
-    for (const gasto of gastos) {
-      // Extraer extras
-      const extras = {};
-      for (const key in gasto) {
-        if (!fixedFields.includes(key)) {
-          extras[key] = gasto[key];
-        }
-      }
-      const gastosQuery = `
-        INSERT INTO gastos_proyectos 
-        (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      const params = [
-        proyectoId,
-        gasto.camioneta,
-        gasto.campo,
-        gasto.obreros,
-        gasto.comidas,
-        gasto.otros,
-        gasto.peajes,
-        gasto.combustible,
-        gasto.hospedaje,
-        Object.keys(extras).length > 0 ? JSON.stringify(extras) : null,
-      ];
-      await executeQuery(gastosQuery, params);
-    }
-  }
 
+    // Extraer campos adicionales (extras) ignorando "otros_campos"
+    const extras = {};
+    for (const key in gastos) {
+      if (!fixedFields.includes(key) && key !== "otros_campos") {
+        extras[key] = gastos[key];
+      }
+    }
+
+    // Si se envía "otros_campos", lo usamos directamente sin merge para evitar duplicación
+    const otrosCampos =
+      gastos.otros_campos && typeof gastos.otros_campos === "object"
+        ? gastos.otros_campos
+        : Object.keys(extras).length > 0
+        ? extras
+        : null;
+
+    // Insertar el gasto
+    const gastosQuery = `
+      INSERT INTO gastos_proyectos 
+      (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const params = [
+      proyectoId,
+      gastos.camioneta || 0,
+      gastos.campo || 0,
+      gastos.obreros || 0,
+      gastos.comidas || 0,
+      gastos.otros || 0,
+      gastos.peajes || 0,
+      gastos.combustible || 0,
+      gastos.hospedaje || 0,
+      otrosCampos ? JSON.stringify(otrosCampos) : null,
+    ];
+
+    console.log(params, "params");
+
+    await executeQuery(gastosQuery, params);
+  }
   return { proyectoId, message: "Proyecto creado con éxito" };
 };
 
 export const updateProyecto = async (id, data) => {
   validateProyectoData(data);
- 
+
   const { gastos, ...proyectoData } = data;
   const proyectoQuery = `
     UPDATE proyectos 
@@ -203,10 +237,16 @@ export const updateProyecto = async (id, data) => {
     for (const gasto of gastos) {
       const extras = {};
       for (const key in gasto) {
-        if (!fixedFields.includes(key)) {
+        if (!fixedFields.includes(key) && key !== "otros_campos") {
           extras[key] = gasto[key];
         }
       }
+      const otrosCampos =
+        gasto.otros_campos && typeof gasto.otros_campos === "object"
+          ? gasto.otros_campos
+          : Object.keys(extras).length > 0
+          ? extras
+          : null;
       const gastoQuery = `
         INSERT INTO gastos_proyectos 
           (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos)
@@ -232,14 +272,13 @@ export const updateProyecto = async (id, data) => {
         gasto.peajes,
         gasto.combustible,
         gasto.hospedaje,
-        Object.keys(extras).length > 0 ? JSON.stringify(extras) : null,
+        otrosCampos ? JSON.stringify(otrosCampos) : null,
       ]);
     }
   }
 
   return { proyectoId: id, message: "Proyecto actualizado con éxito" };
 };
-
 
 export const deleteProyecto = async (id) => {
   const query = "DELETE FROM proyectos WHERE proyecto_id = ?";

@@ -1,0 +1,25 @@
+{
+  "fecha": "2025-02-25",
+  "solicitante": "milton",
+  "nombre_proyecto": "Estudio para pavimentos rígido Convención Guamal",
+  "obrero": "daniel",
+  "costo_servicio": 6000000,
+  "abono": 0,
+  "factura": "2",
+  "metodo_de_pago": "transferencia",
+  "valor_iva": 0,
+  "gastos":{
+      "camioneta": "",
+      "campo": "",
+      "obreros": "",
+      "comidas": "",
+      "otros": "",
+      "peajes": "",
+      "combustible": "",
+      "hospedaje": "",
+      "otros_campos": {
+        "extra_1": 500000,
+        "ep1_ra": 200000
+      }
+    }
+}
