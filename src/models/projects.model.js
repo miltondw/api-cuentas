@@ -29,7 +29,7 @@ const validateProyectoData = (data) => {
   }
 };
 
-// Campos para la inserción (incluimos los nuevos)
+// Campos para la inserción
 const PROYECTO_FIELDS = [
   "fecha",
   "solicitante",
@@ -41,7 +41,6 @@ const PROYECTO_FIELDS = [
   "valor_iva",
   "metodo_de_pago",
 ];
-
 export const getAllProyectos = async (page = 1, limit = 10) => {
   page = Number(page) || 1;
   limit = Number(limit) || 10;
@@ -71,31 +70,35 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
     .join(", ")})`;
   const gastos = await executeQuery(gastosQuery, proyectosIds);
 
-const proyectosMap = proyectos.map((proyecto) => ({
-  ...proyecto,
-  gastos: gastos
-    .filter((gasto) => gasto.proyecto_id === proyecto.proyecto_id)
-    .map((gasto) => {
-      let otrosCampos = null;
-      if (gasto.otros_campos) {
-        if (typeof gasto.otros_campos === "string") {
+  const proyectosMap = proyectos.map((proyecto) => ({
+    ...proyecto,
+    gastos: gastos
+      .filter((gasto) => gasto.proyecto_id === proyecto.proyecto_id)
+      .map((gasto) => {
+        let otrosCampos = null;
+        if (gasto.otros_campos) {
           try {
-            otrosCampos = JSON.parse(gasto.otros_campos);
+            // Parsear el campo otros_campos si es un string
+            otrosCampos =
+              typeof gasto.otros_campos === "string"
+                ? JSON.parse(gasto.otros_campos)
+                : gasto.otros_campos;
+
+            // Si otros_campos es un objeto anidado, extraer su contenido
+            if (otrosCampos && typeof otrosCampos === "object" && otrosCampos.otros_campos) {
+              otrosCampos = otrosCampos.otros_campos;
+            }
           } catch (error) {
             console.error("Error al parsear otros_campos:", error);
             otrosCampos = null;
           }
-        } else {
-          otrosCampos = gasto.otros_campos;
         }
-      }
-      return {
-        ...gasto,
-        otros_campos: otrosCampos,
-      };
-    }),
-}));
-
+        return {
+          ...gasto,
+          otros_campos: otrosCampos,
+        };
+      }),
+  }));
 
   return {
     proyectos: proyectosMap,
