@@ -32,6 +32,7 @@ const validateProyectoData = (data) => {
     throw new Error("El campo 'solicitante' debe ser un texto válido");
   }
 };
+
 /**
  * Parsea el campo `otros_campos` de un gasto.
  * @param {string} otros_campos - Cadena JSON con los otros campos.
@@ -52,6 +53,7 @@ const parseOtrosCampos = (otros_campos) => {
     return {}; // Retorna un objeto vacío si hay un error
   }
 };
+
 /**
  * Obtiene todos los proyectos con paginación.
  * @param {number} page - Número de página (por defecto 1).
@@ -80,18 +82,20 @@ export const obtenerProyectos = async (page = 1, limit = 10) => {
     proyectosIds
   );
 
-  const proyectosMap = proyectos.map(proyecto => ({
-    ...proyecto,
-    gastos: gastos
-      .filter(gasto => gasto.proyecto_id === proyecto.proyecto_id)
-      .map(({ otros_campos, ...gasto }) => ({
-        ...gasto,
-        otros_campos: parseOtrosCampos(otros_campos) // Aplica parseOtrosCampos aquí
-      }))
-  }));
+  const proyectosMap = proyectos.map(proyecto => {
+    const gastoProyecto = gastos.find(gasto => gasto.proyecto_id === proyecto.proyecto_id) || {};
+    return {
+      ...proyecto,
+      gastos: {
+        ...gastoProyecto,
+        otros_campos: parseOtrosCampos(gastoProyecto.otros_campos),
+      },
+    };
+  });
 
   return { success: true, proyectos: proyectosMap, total, page, limit, totalPages };
 };
+
 /**
  * Crea un nuevo proyecto y sus gastos asociados.
  * @param {Object} data - Datos del proyecto y sus gastos.
@@ -170,17 +174,17 @@ export const obtenerProyecto = async (id) => {
   const [proyecto] = await executeQuery("SELECT * FROM proyectos WHERE proyecto_id = ?", [id]);
   if (!proyecto) return { success: false, proyecto: null };
 
-  const gastos = await executeQuery("SELECT * FROM gastos_proyectos WHERE proyecto_id = ?", [id]);
+  const [gastos] = await executeQuery("SELECT * FROM gastos_proyectos WHERE proyecto_id = ?", [id]);
 
   return {
     success: true,
     proyecto: {
       ...proyecto,
-      gastos: gastos.map(({ otros_campos, ...gasto }) => ({
-        ...gasto,
-        otros_campos: parseOtrosCampos(otros_campos)
-      }))
-    }
+      gastos: {
+        ...gastos,
+        otros_campos: parseOtrosCampos(gastos.otros_campos),
+      },
+    },
   };
 };
 
