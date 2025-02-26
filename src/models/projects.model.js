@@ -40,7 +40,7 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
   ]);
 
   if (proyectos.length === 0) {
-    return { proyectos: [], total: totalResult[0].total, page, limit };
+    return { success: true, data: { proyectos: [], total: totalResult[0].total, page, limit } };
   }
 
   const proyectosIds = proyectos.map(p => p.proyecto_id);
@@ -49,24 +49,41 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
 
   const proyectosMap = proyectos.map(proyecto => ({
     ...proyecto,
-    gastos: gastos.filter(gasto => gasto.proyecto_id === proyecto.proyecto_id).map(gasto => {
+    gastos: gastos.filter(gasto => gasto.proyecto_id === proyecto.proyecto_id).map((gasto) => {
       let otrosCampos = null;
       if (gasto.otros_campos) {
         try {
-          otrosCampos = typeof gasto.otros_campos === "string" ? JSON.parse(gasto.otros_campos) : gasto.otros_campos;
-          if (otrosCampos && typeof otrosCampos === "object" && otrosCampos.otros_campos) {
-            otrosCampos = otrosCampos.otros_campos;
+          otrosCampos =
+            typeof gasto.otros_campos === "string"
+              ? JSON.parse(gasto.otros_campos)
+              : gasto.otros_campos;
+
+          // Asegurar que no haya índices numéricos innecesarios
+          if (otrosCampos && typeof otrosCampos === "object") {
+            if (Object.keys(otrosCampos).length === 1 && otrosCampos[0]) {
+              otrosCampos = otrosCampos[0]; // Extraer el objeto si está dentro de un índice 0
+            }
+            if (otrosCampos.otros_campos) {
+              otrosCampos = { ...otrosCampos, ...otrosCampos.otros_campos };
+              delete otrosCampos.otros_campos; // Evitar redundancias
+            }
           }
         } catch (error) {
           console.error("Error al parsear otros_campos:", error);
           otrosCampos = null;
         }
       }
-      return { ...gasto, otros_campos: otrosCampos };
-    }),
+
+      // Fusionar los valores de otros_campos en los gastos principales
+      return {
+        ...gasto,
+        ...otrosCampos, // Esto moverá los valores correctos a los campos de gastos
+        otros_campos: null, // Limpiar la propiedad para evitar confusión
+      };
+    })
   }));
 
-  return { proyectos: proyectosMap, total: totalResult[0].total, page, limit };
+  return { success: true, data: { proyectos: proyectosMap, total: totalResult[0].total, page, limit } };
 };
 
 export const getProyectoById = async (id) => {
@@ -74,17 +91,18 @@ export const getProyectoById = async (id) => {
   const proyectoQuery = "SELECT * FROM proyectos WHERE proyecto_id = ?";
   const proyectoResult = await executeQuery(proyectoQuery, [id]);
 
-  if (proyectoResult.length === 0) return null;
+  if (proyectoResult.length === 0) return { success: false, data: null };
 
   const gastosQuery = "SELECT * FROM gastos_proyectos WHERE proyecto_id = ?";
   const gastosResult = await executeQuery(gastosQuery, [id]);
 
-  return { ...proyectoResult[0], gastos: gastosResult };
+  return { success: true, data: { ...proyectoResult[0], gastos: gastosResult } };
 };
 
 export const abonar = async (id, abono) => {
   const query = "UPDATE proyectos SET abono = abono + ? WHERE proyecto_id = ?";
-  return executeQuery(query, [abono, id]);
+  await executeQuery(query, [abono, id]);
+  return { success: true, message: "Abono realizado con éxito" };
 };
 
 export const createProyecto = async (data) => {
@@ -108,7 +126,7 @@ export const createProyecto = async (data) => {
     await executeQuery(gastosQuery, params);
   }
 
-  return { proyectoId, message: "Proyecto creado con éxito" };
+  return { success: true, data: { proyectoId, message: "Proyecto creado con éxito" } };
 };
 
 export const updateProyecto = async (id, data) => {
@@ -125,10 +143,10 @@ export const updateProyecto = async (id, data) => {
     await createProyecto({ ...data, proyecto_id: id });
   }
 
-  return { proyectoId: id, message: "Proyecto actualizado con éxito" };
+  return { success: true, data: { proyectoId: id, message: "Proyecto actualizado con éxito" } };
 };
 
 export const deleteProyecto = async (id) => {
   await executeQuery("DELETE FROM proyectos WHERE proyecto_id = ?", [id]);
-  return { message: "Proyecto eliminado con éxito" };
+  return { success: true, message: "Proyecto eliminado con éxito" };
 };
