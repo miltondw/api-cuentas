@@ -1,24 +1,24 @@
 import express from "express";
 import {
-  obtenerProyectos,
-  obtenerProyecto,
-  crearProyecto,
-  actualizarProyecto,
-  abonarProyecto,
-  eliminarProyecto,
+getProyectos,
+postProyecto,
+getProyectoById,
+putProyecto,
+patchAbonarProyecto,
+deleteProyecto,
 } from "../controllers/project.controller.js";
 import verificarToken from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", verificarToken, obtenerProyectos);
-router.get("/:id", verificarToken, obtenerProyecto);
+router.get("/", verificarToken, getProyectos);
+router.get("/:id", verificarToken, getProyectoById);
 
-router.post("/", verificarToken, crearProyecto);
+router.post("/", verificarToken, postProyecto);
 
-router.put("/:id", verificarToken, actualizarProyecto);
-router.patch("/:id/abonar", verificarToken, abonarProyecto);
+router.put("/:id", verificarToken, putProyecto);
+router.patch("/:id/abonar", verificarToken, patchAbonarProyecto);
 
-router.delete("/:id", verificarToken, eliminarProyecto);
+router.delete("/:id", verificarToken, deleteProyecto);
 
 export default router;
