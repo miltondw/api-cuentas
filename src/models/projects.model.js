@@ -31,7 +31,8 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
   limit = Number(limit) || 10;
   const offset = (page - 1) * limit;
 
-  const proyectosQuery = "SELECT * FROM proyectos ORDER BY fecha DESC LIMIT ? OFFSET ?";
+  // Modifica la consulta para ordenar por proyecto_id DESC
+  const proyectosQuery = "SELECT * FROM proyectos ORDER BY proyecto_id DESC LIMIT ? OFFSET ?";
   const totalQuery = "SELECT COUNT(*) AS total FROM proyectos";
 
   const [proyectos, totalResult] = await Promise.all([
@@ -50,37 +51,28 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
   const proyectosMap = proyectos.map(proyecto => ({
     ...proyecto,
     gastos: gastos.filter(gasto => gasto.proyecto_id === proyecto.proyecto_id).map((gasto) => {
-      let otrosCampos = null;
+      let otrosCampos = {};
       if (gasto.otros_campos) {
         try {
           otrosCampos =
             typeof gasto.otros_campos === "string"
               ? JSON.parse(gasto.otros_campos)
               : gasto.otros_campos;
-
-          // Asegurar que no haya índices numéricos innecesarios
-          if (otrosCampos && typeof otrosCampos === "object") {
-            if (Object.keys(otrosCampos).length === 1 && otrosCampos[0]) {
-              otrosCampos = otrosCampos[0]; // Extraer el objeto si está dentro de un índice 0
-            }
-            if (otrosCampos.otros_campos) {
-              otrosCampos = { ...otrosCampos, ...otrosCampos.otros_campos };
-              delete otrosCampos.otros_campos; // Evitar redundancias
-            }
-          }
         } catch (error) {
           console.error("Error al parsear otros_campos:", error);
-          otrosCampos = null;
+          otrosCampos = {};
         }
       }
 
-      // Fusionar los valores de otros_campos en los gastos principales
+      // Eliminar otros_campos del objeto principal y moverlo dentro del objeto otros_campos
+      const gastoFiltrado = { ...gasto };
+      delete gastoFiltrado.otros_campos;
+
       return {
-        ...gasto,
-        ...otrosCampos, // Esto moverá los valores correctos a los campos de gastos
-        otros_campos: null, // Limpiar la propiedad para evitar confusión
+        ...gastoFiltrado,
+        otros_campos: otrosCampos,
       };
-    })
+    }),
   }));
 
   return { success: true, data: { proyectos: proyectosMap, total: totalResult[0].total, page, limit } };
@@ -96,7 +88,34 @@ export const getProyectoById = async (id) => {
   const gastosQuery = "SELECT * FROM gastos_proyectos WHERE proyecto_id = ?";
   const gastosResult = await executeQuery(gastosQuery, [id]);
 
-  return { success: true, data: { ...proyectoResult[0], gastos: gastosResult } };
+  const proyecto = {
+    ...proyectoResult[0],
+    gastos: gastosResult.map((gasto) => {
+      let otrosCampos = {};
+      if (gasto.otros_campos) {
+        try {
+          otrosCampos =
+            typeof gasto.otros_campos === "string"
+              ? JSON.parse(gasto.otros_campos)
+              : gasto.otros_campos;
+        } catch (error) {
+          console.error("Error al parsear otros_campos:", error);
+          otrosCampos = {};
+        }
+      }
+
+      // Eliminar otros_campos del objeto principal y moverlo dentro del objeto otros_campos
+      const gastoFiltrado = { ...gasto };
+      delete gastoFiltrado.otros_campos;
+
+      return {
+        ...gastoFiltrado,
+        otros_campos: otrosCampos,
+      };
+    }),
+  };
+
+  return { success: true, data: proyecto };
 };
 
 export const abonar = async (id, abono) => {
@@ -120,8 +139,22 @@ export const createProyecto = async (data) => {
     const extras = Object.fromEntries(Object.entries(gastos).filter(([key]) => !fixedFields.includes(key) && key !== "otros_campos"));
     const otrosCampos = gastos.otros_campos || (Object.keys(extras).length > 0 ? extras : null);
 
+    // Convertir otros_campos a JSON si es un objeto
+    const otrosCamposJSON = otrosCampos ? JSON.stringify(otrosCampos) : null;
+
     const gastosQuery = `INSERT INTO gastos_proyectos (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [proyectoId, gastos.camioneta || 0, gastos.campo || 0, gastos.obreros || 0, gastos.comidas || 0, gastos.otros || 0, gastos.peajes || 0, gastos.combustible || 0, gastos.hospedaje || 0, otrosCampos ? JSON.stringify(otrosCampos) : null];
+    const params = [
+      proyectoId,
+      gastos.camioneta || 0,
+      gastos.campo || 0,
+      gastos.obreros || 0,
+      gastos.comidas || 0,
+      gastos.otros || 0,
+      gastos.peajes || 0,
+      gastos.combustible || 0,
+      gastos.hospedaje || 0,
+      otrosCamposJSON, // Aquí se envía el JSON correctamente
+    ];
 
     await executeQuery(gastosQuery, params);
   }
@@ -140,7 +173,26 @@ export const updateProyecto = async (id, data) => {
   if (gastos) {
     const gastosQuery = `DELETE FROM gastos_proyectos WHERE proyecto_id = ?`;
     await executeQuery(gastosQuery, [id]);
-    await createProyecto({ ...data, proyecto_id: id });
+
+    const fixedFields = ["camioneta", "campo", "obreros", "comidas", "otros", "peajes", "combustible", "hospedaje"];
+    const extras = Object.fromEntries(Object.entries(gastos).filter(([key]) => !fixedFields.includes(key) && key !== "otros_campos"));
+    const otrosCampos = Object.keys(extras).length > 0 ? extras : null;
+
+    const gastosQueryInsert = `INSERT INTO gastos_proyectos (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [
+      id,
+      gastos.camioneta || 0,
+      gastos.campo || 0,
+      gastos.obreros || 0,
+      gastos.comidas || 0,
+      gastos.otros || 0,
+      gastos.peajes || 0,
+      gastos.combustible || 0,
+      gastos.hospedaje || 0,
+      otrosCampos ? JSON.stringify(otrosCampos) : null,
+    ];
+
+    await executeQuery(gastosQueryInsert, params);
   }
 
   return { success: true, data: { proyectoId: id, message: "Proyecto actualizado con éxito" } };
