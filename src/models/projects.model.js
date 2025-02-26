@@ -31,7 +31,6 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
   limit = Number(limit) || 10;
   const offset = (page - 1) * limit;
 
-  // Modifica la consulta para ordenar por proyecto_id DESC
   const proyectosQuery = "SELECT * FROM proyectos ORDER BY proyecto_id DESC LIMIT ? OFFSET ?";
   const totalQuery = "SELECT COUNT(*) AS total FROM proyectos";
 
@@ -41,16 +40,22 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
   ]);
 
   if (proyectos.length === 0) {
-    return { success: true, data: { proyectos: [], total: totalResult[0].total, page, limit } };
+    return {
+      success: true,
+      proyectos: [],
+      total: totalResult[0].total,
+      page,
+      limit,
+    };
   }
 
-  const proyectosIds = proyectos.map(p => p.proyecto_id);
+  const proyectosIds = proyectos.map((p) => p.proyecto_id);
   const gastosQuery = `SELECT * FROM gastos_proyectos WHERE proyecto_id IN (${proyectosIds.map(() => "?").join(", ")})`;
   const gastos = await executeQuery(gastosQuery, proyectosIds);
 
-  const proyectosMap = proyectos.map(proyecto => ({
+  const proyectosMap = proyectos.map((proyecto) => ({
     ...proyecto,
-    gastos: gastos.filter(gasto => gasto.proyecto_id === proyecto.proyecto_id).map((gasto) => {
+    gastos: gastos.filter((gasto) => gasto.proyecto_id === proyecto.proyecto_id).map((gasto) => {
       let otrosCampos = {};
       if (gasto.otros_campos) {
         try {
@@ -64,7 +69,6 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
         }
       }
 
-      // Eliminar otros_campos del objeto principal y moverlo dentro del objeto otros_campos
       const gastoFiltrado = { ...gasto };
       delete gastoFiltrado.otros_campos;
 
@@ -75,7 +79,13 @@ export const getAllProyectos = async (page = 1, limit = 10) => {
     }),
   }));
 
-  return { success: true, data: { proyectos: proyectosMap, total: totalResult[0].total, page, limit } };
+  return {
+    success: true,
+    proyectos: proyectosMap,
+    total: totalResult[0].total,
+    page,
+    limit,
+  };
 };
 
 export const getProyectoById = async (id) => {
@@ -83,7 +93,9 @@ export const getProyectoById = async (id) => {
   const proyectoQuery = "SELECT * FROM proyectos WHERE proyecto_id = ?";
   const proyectoResult = await executeQuery(proyectoQuery, [id]);
 
-  if (proyectoResult.length === 0) return { success: false, data: null };
+  if (proyectoResult.length === 0) {
+    return { success: false, proyecto: null };
+  }
 
   const gastosQuery = "SELECT * FROM gastos_proyectos WHERE proyecto_id = ?";
   const gastosResult = await executeQuery(gastosQuery, [id]);
@@ -104,7 +116,6 @@ export const getProyectoById = async (id) => {
         }
       }
 
-      // Eliminar otros_campos del objeto principal y moverlo dentro del objeto otros_campos
       const gastoFiltrado = { ...gasto };
       delete gastoFiltrado.otros_campos;
 
@@ -115,7 +126,7 @@ export const getProyectoById = async (id) => {
     }),
   };
 
-  return { success: true, data: proyecto };
+  return { success: true, proyecto };
 };
 
 export const abonar = async (id, abono) => {
@@ -129,7 +140,7 @@ export const createProyecto = async (data) => {
   const { gastos, ...proyectoData } = data;
 
   const proyectoQuery = `INSERT INTO proyectos (${PROYECTO_FIELDS.join(", ")}) VALUES (${PROYECTO_FIELDS.map(() => "?").join(", ")})`;
-  const values = PROYECTO_FIELDS.map(field => proyectoData[field] || null);
+  const values = PROYECTO_FIELDS.map((field) => proyectoData[field] || null);
 
   const result = await executeQuery(proyectoQuery, values);
   const proyectoId = result.insertId;
@@ -139,7 +150,6 @@ export const createProyecto = async (data) => {
     const extras = Object.fromEntries(Object.entries(gastos).filter(([key]) => !fixedFields.includes(key) && key !== "otros_campos"));
     const otrosCampos = gastos.otros_campos || (Object.keys(extras).length > 0 ? extras : null);
 
-    // Convertir otros_campos a JSON si es un objeto
     const otrosCamposJSON = otrosCampos ? JSON.stringify(otrosCampos) : null;
 
     const gastosQuery = `INSERT INTO gastos_proyectos (proyecto_id, camioneta, campo, obreros, comidas, otros, peajes, combustible, hospedaje, otros_campos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -153,13 +163,13 @@ export const createProyecto = async (data) => {
       gastos.peajes || 0,
       gastos.combustible || 0,
       gastos.hospedaje || 0,
-      otrosCamposJSON, // Aquí se envía el JSON correctamente
+      otrosCamposJSON,
     ];
 
     await executeQuery(gastosQuery, params);
   }
 
-  return { success: true, data: { proyectoId, message: "Proyecto creado con éxito" } };
+  return { success: true, proyectoId, message: "Proyecto creado con éxito" };
 };
 
 export const updateProyecto = async (id, data) => {
