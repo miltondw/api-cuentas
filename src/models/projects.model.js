@@ -169,9 +169,12 @@ export const createProyecto = async (data) => {
     await executeQuery(gastosQuery, params);
   }
 
-  return { success: true, proyectoId, message: "Proyecto creado con éxito" };
+  return {
+    success: true,
+    proyectoId,
+    message: "Proyecto creado con éxito",
+  };
 };
-
 export const updateProyecto = async (id, data) => {
   validateProyectoData(data);
   const { gastos, ...proyectoData } = data;
