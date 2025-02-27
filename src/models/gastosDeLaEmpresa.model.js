@@ -5,26 +5,27 @@ const executeQuery = async (query, params = []) => {
     const [results] = await db.query(query, params);
     return results;
   } catch (error) {
-    console.error(`Error en consulta: ${query}`, error);
-    throw new Error(`Database Error: ${error.message}`);
+    console.error(`Error en consulta SQL: ${query}`, error);
+    throw new Error(`Error en la base de datos: ${error.message}`);
   }
 };
 
-// Función para extraer campos adicionales
+// Función para extraer y validar otros_campos
 const extractExtras = (gasto) => {
   if (!gasto.otros_campos) return null;
-  
-  // Convertir array de { field, value } a objeto plano
+
+  // Convertir a objeto de clave-valor
   const extras = {};
-  gasto.otros_campos.forEach(item => {
-    if (item.field && item.value !== undefined) {
-      extras[item.field] = Number(item.value);
+  for (const [key, value] of Object.entries(gasto.otros_campos)) {
+    if (key && value !== undefined) {
+      extras[key] = Number(value);
     }
-  });
-  
+  }
+
   return Object.keys(extras).length > 0 ? extras : null;
 };
 
+// Obtener todos los gastos con paginación
 export const getAll = async (page = 1, limit = 10) => {
   const offset = (page - 1) * limit;
 
@@ -35,7 +36,7 @@ export const getAll = async (page = 1, limit = 10) => {
     ORDER BY mes DESC 
     LIMIT ? OFFSET ?
   `;
-  
+
   const totalQuery = "SELECT COUNT(*) AS total FROM gastos_empresa";
 
   const [gastos, totalResult] = await Promise.all([
@@ -43,13 +44,10 @@ export const getAll = async (page = 1, limit = 10) => {
     executeQuery(totalQuery),
   ]);
 
- return {
+  return {
     gastos: gastos.map(g => ({
       ...g,
-      otros_campos: g.otros_campos 
-        ? Object.entries(JSON.parse(g.otros_campos))
-            .map(([field, value]) => ({ field, value }))
-        : []
+      otros_campos: g.otros_campos ? JSON.parse(g.otros_campos) : {},
     })),
     total: totalResult[0].total,
     page,
@@ -57,6 +55,7 @@ export const getAll = async (page = 1, limit = 10) => {
   };
 };
 
+// Obtener un gasto por ID
 export const getGastoById = async (id) => {
   const query = `
     SELECT *, 
@@ -64,32 +63,27 @@ export const getGastoById = async (id) => {
     FROM gastos_empresa 
     WHERE gasto_empresa_id = ?
   `;
-  
-  const result = await executeQuery(query, [id]);
-  
-  if (!result[0]) return null;
 
-  // Convertir objeto plano a array de { field, value }
-  const otrosCampos = result[0].otros_campos 
-    ? Object.entries(JSON.parse(result[0].otros_campos))
-        .map(([field, value]) => ({ field, value }))
-    : [];
+  const result = await executeQuery(query, [id]);
+
+  if (!result[0]) return null;
 
   return {
     ...result[0],
-    otros_campos: otrosCampos
+    otros_campos: result[0].otros_campos ? JSON.parse(result[0].otros_campos) : {},
   };
 };
 
+// Crear un nuevo gasto
 export const create = async (gasto) => {
   const extras = extractExtras(gasto);
-  
+
   const query = `
     INSERT INTO gastos_empresa 
     (mes, salarios, luz, agua, arriendo, internet, salud, otros_campos) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
-  
+
   return executeQuery(query, [
     gasto.mes,
     gasto.salarios,
@@ -98,13 +92,14 @@ export const create = async (gasto) => {
     gasto.arriendo,
     gasto.internet,
     gasto.salud,
-    extras ? JSON.stringify(extras) : null
+    extras ? JSON.stringify(extras) : null,
   ]);
 };
 
+// Actualizar un gasto existente
 export const update = async (id, gasto) => {
   const extras = extractExtras(gasto);
-  
+
   const query = `
     UPDATE gastos_empresa 
     SET mes = ?, 
@@ -117,7 +112,7 @@ export const update = async (id, gasto) => {
         otros_campos = ? 
     WHERE gasto_empresa_id = ?
   `;
-  
+
   return executeQuery(query, [
     gasto.mes,
     gasto.salarios,
@@ -127,10 +122,11 @@ export const update = async (id, gasto) => {
     gasto.internet,
     gasto.salud,
     extras ? JSON.stringify(extras) : null,
-    id
+    id,
   ]);
 };
 
+// Eliminar un gasto
 export const deleteEmpresa = async (id) => {
   const query = "DELETE FROM gastos_empresa WHERE gasto_empresa_id = ?";
   return executeQuery(query, [id]);
