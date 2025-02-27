@@ -11,7 +11,7 @@ const executeQuery = async (query, params = []) => {
 };
 
 const REQUIRED_FIELDS = ["fecha", "solicitante", "nombre_proyecto", "obrero", "costo_servicio", "abono"];
-const ALL_FIELDS = [...REQUIRED_FIELDS, "factura", "valor_iva", "metodo_de_pago"];
+const ALL_FIELDS = [...REQUIRED_FIELDS, "factura", "valor_retencion", "metodo_de_pago"];
 
 /**
  * Valida los datos de un proyecto.
