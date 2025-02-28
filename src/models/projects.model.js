@@ -111,7 +111,7 @@ export const crearProyecto = async (data) => {
   try {
     const [result] = await connection.query(
       `INSERT INTO proyectos (${ALL_FIELDS.join(", ")}) VALUES (${ALL_FIELDS.map(() => "?").join(", ")})`,
-      ALL_FIELDS.map(field => proyectoData[field] || null)
+      ALL_FIELDS.map(field => proyectoData[field] ?? null)
     );
 
     const proyectoId = result.insertId;
@@ -204,7 +204,7 @@ export const actualizarProyecto = async (id, data) => {
   try {
     await connection.query(
       `UPDATE proyectos SET ${ALL_FIELDS.map(field => `${field} = ?`).join(", ")} WHERE proyecto_id = ?`,
-      [...ALL_FIELDS.map(field => proyectoData[field] || null), id]
+      [...ALL_FIELDS.map(field => proyectoData[field] ?? null), id]
     );
 
     if (gastos) {
@@ -229,7 +229,18 @@ export const actualizarProyecto = async (id, data) => {
  * @returns {Object} - Objeto con un mensaje de éxito.
  */
 export const abonarProyecto = async (id, abono) => {
-  await executeQuery("UPDATE proyectos SET abono = abono + ? WHERE proyecto_id = ?", [abono, id]);
+  abono = Number(abono);
+  if (isNaN(abono)) throw new Error("El abono debe ser un número válido");
+  
+  const [proyecto] = await executeQuery("SELECT costo_servicio, abono FROM proyectos WHERE proyecto_id = ?", [id]);
+  if (!proyecto) throw new Error("Proyecto no encontrado");
+  
+  const nuevoAbono = proyecto.abono + abono;
+  if (nuevoAbono > proyecto.costo_servicio) {
+    throw new Error("El abono no puede exceder el costo del servicio");
+  }
+  
+  await executeQuery("UPDATE proyectos SET abono = ? WHERE proyecto_id = ?", [nuevoAbono, id]);
   return { success: true, message: "Abono realizado con éxito" };
 };
 
