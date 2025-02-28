@@ -3,7 +3,7 @@ import {
   create,
   update,
   deleteEmpresa,
-  getGastoById
+  getGastoById,
 } from "../models/gastosDeLaEmpresa.model.js";
 import { handleError } from "../middleware/errorHandler.js";
 
@@ -29,7 +29,7 @@ export const obtenerGastoEmpresa = async (req, res) => {
     // Asegurar la estructura correcta en la respuesta
     const responseData = {
       ...gasto,
-      otros_campos: gasto.otros_campos || []
+      otros_campos: gasto.otros_campos || [],
     };
 
     res.json({ success: true, data: responseData });

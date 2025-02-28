@@ -1,11 +1,11 @@
 import express from "express";
 import {
-getProyectos,
-postProyecto,
-getProyectoById,
-putProyecto,
-patchAbonarProyecto,
-deleteProyecto,
+  getProyectos,
+  postProyecto,
+  getProyectoById,
+  putProyecto,
+  patchAbonarProyecto,
+  deleteProyecto,
 } from "../controllers/project.controller.js";
 import verificarToken from "../middleware/authMiddleware.js";
 

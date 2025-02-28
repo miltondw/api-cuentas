@@ -24,12 +24,14 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 
 // 1. Middlewares de seguridad
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGINS?.split(",") ||[ "https://localhost:5173"],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGINS?.split(",") || ["https://localhost:5173"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Agrega cookie-parser para leer cookies en las peticiones
 app.use(cookieParser());
@@ -99,4 +101,3 @@ const shutdown = (signal) => {
 
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
- 

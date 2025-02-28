@@ -20,7 +20,7 @@ const registrarUsuario = async (req, res) => {
       .status(500)
       .json({ error: "Error al registrar el usuario", details: err });
   }
-}; 
+};
 
 const loginUsuario = async (req, res) => {
   const { email, password } = req.body;
@@ -63,10 +63,10 @@ const loginUsuario = async (req, res) => {
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 días
     });
 
-    res.status(200).json({ 
-  message: "Login exitoso",
-  user: { id: user.id, name: user.name, rol: user.rol } // Datos públicos del usuario
-});
+    res.status(200).json({
+      message: "Login exitoso",
+      user: { id: user.id, name: user.name, rol: user.rol }, // Datos públicos del usuario
+    });
   } catch (err) {
     console.error("🔥 Error en loginUsuario:", err);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -107,15 +107,21 @@ const logoutUsuario = (req, res) => {
   res.clearCookie("accessToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax"
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   });
-  
+
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax"
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   });
 
   res.status(200).json({ message: "Sesión cerrada exitosamente" });
-}; 
-export { registrarUsuario, loginUsuario, refreshToken,verifyAuth,logoutUsuario };
+};
+export {
+  registrarUsuario,
+  loginUsuario,
+  refreshToken,
+  verifyAuth,
+  logoutUsuario,
+};

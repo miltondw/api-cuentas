@@ -4,7 +4,7 @@ import {
   loginUsuario,
   refreshToken,
   logoutUsuario,
-  verifyAuth
+  verifyAuth,
 } from "../controllers/auth.controller.js";
 import verificarToken from "../middleware/authMiddleware.js";
 const router = express.Router();
@@ -19,4 +19,3 @@ router.get("/verify", verificarToken, verifyAuth);
 router.post("/logout", logoutUsuario);
 
 export default router;
- 

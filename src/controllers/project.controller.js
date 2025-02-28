@@ -4,7 +4,7 @@ import {
   obtenerProyecto,
   actualizarProyecto,
   abonarProyecto,
-  eliminarProyecto
+  eliminarProyecto,
 } from "../models/projects.model.js";
 
 const handleError = (res, error, message = "Error en el servidor") => {

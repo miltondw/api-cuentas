@@ -2,11 +2,11 @@ import jwt from "jsonwebtoken";
 
 const verificarToken = (req, res, next) => {
   const token = req.cookies.accessToken;
-  
+
   if (!token) {
-    return res.status(403).json({ 
+    return res.status(403).json({
       error: "Acceso denegado",
-      solution: "Intenta refrescar el token con /api/auth/refresh"
+      solution: "Intenta refrescar el token con /api/auth/refresh",
     });
   }
 
@@ -14,10 +14,10 @@ const verificarToken = (req, res, next) => {
     if (err) {
       return res.status(401).json({
         error: "Token expirado o inválido",
-        actionRequired: "refresh_token"
+        actionRequired: "refresh_token",
       });
     }
-    
+
     req.user = decoded;
     next();
   });

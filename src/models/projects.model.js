@@ -10,8 +10,20 @@ const executeQuery = async (query, params = []) => {
   }
 };
 
-const REQUIRED_FIELDS = ["fecha", "solicitante", "nombre_proyecto", "obrero", "costo_servicio", "abono"];
-const ALL_FIELDS = [...REQUIRED_FIELDS, "factura", "valor_retencion", "metodo_de_pago"];
+const REQUIRED_FIELDS = [
+  "fecha",
+  "solicitante",
+  "nombre_proyecto",
+  "obrero",
+  "costo_servicio",
+  "abono",
+];
+const ALL_FIELDS = [
+  ...REQUIRED_FIELDS,
+  "factura",
+  "valor_retencion",
+  "metodo_de_pago",
+];
 
 /**
  * Valida los datos de un proyecto.
@@ -19,7 +31,7 @@ const ALL_FIELDS = [...REQUIRED_FIELDS, "factura", "valor_retencion", "metodo_de
  * @throws {Error} Si faltan campos requeridos o los datos no son válidos.
  */
 const validateProyectoData = (data) => {
-  const missingFields = REQUIRED_FIELDS.filter(field => !(field in data));
+  const missingFields = REQUIRED_FIELDS.filter((field) => !(field in data));
   if (missingFields.length > 0) {
     throw new Error(`Campos faltantes: ${missingFields.join(", ")}`);
   }
@@ -66,24 +78,29 @@ export const obtenerProyectos = async (page = 1, limit = 10) => {
   const offset = (page - 1) * limit;
 
   const [proyectos, totalResult] = await Promise.all([
-    executeQuery("SELECT * FROM proyectos ORDER BY proyecto_id DESC LIMIT ? OFFSET ?", [limit, offset]),
-    executeQuery("SELECT COUNT(*) AS total FROM proyectos")
+    executeQuery(
+      "SELECT * FROM proyectos ORDER BY proyecto_id DESC LIMIT ? OFFSET ?",
+      [limit, offset]
+    ),
+    executeQuery("SELECT COUNT(*) AS total FROM proyectos"),
   ]);
 
   const total = totalResult[0].total;
   const totalPages = Math.ceil(total / limit);
 
-  if (!proyectos.length) return { success: true, proyectos: [], total, page, limit, totalPages };
+  if (!proyectos.length)
+    return { success: true, proyectos: [], total, page, limit, totalPages };
 
-  const proyectosIds = proyectos.map(p => p.proyecto_id);
+  const proyectosIds = proyectos.map((p) => p.proyecto_id);
   const placeholders = proyectosIds.map(() => "?").join(", ");
   const gastos = await executeQuery(
     `SELECT * FROM gastos_proyectos WHERE proyecto_id IN (${placeholders})`,
     proyectosIds
   );
 
-  const proyectosMap = proyectos.map(proyecto => {
-    const gastoProyecto = gastos.find(gasto => gasto.proyecto_id === proyecto.proyecto_id) || {};
+  const proyectosMap = proyectos.map((proyecto) => {
+    const gastoProyecto =
+      gastos.find((gasto) => gasto.proyecto_id === proyecto.proyecto_id) || {};
     return {
       ...proyecto,
       gastos: {
@@ -93,7 +110,14 @@ export const obtenerProyectos = async (page = 1, limit = 10) => {
     };
   });
 
-  return { success: true, proyectos: proyectosMap, total, page, limit, totalPages };
+  return {
+    success: true,
+    proyectos: proyectosMap,
+    total,
+    page,
+    limit,
+    totalPages,
+  };
 };
 
 /**
@@ -110,8 +134,10 @@ export const crearProyecto = async (data) => {
 
   try {
     const [result] = await connection.query(
-      `INSERT INTO proyectos (${ALL_FIELDS.join(", ")}) VALUES (${ALL_FIELDS.map(() => "?").join(", ")})`,
-      ALL_FIELDS.map(field => proyectoData[field] ?? null)
+      `INSERT INTO proyectos (${ALL_FIELDS.join(
+        ", "
+      )}) VALUES (${ALL_FIELDS.map(() => "?").join(", ")})`,
+      ALL_FIELDS.map((field) => proyectoData[field] ?? null)
     );
 
     const proyectoId = result.insertId;
@@ -136,15 +162,27 @@ export const crearProyecto = async (data) => {
  * @param {Object} gastos - Datos de los gastos.
  */
 const insertGastos = async (connection, proyectoId, gastos) => {
-  const fixedFields = ["camioneta", "campo", "obreros", "comidas", "otros", "peajes", "combustible", "hospedaje"];
-  
+  const fixedFields = [
+    "camioneta",
+    "campo",
+    "obreros",
+    "comidas",
+    "otros",
+    "peajes",
+    "combustible",
+    "hospedaje",
+  ];
+
   // Filtra solo los campos que no están en fixedFields y no son "otros_campos"
   const extras = Object.fromEntries(
-    Object.entries(gastos).filter(([key]) => !fixedFields.includes(key) && key !== "otros_campos")
+    Object.entries(gastos).filter(
+      ([key]) => !fixedFields.includes(key) && key !== "otros_campos"
+    )
   );
 
   // Convierte extras a JSON si no está vacío
-  const otrosCamposJSON = Object.keys(extras).length > 0 ? JSON.stringify(extras) : null;
+  const otrosCamposJSON =
+    Object.keys(extras).length > 0 ? JSON.stringify(extras) : null;
 
   // Combina los campos fijos, extras y otros_campos
   await connection.query(
@@ -160,7 +198,9 @@ const insertGastos = async (connection, proyectoId, gastos) => {
       gastos.peajes || 0,
       gastos.combustible || 0,
       gastos.hospedaje || 0,
-      gastos.otros_campos ? JSON.stringify(gastos.otros_campos) : otrosCamposJSON
+      gastos.otros_campos
+        ? JSON.stringify(gastos.otros_campos)
+        : otrosCamposJSON,
     ]
   );
 };
@@ -171,10 +211,16 @@ const insertGastos = async (connection, proyectoId, gastos) => {
  * @returns {Object} - Objeto con el proyecto y sus gastos.
  */
 export const obtenerProyecto = async (id) => {
-  const [proyecto] = await executeQuery("SELECT * FROM proyectos WHERE proyecto_id = ?", [id]);
+  const [proyecto] = await executeQuery(
+    "SELECT * FROM proyectos WHERE proyecto_id = ?",
+    [id]
+  );
   if (!proyecto) return { success: false, proyecto: null };
 
-  const [gastos] = await executeQuery("SELECT * FROM gastos_proyectos WHERE proyecto_id = ?", [id]);
+  const [gastos] = await executeQuery(
+    "SELECT * FROM gastos_proyectos WHERE proyecto_id = ?",
+    [id]
+  );
 
   return {
     success: true,
@@ -203,12 +249,17 @@ export const actualizarProyecto = async (id, data) => {
 
   try {
     await connection.query(
-      `UPDATE proyectos SET ${ALL_FIELDS.map(field => `${field} = ?`).join(", ")} WHERE proyecto_id = ?`,
-      [...ALL_FIELDS.map(field => proyectoData[field] ?? null), id]
+      `UPDATE proyectos SET ${ALL_FIELDS.map((field) => `${field} = ?`).join(
+        ", "
+      )} WHERE proyecto_id = ?`,
+      [...ALL_FIELDS.map((field) => proyectoData[field] ?? null), id]
     );
 
     if (gastos) {
-      await connection.query("DELETE FROM gastos_proyectos WHERE proyecto_id = ?", [id]);
+      await connection.query(
+        "DELETE FROM gastos_proyectos WHERE proyecto_id = ?",
+        [id]
+      );
       await insertGastos(connection, id, gastos);
     }
 
@@ -231,16 +282,22 @@ export const actualizarProyecto = async (id, data) => {
 export const abonarProyecto = async (id, abono) => {
   abono = Number(abono);
   if (isNaN(abono)) throw new Error("El abono debe ser un número válido");
-  
-  const [proyecto] = await executeQuery("SELECT costo_servicio, abono FROM proyectos WHERE proyecto_id = ?", [id]);
+
+  const [proyecto] = await executeQuery(
+    "SELECT costo_servicio, abono FROM proyectos WHERE proyecto_id = ?",
+    [id]
+  );
   if (!proyecto) throw new Error("Proyecto no encontrado");
-  
+
   const nuevoAbono = proyecto.abono + abono;
   if (nuevoAbono > proyecto.costo_servicio) {
     throw new Error("El abono no puede exceder el costo del servicio");
   }
-  
-  await executeQuery("UPDATE proyectos SET abono = ? WHERE proyecto_id = ?", [nuevoAbono, id]);
+
+  await executeQuery("UPDATE proyectos SET abono = ? WHERE proyecto_id = ?", [
+    nuevoAbono,
+    id,
+  ]);
   return { success: true, message: "Abono realizado con éxito" };
 };
 
@@ -254,7 +311,10 @@ export const eliminarProyecto = async (id) => {
   await connection.beginTransaction();
 
   try {
-    await connection.query("DELETE FROM gastos_proyectos WHERE proyecto_id = ?", [id]);
+    await connection.query(
+      "DELETE FROM gastos_proyectos WHERE proyecto_id = ?",
+      [id]
+    );
     await connection.query("DELETE FROM proyectos WHERE proyecto_id = ?", [id]);
     await connection.commit();
     return { success: true, message: "Proyecto eliminado con éxito" };

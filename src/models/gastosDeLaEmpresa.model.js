@@ -45,7 +45,7 @@ export const getAll = async (page = 1, limit = 10) => {
   ]);
 
   return {
-    gastos: gastos.map(g => ({
+    gastos: gastos.map((g) => ({
       ...g,
       otros_campos: g.otros_campos ? JSON.parse(g.otros_campos) : {},
     })),
@@ -70,7 +70,9 @@ export const getGastoById = async (id) => {
 
   return {
     ...result[0],
-    otros_campos: result[0].otros_campos ? JSON.parse(result[0].otros_campos) : {},
+    otros_campos: result[0].otros_campos
+      ? JSON.parse(result[0].otros_campos)
+      : {},
   };
 };
 

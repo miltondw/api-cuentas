@@ -7,7 +7,7 @@ const requiredEnv = ["DB_HOST", "DB_USER", "DB_NAME"];
 requiredEnv.forEach((varName) => {
   if (!process.env[varName]) throw new Error(`❌ ${varName} es requerido`);
 });
- 
+
 const poolConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
