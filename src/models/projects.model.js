@@ -255,6 +255,9 @@ export const actualizarProyecto = async (id, data) => {
       [...ALL_FIELDS.map((field) => proyectoData[field] ?? null), id]
     );
 
+    if (gastos.otros_campos === null) {
+      gastos.otros_campos = {};
+    }
     if (gastos) {
       await connection.query(
         "DELETE FROM gastos_proyectos WHERE proyecto_id = ?",
