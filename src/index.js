@@ -75,11 +75,11 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `https://api-cuentas-zlut.onrender.com/api`,
+        url: `https://api-cuentas-zlut.onrender.com`,
         description: "Servidor de producción",
       },
       {
-        url: `http://localhost:${PORT}/api`,
+        url: `http://localhost:${PORT}`,
         description: "Servidor local de desarrollo",
       },
     ],

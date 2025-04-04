@@ -43,13 +43,13 @@ export const obtenerPerfilesPorProyecto = async (projectId) => {
 /**
  * Obtiene un perfil específico con sus golpes.
  * @param {number} projectId - ID del proyecto.
- * @param {string} soundingNumber - Número del sondeo.
+ * @param {number} profileId - Número del sondeo.
  * @returns {Object} - Perfil encontrado o null.
  */
-export const obtenerPerfil = async (projectId, soundingNumber) => {
+export const obtenerPerfil = async (projectId, profileId) => {
   const [perfil] = await executeQuery(
-    "SELECT * FROM profiles WHERE project_id = ? AND sounding_number = ?",
-    [projectId, soundingNumber]
+    "SELECT * FROM profiles WHERE project_id = ? AND profile_id = ?",
+    [projectId, profileId]
   );
   if (!perfil) {
     return { success: false, message: "Perfil no encontrado" };
@@ -73,7 +73,7 @@ export const obtenerPerfil = async (projectId, soundingNumber) => {
 export const crearPerfil = async (data) => {
   const {
     project_id,
-    sounding_number,
+    profile_id,
     water_level,
     profile_date,
     samples_number,
@@ -85,9 +85,9 @@ export const crearPerfil = async (data) => {
 
   try {
     const [profileResult] = await connection.query(
-      `INSERT INTO profiles (project_id, sounding_number, water_level, profile_date, samples_number)
+      `INSERT INTO profiles (project_id, profile_id, water_level, profile_date, samples_number)
        VALUES (?, ?, ?, ?, ?)`,
-      [project_id, sounding_number, water_level, profile_date, samples_number]
+      [project_id, profile_id, water_level, profile_date, samples_number]
     );
 
     const profileId = profileResult.insertId;
@@ -124,11 +124,11 @@ export const crearPerfil = async (data) => {
 /**
  * Actualiza un perfil existente y sus datos de golpes.
  * @param {number} projectId - ID del proyecto.
- * @param {string} soundingNumber - Número del sondeo.
+ * @param {number} profileId - Número del sondeo.
  * @param {Object} data - Datos actualizados del perfil.
  * @returns {Object} - Resultado de la actualización.
  */
-export const actualizarPerfil = async (projectId, soundingNumber, data) => {
+export const actualizarPerfil = async (projectId, profileId, data) => {
   const { water_level, profile_date, samples_number, blows_data } = data;
 
   const connection = await db.getConnection();
@@ -136,8 +136,8 @@ export const actualizarPerfil = async (projectId, soundingNumber, data) => {
 
   try {
     const [profile] = await connection.query(
-      "SELECT profile_id FROM profiles WHERE project_id = ? AND sounding_number = ?",
-      [projectId, soundingNumber]
+      "SELECT profile_id FROM profiles WHERE project_id = ? AND profile_id = ?",
+      [projectId, profileId]
     );
     if (!profile) {
       throw new Error("Perfil no encontrado");
@@ -183,13 +183,13 @@ export const actualizarPerfil = async (projectId, soundingNumber, data) => {
 /**
  * Elimina un perfil y sus datos de golpes.
  * @param {number} projectId - ID del proyecto.
- * @param {string} soundingNumber - Número del sondeo.
+ * @param {number} profileId - Número del sondeo.
  * @returns {Object} - Resultado de la eliminación.
  */
-export const eliminarPerfil = async (projectId, soundingNumber) => {
+export const eliminarPerfil = async (projectId, profileId) => {
   const [result] = await executeQuery(
-    "DELETE FROM profiles WHERE project_id = ? AND sounding_number = ?",
-    [projectId, soundingNumber]
+    "DELETE FROM profiles WHERE project_id = ? AND profile_id = ?",
+    [projectId, profileId]
   );
 
   if (result.affectedRows === 0) {
