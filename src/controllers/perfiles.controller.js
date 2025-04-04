@@ -30,8 +30,8 @@ export const getPerfilesPorProyecto = async (req, res) => {
  */
 export const getPerfil = async (req, res) => {
   try {
-    const { projectId, soundingNumber } = req.params;
-    const result = await obtenerPerfil(projectId, soundingNumber);
+    const { projectId, profileId } = req.params;
+    const result = await obtenerPerfil(projectId, profileId);
     if (!result.success) return res.status(404).json(result);
     res.json(result);
   } catch (error) {
@@ -58,8 +58,8 @@ export const postPerfil = async (req, res) => {
  */
 export const putPerfil = async (req, res) => {
   try {
-    const { projectId, soundingNumber } = req.params;
-    const result = await actualizarPerfil(projectId, soundingNumber, req.body);
+    const { projectId, profileId } = req.params;
+    const result = await actualizarPerfil(projectId, profileId, req.body);
     if (!result.success) return res.status(404).json(result);
     res.json(result);
   } catch (error) {
@@ -72,8 +72,8 @@ export const putPerfil = async (req, res) => {
  */
 export const deletePerfil = async (req, res) => {
   try {
-    const { projectId, soundingNumber } = req.params;
-    const result = await eliminarPerfil(projectId, soundingNumber);
+    const { projectId, profileId } = req.params;
+    const result = await eliminarPerfil(projectId, profileId);
     if (!result.success) return res.status(404).json(result);
     res.json(result);
   } catch (error) {
