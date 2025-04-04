@@ -6,9 +6,12 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import cookieParser from "cookie-parser"; // Importa cookie-parser
-
+//swaggerUi
+import swaggerUi from "swagger-ui-express"; // Importa Swagger UI
+import swaggerJsdoc from "swagger-jsdoc"; // Importa swagger-jsdoc
 // Rutas
 import projects from "./routes/project.routes.js";
+import profiles from "./routes/perfiles.routes.js";
 import gastosEmpresa from "./routes/gastos-empresa.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import resumen from "./routes/resumen-financiero.routes.js";
@@ -53,7 +56,38 @@ if (NODE_ENV === "development") {
   app.use(morgan("dev"));
   console.log("Modo desarrollo activado");
 }
+// Configuración de Swagger
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "API de Gestión de Proyectos",
+      version: "1.0.0",
+      description:
+        "Documentación de la API para gestión de proyectos y autenticación",
+      contact: {
+        name: "Soporte API",
+        email: "mjestradas@ufpso.edu.co",
+      },
+      license: {
+        name: "MIT",
+      },
+    },
+    servers: [
+      {
+        url: `https://api-cuentas-zlut.onrender.com/api`,
+        description: "Servidor de producción",
+      },
+      {
+        url: `http://localhost:${PORT}/api`,
+        description: "Servidor local de desarrollo",
+      },
+    ],
+  },
+  apis: ["./src/routes/*.js"], // Asegúrate de que la ruta sea correcta
+};
 
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
 // 5. Validación de variables de entorno obligatorias
 const requiredEnvVars = [
   "JWT_SECRET",
@@ -68,15 +102,28 @@ requiredEnvVars.forEach((varName) => {
     process.exit(1);
   }
 });
+// Agrega opciones de personalización para la UI
+const swaggerUiOptions = {
+  explorer: true,
+  customSiteTitle: "API Gestión de Proyectos",
+  customCss: ".swagger-ui .topbar { display: none }",
+};
 
 // 6. Configuración de rutas
 app.use("/api", apiLimiter);
 app.use("/api/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/projects", projects);
+app.use("/api/projects", profiles);
 app.use("/api/gastos-mes", gastosEmpresa);
 app.use("/api/resumen", resumen);
 app.use("/api/auth", authRoutes);
-
+// Ruta para Swagger UI
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocs, swaggerUiOptions)
+);
+console.log(swaggerDocs, swaggerUiOptions);
 // 7. Manejo de errores (después de las rutas)
 app.use(notFoundHandler);
 app.use(handleError);

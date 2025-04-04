@@ -1,3 +1,4 @@
+// authMiddleware.js
 import jwt from "jsonwebtoken";
 
 const verificarToken = (req, res, next) => {
@@ -10,17 +11,21 @@ const verificarToken = (req, res, next) => {
     });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // Almacena los datos del usuario decodificados
+    next();
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
       return res.status(401).json({
-        error: "Token expirado o inválido",
+        error: "Token expirado",
         actionRequired: "refresh_token",
       });
     }
-
-    req.user = decoded;
-    next();
-  });
+    return res.status(401).json({
+      error: "Token inválido",
+    });
+  }
 };
 
 export default verificarToken;
