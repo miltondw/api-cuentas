@@ -24,12 +24,12 @@ const router = express.Router();
  *       type: object
  *       required:
  *         - projectId
- *         - soundingNumber
+ *         - profileId
  *         - datosPerfil
  *       properties:
  *         projectId:
  *           type: integer
- *         soundingNumber:
+ *         profileId:
  *           type: integer
  *         datosPerfil:
  *           type: object
@@ -71,7 +71,7 @@ router.get("/:projectId/profiles", getPerfilesPorProyecto);
 
 /**
  * @swagger
- * /api/projects/{projectId}/profiles/{soundingNumber}:
+ * /api/projects/{projectId}/profiles/{profileId}:
  *   get:
  *     summary: Obtener un perfil específico
  *     tags: [Perfiles]
@@ -83,7 +83,7 @@ router.get("/:projectId/profiles", getPerfilesPorProyecto);
  *           type: integer
  *         description: ID del proyecto
  *       - in: path
- *         name: soundingNumber
+ *         name: profileId
  *         required: true
  *         schema:
  *           type: integer
@@ -98,7 +98,7 @@ router.get("/:projectId/profiles", getPerfilesPorProyecto);
  *       404:
  *         description: Perfil no encontrado
  */
-router.get("/:projectId/profiles/:soundingNumber", getPerfil);
+router.get("/:projectId/profiles/:profileId", getPerfil);
 
 /**
  * @swagger
@@ -131,7 +131,7 @@ router.post("/:projectId/profiles", postPerfil);
 
 /**
  * @swagger
- * /api/projects/{projectId}/profiles/{soundingNumber}:
+ * /api/projects/{projectId}/profiles/{profileId}:
  *   put:
  *     summary: Actualizar un perfil existente
  *     tags: [Perfiles]
@@ -143,7 +143,7 @@ router.post("/:projectId/profiles", postPerfil);
  *           type: integer
  *         description: ID del proyecto
  *       - in: path
- *         name: soundingNumber
+ *         name: profileId
  *         required: true
  *         schema:
  *           type: integer
@@ -162,11 +162,11 @@ router.post("/:projectId/profiles", postPerfil);
  *       404:
  *         description: Perfil no encontrado
  */
-router.put("/:projectId/profiles/:soundingNumber", putPerfil);
+router.put("/:projectId/profiles/:profileId", putPerfil);
 
 /**
  * @swagger
- * /api/projects/{projectId}/profiles/{soundingNumber}:
+ * /api/projects/{projectId}/profiles/{profileId}:
  *   delete:
  *     summary: Eliminar un perfil
  *     tags: [Perfiles]
@@ -178,7 +178,7 @@ router.put("/:projectId/profiles/:soundingNumber", putPerfil);
  *           type: integer
  *         description: ID del proyecto
  *       - in: path
- *         name: soundingNumber
+ *         name: profileId
  *         required: true
  *         schema:
  *           type: integer
@@ -189,6 +189,6 @@ router.put("/:projectId/profiles/:soundingNumber", putPerfil);
  *       404:
  *         description: Perfil no encontrado
  */
-router.delete("/:projectId/profiles/:soundingNumber", deletePerfil);
+router.delete("/:projectId/profiles/:profileId", deletePerfil);
 
 export default router;

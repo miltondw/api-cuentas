@@ -43,7 +43,7 @@ export const obtenerPerfilesPorProyecto = async (projectId) => {
 /**
  * Obtiene un perfil específico con sus golpes.
  * @param {number} projectId - ID del proyecto.
- * @param {number} profileId - Número del sondeo.
+ * @param {number} profileId - Número del id del sondeo.
  * @returns {Object} - Perfil encontrado o null.
  */
 export const obtenerPerfil = async (projectId, profileId) => {
@@ -124,7 +124,7 @@ export const crearPerfil = async (data) => {
 /**
  * Actualiza un perfil existente y sus datos de golpes.
  * @param {number} projectId - ID del proyecto.
- * @param {number} profileId - Número del sondeo.
+ * @param {number} profileId - Número del id del sondeo.
  * @param {Object} data - Datos actualizados del perfil.
  * @returns {Object} - Resultado de la actualización.
  */

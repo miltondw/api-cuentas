@@ -123,7 +123,6 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocs, swaggerUiOptions)
 );
-console.log(swaggerDocs, swaggerUiOptions);
 // 7. Manejo de errores (después de las rutas)
 app.use(notFoundHandler);
 app.use(handleError);
