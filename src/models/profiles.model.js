@@ -128,6 +128,13 @@ export const crearPerfil = async (data) => {
  * @param {Object} data - Datos actualizados del perfil.
  * @returns {Object} - Resultado de la actualización.
  */
+/**
+ * Actualiza un perfil existente y sus datos de golpes.
+ * @param {number} projectId - ID del proyecto.
+ * @param {number} profileId - Número del id del sondeo.
+ * @param {Object} data - Datos actualizados del perfil.
+ * @returns {Object} - Resultado de la actualización.
+ */
 export const actualizarPerfil = async (projectId, profileId, data) => {
   const { water_level, profile_date, samples_number, blows_data } = data;
 
@@ -135,25 +142,28 @@ export const actualizarPerfil = async (projectId, profileId, data) => {
   await connection.beginTransaction();
 
   try {
-    const [profile] = await connection.query(
+    // Verificar si el perfil existe
+    const [existingProfile] = await connection.query(
       "SELECT profile_id FROM profiles WHERE project_id = ? AND profile_id = ?",
       [projectId, profileId]
     );
-    if (!profile) {
+
+    if (!existingProfile) {
       throw new Error("Perfil no encontrado");
     }
-    const profileId = profile.profile_id;
 
+    // Actualizar los datos del perfil
     await connection.query(
       `UPDATE profiles SET water_level = ?, profile_date = ?, samples_number = ?
-       WHERE profile_id = ?`,
-      [water_level, profile_date, samples_number, profileId]
+       WHERE project_id = ? AND profile_id = ?`,
+      [water_level, profile_date, samples_number, projectId, profileId]
     );
 
     // Eliminar los golpes existentes y volver a insertarlos
     await connection.query("DELETE FROM blows WHERE profile_id = ?", [
       profileId,
     ]);
+
     if (blows_data && blows_data.length > 0) {
       const blowValues = blows_data.map((blow) => [
         profileId,

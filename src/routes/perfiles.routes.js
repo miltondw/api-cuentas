@@ -87,7 +87,7 @@ router.get("/:projectId/profiles", getPerfilesPorProyecto);
  *         required: true
  *         schema:
  *           type: integer
- *         description: Número de sondeo del perfil
+ *         description: Número del Id del perfil
  *     responses:
  *       200:
  *         description: Detalles del perfil
@@ -147,7 +147,7 @@ router.post("/:projectId/profiles", postPerfil);
  *         required: true
  *         schema:
  *           type: integer
- *         description: Número de sondeo del perfil
+ *         description: Número del Id del perfil
  *     requestBody:
  *       required: true
  *       content:
@@ -182,7 +182,7 @@ router.put("/:projectId/profiles/:profileId", putPerfil);
  *         required: true
  *         schema:
  *           type: integer
- *         description: Número de sondeo del perfil
+ *         description: Número del Id del perfil
  *     responses:
  *       204:
  *         description: Perfil eliminado exitosamente
