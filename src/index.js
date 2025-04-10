@@ -26,6 +26,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
+// Configurar Express para confiar en proxies
+// Esto debe estar ANTES de configurar cualquier middleware de rate-limiting
+app.set('trust proxy', true);
+
 // 1. Middlewares de seguridad
 app.use(helmet());
 app.use(
