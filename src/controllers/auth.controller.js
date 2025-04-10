@@ -18,7 +18,7 @@ const REFRESH_TOKEN_EXPIRY = '7d';
 const generateTokens = (user) => {
   // Payload solo con información no sensible
   const payload = { 
-    id: user.id, 
+    id: user.usuario_id || user.id, // Usar usuario_id o id si ya está como alias
     email: user.email, 
     rol: user.rol,
     // Agregar una marca de tiempo para hacer único cada token

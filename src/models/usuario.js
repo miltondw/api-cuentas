@@ -6,7 +6,7 @@ const createUsuario = async (data) => {
 
   try {
     // Verificar si el email ya existe
-    const [existingUser] = await db.query("SELECT id FROM usuarios WHERE email = ?", [email]);
+    const [existingUser] = await db.query("SELECT usuario_id FROM usuarios WHERE email = ?", [email]);
     if (existingUser.length > 0) {
       const error = new Error("El email ya está registrado");
       error.status = 409; // Conflict
@@ -37,7 +37,7 @@ const createUsuario = async (data) => {
 // Obtener un usuario por email
 const getUsuarioByEmail = async (email) => {
   try {
-    const [results] = await db.query("SELECT * FROM usuarios WHERE email = ?", [email]);
+    const [results] = await db.query("SELECT *, usuario_id as id FROM usuarios WHERE email = ?", [email]);
     return results[0] || null;
   } catch (err) {
     console.error("❌ Error en getUsuarioByEmail:", err);
@@ -55,13 +55,13 @@ const registerFailedAttempt = async (userId) => {
       `UPDATE usuarios 
        SET failed_attempts = failed_attempts + 1, 
            last_failed_attempt = ?
-       WHERE id = ?`,
+       WHERE usuario_id = ?`,
       [now, userId]
     );
     
     // Obtener el número actual de intentos fallidos
     const [userInfo] = await db.query(
-      "SELECT failed_attempts FROM usuarios WHERE id = ?",
+      "SELECT failed_attempts FROM usuarios WHERE usuario_id = ?",
       [userId]
     );
     
@@ -71,7 +71,7 @@ const registerFailedAttempt = async (userId) => {
       const lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
       
       await db.query(
-        "UPDATE usuarios SET account_locked_until = ? WHERE id = ?",
+        "UPDATE usuarios SET account_locked_until = ? WHERE usuario_id = ?",
         [lockUntil, userId]
       );
       
@@ -99,7 +99,7 @@ const resetFailedAttempts = async (userId) => {
        SET failed_attempts = 0, 
            last_failed_attempt = NULL,
            account_locked_until = NULL
-       WHERE id = ?`,
+       WHERE usuario_id = ?`,
       [userId]
     );
   } catch (err) {
@@ -112,7 +112,7 @@ const resetFailedAttempts = async (userId) => {
 const isAccountLocked = async (userId) => {
   try {
     const [results] = await db.query(
-      "SELECT account_locked_until FROM usuarios WHERE id = ?",
+      "SELECT account_locked_until FROM usuarios WHERE usuario_id = ?",
       [userId]
     );
     
@@ -130,7 +130,7 @@ const isAccountLocked = async (userId) => {
       await db.query(
         `UPDATE usuarios 
          SET account_locked_until = NULL
-         WHERE id = ?`,
+         WHERE usuario_id = ?`,
         [userId]
       );
       
