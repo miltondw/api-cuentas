@@ -18,6 +18,7 @@ import resumen from "./routes/resumen-financiero.routes.js";
 
 // Middleware de errores
 import { notFoundHandler, handleError } from "./middleware/errorHandler.js";
+import { generateCsrfToken } from "./middleware/csrfMiddleware.js";
 
 // Configuración inicial
 dotenv.config();
@@ -95,6 +96,7 @@ const requiredEnvVars = [
   "DB_HOST",
   "DB_USER",
   "DB_NAME",
+  "CSRF_SECRET"
 ];
 requiredEnvVars.forEach((varName) => {
   if (!process.env[varName]) {
@@ -123,6 +125,12 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocs, swaggerUiOptions)
 );
+// Agregar middleware CSRF después de las rutas que no lo necesitan
+app.use("/api/auth", generateCsrfToken);
+app.use("/api/projects", generateCsrfToken);
+app.use("/api/projects", profiles);
+app.use("/api/gastos-mes", generateCsrfToken);
+app.use("/api/resumen", generateCsrfToken);
 // 7. Manejo de errores (después de las rutas)
 app.use(notFoundHandler);
 app.use(handleError);
