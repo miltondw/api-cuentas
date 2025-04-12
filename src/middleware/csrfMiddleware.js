@@ -1,81 +1,102 @@
-import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
-const CSRF_SECRET = process.env.CSRF_SECRET || crypto.randomBytes(32).toString('hex');
-const CSRF_COOKIE_NAME = 'csrf_token';
-const CSRF_HEADER_NAME = 'X-CSRF-Token';
+const CSRF_SECRET =
+  process.env.CSRF_SECRET || crypto.randomBytes(32).toString("hex");
+const CSRF_COOKIE_NAME = "csrf_token";
+const CSRF_HEADER_NAME = "X-CSRF-Token";
+const CSRF_TOKEN_EXPIRES = "1h"; // 1 hora de expiración
 
-// Generar token CSRF
+// Configuración de cookies seguras
+const secureCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 60 * 60 * 1000, // 1 hora
+  path: "/api", // Solo accesible en rutas /api
+};
+
+/**
+ * Genera un token CSRF y lo establece en cookie y header
+ */
 export const generateCsrfToken = (req, res, next) => {
-  // Solo generar para rutas que lo necesiten (POST, PUT, DELETE)
-  if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
-    const csrfToken = jwt.sign(
-      { 
+  // Solo para métodos que modifican datos
+  if (["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
+    try {
+      const payload = {
         timestamp: Date.now(),
-        // Vinculamos el token al usuario si está autenticado
-        userId: req.user?.id || 'anonymous'
-      },
-      CSRF_SECRET,
-      { expiresIn: '1h' }
-    );
+        userId: req.user?.id || "anonymous",
+        userAgent: req.headers["user-agent"],
+        ip: req.ip,
+      };
 
-    // Establecemos la cookie con el token CSRF
-    res.cookie(CSRF_COOKIE_NAME, csrfToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 1000 // 1 hora
-    });
+      const csrfToken = jwt.sign(payload, CSRF_SECRET, {
+        expiresIn: CSRF_TOKEN_EXPIRES,
+      });
 
-    // Agregamos el token a los headers para que el frontend pueda usarlo
-    res.setHeader(CSRF_HEADER_NAME, csrfToken);
+      // Cookie segura
+      res.cookie(CSRF_COOKIE_NAME, csrfToken, secureCookieOptions);
+
+      // Header para el frontend
+      res.set(CSRF_HEADER_NAME, csrfToken);
+
+      // Adjuntar token al request para posible uso posterior
+      req.csrfToken = csrfToken;
+    } catch (error) {
+      console.error("Error generando CSRF token:", error);
+      // No bloquear la petición, pero registrar el error
+    }
   }
   next();
 };
 
-// Verificar token CSRF
+/**
+ * Verifica la validez del token CSRF
+ */
 export const verifyCsrfToken = (req, res, next) => {
-  // Solo verificar para rutas que modifican datos
-  if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+  // Solo verificar para métodos que modifican datos
+  if (["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
     const csrfCookie = req.cookies[CSRF_COOKIE_NAME];
-    const csrfHeader = req.headers[CSRF_HEADER_NAME.toLowerCase()];
+    const csrfHeader = req.get(CSRF_HEADER_NAME);
 
-    // Verificar que exista token en cookie y header
+    // Validación básica
     if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
-      return res.status(403).json({ 
-        error: 'CSRF token inválido o no proporcionado'
+      return res.status(403).json({
+        error: "Protección CSRF: Token inválido o no proporcionado",
+        code: "invalid_csrf_token",
       });
     }
 
     try {
-      // Verificar que el token sea válido
-      jwt.verify(csrfCookie, CSRF_SECRET);
-      
-      // Regenerar token para la siguiente petición (one-time use)
-      const newCsrfToken = jwt.sign(
-        { 
-          timestamp: Date.now(),
-          userId: req.user?.id || 'anonymous'
-        },
-        CSRF_SECRET,
-        { expiresIn: '1h' }
-      );
+      // Verificar firma y expiración
+      const decoded = jwt.verify(csrfCookie, CSRF_SECRET);
 
-      // Actualizar la cookie con el nuevo token
-      res.cookie(CSRF_COOKIE_NAME, newCsrfToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 1000 // 1 hora
+      // Validaciones adicionales
+      if (req.user?.id && decoded.userId !== req.user.id) {
+        throw new Error("User mismatch in CSRF token");
+      }
+
+      // Regenerar token (one-time use)
+      const newPayload = {
+        ...decoded,
+        timestamp: Date.now(),
+      };
+
+      const newCsrfToken = jwt.sign(newPayload, CSRF_SECRET, {
+        expiresIn: CSRF_TOKEN_EXPIRES,
       });
 
-      // Actualizar el header con el nuevo token
-      res.setHeader(CSRF_HEADER_NAME, newCsrfToken);
-    } catch (err) {
-      return res.status(403).json({ 
-        error: 'CSRF token expirado o inválido'
+      // Actualizar cookie y header
+      res.cookie(CSRF_COOKIE_NAME, newCsrfToken, secureCookieOptions);
+      res.set(CSRF_HEADER_NAME, newCsrfToken);
+      req.csrfToken = newCsrfToken;
+    } catch (error) {
+      console.error("Error verificando CSRF token:", error);
+      return res.status(403).json({
+        error: "Protección CSRF: Token expirado o inválido",
+        code: "csrf_token_verification_failed",
       });
     }
   }
   next();
-}; 
+};

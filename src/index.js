@@ -5,18 +5,17 @@ import cors from "cors";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
-import cookieParser from "cookie-parser"; // Importa cookie-parser
-//swaggerUi
-import swaggerUi from "swagger-ui-express"; // Importa Swagger UI
-import swaggerJsdoc from "swagger-jsdoc"; // Importa swagger-jsdoc
+import cookieParser from "cookie-parser";
+// swagger
+import swaggerUi from "swagger-ui-express";
+import swaggerJsdoc from "swagger-jsdoc";
 // Rutas
 import projects from "./routes/project.routes.js";
 import profiles from "./routes/perfiles.routes.js";
 import gastosEmpresa from "./routes/gastos-empresa.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import resumen from "./routes/resumen-financiero.routes.js";
-
-// Middleware de errores
+// Middlewares
 import { notFoundHandler, handleError } from "./middleware/errorHandler.js";
 import { generateCsrfToken } from "./middleware/csrfMiddleware.js";
 
@@ -26,42 +25,74 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-// Configurar Express para confiar en proxies
-// Esto debe estar ANTES de configurar cualquier middleware de rate-limiting
-app.set('trust proxy', true);
+// 1. Configuración de proxy y seguridad inicial
+app.set("trust proxy", true);
 
-// 1. Middlewares de seguridad
-app.use(helmet());
+// 2. Configuración de CORS mejorada
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [
+      "https://localhost:5173",
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+  exposedHeaders: ["X-CSRF-Token"],
+};
+
+app.use(cors(corsOptions));
 app.use(
-  cors({
-    origin: process.env.CORS_ORIGINS?.split(",") || ["https://localhost:5173"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "cdn.swagger.io"],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "cdn.swagger.io",
+          "fonts.googleapis.com",
+        ],
+        imgSrc: ["'self'", "data:", "cdn.swagger.io"],
+        fontSrc: ["'self'", "fonts.gstatic.com"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: "same-site" },
   })
 );
 
-// Agrega cookie-parser para leer cookies en las peticiones
+// 3. Middlewares esenciales
 app.use(cookieParser());
+app.use(compression());
+app.use(express.json({ limit: "10kb" }));
 
-// 2. Limitador de tasa
+// 4. Rate limiting diferenciado
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 1000, // máximo de peticiones por IP
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// 3. Middlewares de optimización
-app.use(compression());
-app.use(express.json({ limit: "10kb" }));
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Demasiados intentos desde esta IP, por favor intente más tarde",
+});
 
-// 4. Logging en desarrollo
+// 5. Logging en desarrollo
 if (NODE_ENV === "development") {
   app.use(morgan("dev"));
   console.log("Modo desarrollo activado");
 }
-// Configuración de Swagger
+
+// 6. Configuración de Swagger
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
@@ -88,67 +119,97 @@ const swaggerOptions = {
         description: "Servidor local de desarrollo",
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
-  apis: ["./src/routes/*.js"], // Asegúrate de que la ruta sea correcta
+  apis: ["./src/routes/*.js"],
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
-// 5. Validación de variables de entorno obligatorias
-const requiredEnvVars = [
-  "JWT_SECRET",
-  "JWT_REFRESH_SECRET",
-  "DB_HOST",
-  "DB_USER",
-  "DB_NAME",
-  "CSRF_SECRET"
-];
-requiredEnvVars.forEach((varName) => {
-  if (!process.env[varName]) {
-    console.error(`❌ Error: La variable de entorno ${varName} es requerida`);
-    process.exit(1);
-  }
-});
-// Agrega opciones de personalización para la UI
 const swaggerUiOptions = {
   explorer: true,
   customSiteTitle: "API Gestión de Proyectos",
   customCss: ".swagger-ui .topbar { display: none }",
 };
 
-// 6. Configuración de rutas
+// 7. Validación de variables de entorno
+const requiredEnvVars = [
+  "JWT_SECRET",
+  "JWT_REFRESH_SECRET",
+  "DB_HOST",
+  "DB_USER",
+  "DB_NAME",
+  "CSRF_SECRET",
+];
+
+requiredEnvVars.forEach((varName) => {
+  if (!process.env[varName]) {
+    console.error(`❌ Error: La variable de entorno ${varName} es requerida`);
+    process.exit(1);
+  }
+});
+
+// Verificación de URLs importantes
+const importantUrls = ["CORS_ORIGINS", "API_DOCS_URL"];
+importantUrls.forEach((url) => {
+  if (!process.env[url]) {
+    console.warn(`⚠️ Advertencia: La variable ${url} no está configurada`);
+  }
+});
+
+// 8. Configuración de rutas
 app.use("/api", apiLimiter);
 app.use("/api/health", (req, res) => res.json({ status: "ok" }));
+
+// Middlewares CSRF para rutas específicas
+app.use("/api/auth", generateCsrfToken);
+app.use("/api/projects", generateCsrfToken);
+app.use("/api/gastos-mes", generateCsrfToken);
+app.use("/api/resumen", generateCsrfToken);
+
+// Rutas principales
+app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/projects", projects);
-app.use("/api/projects", profiles);
+app.use("/api/profiles", profiles); // Cambiado de /api/projects a /api/profiles
 app.use("/api/gastos-mes", gastosEmpresa);
 app.use("/api/resumen", resumen);
-app.use("/api/auth", authRoutes);
-// Ruta para Swagger UI
+
+// Documentación Swagger
 app.use(
   "/api-docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocs, swaggerUiOptions)
 );
-// Agregar middleware CSRF después de las rutas que no lo necesitan
-app.use("/api/auth", generateCsrfToken);
-app.use("/api/projects", generateCsrfToken);
-app.use("/api/projects", profiles);
-app.use("/api/gastos-mes", generateCsrfToken);
-app.use("/api/resumen", generateCsrfToken);
-// 7. Manejo de errores (después de las rutas)
+
+// 9. Manejo de errores
 app.use(notFoundHandler);
 app.use(handleError);
 
-// 8. Inicio del servidor
+// 10. Inicio del servidor
 const server = app.listen(PORT, () => {
   console.log(`
   🚀 Servidor iniciado en modo ${NODE_ENV}
   📡 Escuchando en el puerto ${PORT}
-  📚 Documentación API: ${process.env.API_DOCS_URL || "No configurada"}
+  🌐 Orígenes permitidos: ${
+    process.env.CORS_ORIGINS || "https://localhost:5173"
+  }
+  📚 Documentación API: http://localhost:${PORT}/api-docs
   `);
 });
 
-// 9. Manejo de cierre elegante
+// 11. Manejo de cierre elegante
 const shutdown = (signal) => {
   console.log(`\n🛑 Recibido ${signal}, cerrando servidor...`);
   server.close(() => {
