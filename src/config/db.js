@@ -17,7 +17,7 @@ const poolConfig = {
   waitForConnections: true,
   connectionLimit: 15,
   queueLimit: 30,
-  timezone: "UTC",
+  timezone: "Z", // Cambiado de "UTC" a "Z"
   charset: "utf8mb4",
 };
 

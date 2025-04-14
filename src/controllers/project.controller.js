@@ -17,8 +17,8 @@ const handleError = (res, error, message = "Error en el servidor") => {
  */
 export const getProyectos = async (req, res) => {
   try {
-    const { page, limit } = req.query;
-    const result = await obtenerProyectos(page, limit);
+    const { page, limit, ...filtros } = req.query;
+    const result = await obtenerProyectos(page, limit, filtros);
     res.json(result);
   } catch (error) {
     handleError(res, error, "Error al obtener proyectos");

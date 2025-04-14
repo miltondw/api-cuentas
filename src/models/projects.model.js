@@ -72,17 +72,47 @@ const parseOtrosCampos = (otros_campos) => {
  * @param {number} limit - Número de proyectos por página (por defecto 10).
  * @returns {Object} - Objeto con los proyectos, total de proyectos, página actual y límite.
  */
-export const obtenerProyectos = async (page = 1, limit = 10) => {
+export const obtenerProyectos = async (page = 1, limit = 10, filtros = {}) => {
   page = Number(page) || 1;
   limit = Number(limit) || 10;
   const offset = (page - 1) * limit;
 
+  const condiciones = [];
+  const valores = [];
+
+  if (filtros.fechaInicio) {
+    condiciones.push("fecha >= ?");
+    valores.push(filtros.fechaInicio);
+  }
+
+  if (filtros.fechaFin) {
+    condiciones.push("fecha <= ?");
+    valores.push(filtros.fechaFin);
+  }
+
+  if (filtros.solicitante) {
+    condiciones.push("solicitante LIKE ?");
+    valores.push(`%${filtros.solicitante}%`);
+  }
+
+  if (filtros.nombre_proyecto) {
+    condiciones.push("nombre_proyecto LIKE ?");
+    valores.push(`%${filtros.nombre_proyecto}%`);
+  }
+
+  const whereClause = condiciones.length
+    ? `WHERE ${condiciones.join(" AND ")}`
+    : "";
+
   const [proyectos, totalResult] = await Promise.all([
     executeQuery(
-      "SELECT * FROM proyectos ORDER BY proyecto_id DESC LIMIT ? OFFSET ?",
-      [limit, offset]
+      `SELECT * FROM proyectos ${whereClause} ORDER BY proyecto_id DESC LIMIT ? OFFSET ?`,
+      [...valores, limit, offset]
     ),
-    executeQuery("SELECT COUNT(*) AS total FROM proyectos"),
+    executeQuery(
+      `SELECT COUNT(*) AS total FROM proyectos ${whereClause}`,
+      valores
+    ),
   ]);
 
   const total = totalResult[0].total;
