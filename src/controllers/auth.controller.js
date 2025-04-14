@@ -4,378 +4,250 @@ import {
   registerFailedAttempt,
   resetFailedAttempts,
   isAccountLocked,
-  revokeRefreshToken,
 } from "../models/usuario.js";
 
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { v4 as uuidv4 } from "uuid";
 
-// Configuración de entorno
 const isProd = process.env.NODE_ENV === "production";
-const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "15m";
-const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || "7d";
-const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5;
-const LOCKOUT_TIME_MINUTES = parseInt(process.env.LOCKOUT_TIME_MINUTES) || 15;
+const ACCESS_TOKEN_EXPIRY = "15m";
+const REFRESH_TOKEN_EXPIRY = "7d";
 
-// Códigos de error estandarizados
-const ERROR_CODES = {
-  INVALID_CREDENTIALS: "invalid_credentials",
-  ACCOUNT_LOCKED: "account_locked",
-  INVALID_AUTH_CODE: "invalid_auth_code",
-  DUPLICATE_USER: "duplicate_user",
-  TOKEN_REFRESH_FAILED: "token_refresh_failed",
-};
-
-/**
- * Genera tokens JWT con seguridad mejorada
- */
-const generateTokens = (user, ipAddress, userAgent) => {
-  const tokenId = uuidv4(); // Identificador único para cada token
-
-  const commonPayload = {
-    jti: tokenId, // ID único del token
-    sub: user.id, // Subject (usuario)
-    iss: process.env.JWT_ISSUER || "api-cuentas", // Issuer
-    aud: process.env.JWT_AUDIENCE || "client-app", // Audience
-    iat: Math.floor(Date.now() / 1000), // Issued at
-    context: {
-      ip: ipAddress,
-      ua: userAgent,
-    },
+// Generar tokens JWT
+const generateTokens = (user) => {
+  // Payload solo con información no sensible
+  const payload = {
+    id: user.usuario_id || user.id, // Usar usuario_id o id si ya está como alias
+    email: user.email,
+    rol: user.rol,
+    // Agregar una marca de tiempo para hacer único cada token
+    iat: Math.floor(Date.now() / 1000),
   };
 
-  // Access Token (corta duración)
-  const accessToken = jwt.sign(
-    {
-      ...commonPayload,
-      type: "access",
-      rol: user.rol,
-      email: user.email,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: ACCESS_TOKEN_EXPIRY }
-  );
+  // Access token (corta duración)
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRY,
+  });
 
-  // Refresh Token (larga duración)
+  // Refresh token (larga duración)
+  // Añadimos un identificador único para poder revocar si es necesario
+  const jti = crypto.randomBytes(16).toString("hex");
   const refreshToken = jwt.sign(
-    {
-      ...commonPayload,
-      type: "refresh",
-    },
+    { ...payload, jti },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: REFRESH_TOKEN_EXPIRY }
   );
 
+  return { accessToken, refreshToken };
+};
+
+// Configuración de cookies seguras
+const setCookieOptions = (maxAge) => {
   return {
-    accessToken,
-    refreshToken,
-    tokenId, // Para almacenar en BD y poder revocar
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+    maxAge,
+    path: "/",
+    // Prevenir ataques XSS
+    //domain: process.env.COOKIE_DOMAIN || undefined
   };
 };
 
-/**
- * Configuración segura de cookies
- */
-const getCookieOptions = (maxAge) => ({
-  httpOnly: true,
-  secure: isProd,
-  sameSite: isProd ? "Strict" : "Lax",
-  maxAge,
-  path: "/api/auth", // Solo accesible en rutas de auth
-  domain: process.env.COOKIE_DOMAIN || undefined,
-  priority: "high",
-});
-
-/**
- * Registro de usuario con validaciones mejoradas
- */
+// Registrar un nuevo usuario
 const registrarUsuario = async (req, res) => {
   const { name, email, password, rol } = req.body;
 
   try {
-    // Validación de rol admin
+    // Validar el código secreto para registro solo si el rol es admin
     if (rol === "admin") {
       const { jwt2 } = req.body;
       if (!jwt2 || jwt2 !== process.env.JWT_SECRET_2) {
         return res.status(403).json({
           error:
             "Código de autorización inválido para crear cuenta de administrador",
-          code: ERROR_CODES.INVALID_AUTH_CODE,
         });
       }
     }
 
-    // Validación de fortaleza de contraseña
-    if (
-      password.length < 8 ||
-      !/[A-Z]/.test(password) ||
-      !/\d/.test(password)
-    ) {
-      return res.status(400).json({
-        error:
-          "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número",
-        code: "weak_password",
-      });
-    }
-
-    // Hash seguro de contraseña
+    // Hash de contraseña con costos variables según entorno
     const saltRounds = isProd ? 12 : 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Crear usuario
-    const newUser = {
-      name,
-      email,
-      password: hashedPassword,
-      rol: rol || "usuario", // Valor por defecto
-    };
-
+    // Guardar usuario en la base de datos
+    const newUser = { name, email, password: hashedPassword, rol };
     const result = await createUsuario(newUser);
 
-    // No enviar datos sensibles en la respuesta
     res.status(201).json({
       message: "Usuario registrado exitosamente",
       userId: result.insertId,
-      email: newUser.email,
     });
   } catch (err) {
-    // Manejo específico de errores
-    if (err.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({
-        error: "El email ya está registrado",
-        code: ERROR_CODES.DUPLICATE_USER,
-      });
+    // Manejar errores específicos
+    if (err.status === 409) {
+      return res.status(409).json({ error: err.message });
     }
 
-    console.error("Error en registro:", err);
+    console.error("Error al registrar usuario:", err);
     res.status(500).json({
       error: "Error al registrar el usuario",
-      code: "server_error",
-      details: isProd ? undefined : err.message,
+      message: isProd ? "Error interno" : err.message,
     });
   }
 };
 
-/**
- * Login con protección contra fuerza bruta
- */
+// Login de usuario
 const loginUsuario = async (req, res) => {
   const { email, password } = req.body;
-  const ipAddress = req.ip;
-  const userAgent = req.headers["user-agent"];
 
   try {
-    // 1. Buscar usuario
+    // 1. Buscar usuario por email
     const user = await getUsuarioByEmail(email);
     if (!user) {
-      // No revelar si el usuario existe
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Delay para timing attacks
       return res.status(401).json({
-        error: "Credenciales inválidas",
-        code: ERROR_CODES.INVALID_CREDENTIALS,
+        error: "Credenciales inválidas", // Mensaje genérico para no revelar existencia
       });
     }
 
-    // 2. Verificar bloqueo de cuenta
+    // 2. Verificar si la cuenta está bloqueada
     const lockStatus = await isAccountLocked(user.id);
     if (lockStatus.isLocked) {
       const waitMinutes = Math.ceil(
         (lockStatus.lockedUntil - new Date()) / (1000 * 60)
       );
       return res.status(429).json({
-        error: "Cuenta temporalmente bloqueada",
-        code: ERROR_CODES.ACCOUNT_LOCKED,
+        error: "Cuenta temporalmente bloqueada por múltiples intentos fallidos",
         waitMinutes,
-        retryAfter: lockStatus.lockedUntil.toISOString(),
+        lockedUntil: lockStatus.lockedUntil,
       });
     }
 
     // 3. Verificar contraseña
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      // Registrar intento fallido
-      const failStatus = await registerFailedAttempt(user.id, ipAddress);
+      // 4. Registrar intento fallido
+      const failStatus = await registerFailedAttempt(user.id);
 
+      // Si la cuenta se acaba de bloquear
       if (failStatus.isLocked) {
         return res.status(429).json({
-          error: "Cuenta bloqueada por seguridad",
-          code: ERROR_CODES.ACCOUNT_LOCKED,
-          waitMinutes: LOCKOUT_TIME_MINUTES,
-          retryAfter: failStatus.lockedUntil.toISOString(),
+          error: "Cuenta bloqueada por múltiples intentos fallidos",
+          waitMinutes: 15,
+          lockedUntil: failStatus.lockedUntil,
         });
       }
 
+      // Intentos incorrectos pero cuenta no bloqueada
       return res.status(401).json({
         error: "Credenciales inválidas",
-        code: ERROR_CODES.INVALID_CREDENTIALS,
-        remainingAttempts: MAX_LOGIN_ATTEMPTS - failStatus.attempts,
+        remainingAttempts: 5 - failStatus.attempts,
       });
     }
 
-    // 4. Login exitoso - resetear intentos
+    // 5. Resetear intentos fallidos tras login exitoso
     await resetFailedAttempts(user.id);
 
-    // 5. Generar tokens con información de contexto
-    const { accessToken, refreshToken, tokenId } = generateTokens(
-      user,
-      ipAddress,
-      userAgent
-    );
+    // 6. Generar tokens
+    const { accessToken, refreshToken } = generateTokens(user);
 
-    // 6. Almacenar refresh token en BD para posible revocación
-    await storeRefreshToken(user.id, tokenId, refreshToken);
+    // 7. Almacenar tokens en cookies seguras
+    const accessMaxAge = 15 * 60 * 1000; // 15 minutos
+    const refreshMaxAge = 7 * 24 * 60 * 60 * 1000; // 7 días
 
-    // 7. Setear cookies seguras
-    res.cookie("accessToken", accessToken, getCookieOptions(15 * 60 * 1000));
-    res.cookie(
-      "refreshToken",
-      refreshToken,
-      getCookieOptions(7 * 24 * 60 * 60 * 1000)
-    );
+    res.cookie("accessToken", accessToken, setCookieOptions(accessMaxAge));
+    res.cookie("refreshToken", refreshToken, setCookieOptions(refreshMaxAge));
+    console.log("Cookies configuradas:", { accessToken, refreshToken });
 
-    // 8. Respuesta exitosa
     res.status(200).json({
-      message: "Autenticación exitosa",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        rol: user.rol,
-      },
-      // Enviar token en respuesta solo para clientes no web
-      ...(req.query.includeTokens === "true" && {
-        accessToken,
-        refreshToken,
-        expiresIn: 15 * 60, // 15 minutos en segundos
-      }),
+      message: "Login exitoso",
+      user: { id: user.id, name: user.name, email: user.email, rol: user.rol },
     });
   } catch (err) {
-    console.error("Error en login:", err);
+    console.error("Error en loginUsuario:", err);
     res.status(500).json({
-      error: "Error en el servidor",
-      code: "server_error",
-      details: isProd ? undefined : err.message,
+      error: "Error interno del servidor",
+      message: isProd ? null : err.message,
     });
   }
 };
 
-/**
- * Refresco de token con revocación
- */
-const refreshToken = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-  const ipAddress = req.ip;
-  const userAgent = req.headers["user-agent"];
+// Refrescar token
+const refreshToken = (req, res) => {
+  const token = req.cookies.refreshToken;
 
-  if (!refreshToken) {
-    return res.status(401).json({
-      error: "Refresh token requerido",
-      code: ERROR_CODES.TOKEN_REFRESH_FAILED,
-    });
+  if (!token) {
+    return res.status(401).json({ error: "Refresh token no proporcionado" });
   }
 
   try {
-    // 1. Verificar token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    // 1. Verificar que el refresh token sea válido
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
-    // 2. Verificar si el token fue revocado
-    const isRevoked = await isTokenRevoked(decoded.jti);
-    if (isRevoked) {
-      throw new Error("Token revocado");
-    }
+    // 2. Generar nuevo access token
+    const newAccessToken = jwt.sign(
+      { id: decoded.id, email: decoded.email, rol: decoded.rol },
+      process.env.JWT_SECRET,
+      { expiresIn: ACCESS_TOKEN_EXPIRY }
+    );
 
-    // 3. Obtener usuario
-    const user = await getUsuarioById(decoded.sub);
-    if (!user) {
-      throw new Error("Usuario no encontrado");
-    }
+    // 3. Almacenar nuevo access token en cookie
+    const accessMaxAge = 15 * 60 * 1000; // 15 minutos
+    res.cookie("accessToken", newAccessToken, setCookieOptions(accessMaxAge));
 
-    // 4. Generar nuevo access token
-    const { accessToken, tokenId } = generateTokens(user, ipAddress, userAgent);
-
-    // 5. Actualizar cookies
-    res.cookie("accessToken", accessToken, getCookieOptions(15 * 60 * 1000));
-
-    // 6. Responder
+    // 4. Responder con éxito
     res.status(200).json({
-      message: "Token actualizado",
-      accessToken: req.query.includeTokens === "true" ? accessToken : undefined,
+      message: "Token renovado exitosamente",
       user: {
-        id: user.id,
-        email: user.email,
-        rol: user.rol,
+        id: decoded.id,
+        email: decoded.email,
+        rol: decoded.rol,
       },
     });
   } catch (err) {
-    // Limpiar cookies inválidas
-    res.clearCookie("accessToken", getCookieOptions(0));
-    res.clearCookie("refreshToken", getCookieOptions(0));
+    // Limpiar cookies si el token es inválido
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "Strict" : "Lax",
+    });
 
-    console.error("Error refrescando token:", err);
-
-    const response = {
-      error: "No se pudo refrescar el token",
-      code: ERROR_CODES.TOKEN_REFRESH_FAILED,
-    };
-
-    if (err.name === "TokenExpiredError") {
-      response.error = "Sesión expirada";
-      response.code = "session_expired";
-    } else if (err.name === "JsonWebTokenError") {
-      response.error = "Token inválido";
-      response.code = "invalid_token";
-    }
-
-    res.status(403).json(response);
+    console.error("Error al refrescar token:", err);
+    res.status(403).json({ error: "Refresh token inválido o expirado" });
   }
 };
 
-/**
- * Verificación de autenticación
- */
+// Verificar autenticación
 const verifyAuth = (req, res) => {
+  // El middleware authMiddleware ya verificó el token
   res.status(200).json({
     message: "Autenticado",
-    user: req.user, // Ya verificado por el middleware
-    permissions: getPermissionsForRole(req.user.rol), // Ejemplo de permisos basados en rol
+    user: {
+      id: req.user.id,
+      email: req.user.email,
+      rol: req.user.rol,
+    },
   });
 };
 
-/**
- * Logout con revocación de token
- */
-const logoutUsuario = async (req, res) => {
-  try {
-    // Revocar refresh token si existe
-    if (req.cookies.refreshToken) {
-      try {
-        const decoded = jwt.verify(
-          req.cookies.refreshToken,
-          process.env.JWT_REFRESH_SECRET
-        );
-        await revokeRefreshToken(decoded.jti);
-      } catch (err) {
-        console.error("Error revocando token:", err);
-      }
-    }
+// Cerrar sesión
+const logoutUsuario = (req, res) => {
+  // Limpiar cookies
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "Strict" : "Lax",
+    path: "/",
+  });
 
-    // Limpiar cookies
-    res.clearCookie("accessToken", getCookieOptions(0));
-    res.clearCookie("refreshToken", getCookieOptions(0));
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "Strict" : "Lax",
+    path: "/",
+  });
 
-    res.status(200).json({
-      message: "Sesión cerrada exitosamente",
-      loggedOut: true,
-    });
-  } catch (err) {
-    console.error("Error en logout:", err);
-    res.status(500).json({
-      error: "Error al cerrar sesión",
-      code: "logout_error",
-    });
-  }
+  res.status(200).json({ message: "Sesión cerrada exitosamente" });
 };
 
 export {
@@ -384,5 +256,4 @@ export {
   refreshToken,
   verifyAuth,
   logoutUsuario,
-  ERROR_CODES,
 };
