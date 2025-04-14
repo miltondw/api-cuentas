@@ -46,8 +46,8 @@ const generateTokens = (user) => {
 const setCookieOptions = (maxAge) => {
   return {
     httpOnly: true,
-    secure: false,
-    sameSite: "Lax",
+    secure: isProd, // true en producción para HTTPS
+    sameSite: isProd ? "None" : "Lax", // None para permitir cookies cross-site en producción
     maxAge,
     path: "/",
     // Prevenir ataques XSS
