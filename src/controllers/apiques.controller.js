@@ -76,7 +76,11 @@ export const postApique = async (req, res) => {
       });
     }
 
-    const result = await crearApique({ ...req.body, project_id: projectId });
+    const result = await crearApique({
+      ...req.body,
+      project_id: projectId,
+    });
+
     res.status(201).json(result);
   } catch (error) {
     handleError(res, error, "Error al crear apique");

@@ -23,12 +23,12 @@ const router = express.Router();
  *     Apique:
  *       type: object
  *       required:
- *         - apique_id
  *         - project_id
  *         - location
  *       properties:
  *         apique_id:
- *           type: string
+ *           type: integer
+ *           readOnly: true
  *         project_id:
  *           type: integer
  *         location:

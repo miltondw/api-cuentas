@@ -24,7 +24,7 @@ const executeQuery = async (query, params = []) => {
  * @throws {Error} - Si los datos no son válidos
  */
 const validarDatosApique = (data) => {
-  const { project_id, apique_id, location, depth, date } = data;
+  const { project_id, location } = data;
 
   if (!project_id) throw new Error("El ID del proyecto es obligatorio");
   if (!location) throw new Error("La ubicación es obligatoria");
@@ -118,6 +118,7 @@ export const obtenerApique = async (projectId, apiqueId) => {
   }
 };
 
+// En la función crearApique, modifica:
 export const crearApique = async (data) => {
   validarDatosApique(data);
   validarCapas(data.layers || []);
@@ -126,18 +127,9 @@ export const crearApique = async (data) => {
   await connection.beginTransaction();
 
   try {
-    // Verificar apique único por proyecto
-    const [existente] = await connection.query(
-      "SELECT apique_id FROM apiques WHERE proyecto_id = ? AND apique_id = ?",
-      [data.project_id, data.apique_id]
-    );
-
-    if (existente.length > 0) {
-      throw new Error("Ya existe un apique con este ID en el proyecto");
-    }
-
-    // Insertar apique
-    await connection.query(
+    // Eliminar verificación de apique_id existente
+    // Insertar apique sin especificar apique_id
+    const [result] = await connection.query(
       `INSERT INTO apiques (
          proyecto_id, location, depth, date, 
         cbr_unaltered, depth_tomo, molde
@@ -153,10 +145,13 @@ export const crearApique = async (data) => {
       ]
     );
 
-    // Insertar capas
+    // Obtener el ID generado
+    const apiqueId = result.insertId;
+
+    // Insertar capas con el ID generado
     if (data.layers && data.layers.length > 0) {
       const valoresCapas = data.layers.map((capa) => [
-        data.apique_id,
+        apiqueId, // Usar el ID generado
         capa.layer_number,
         capa.thickness,
         capa.sample_id || null,
@@ -174,7 +169,7 @@ export const crearApique = async (data) => {
     await connection.commit();
     return {
       success: true,
-      apique_id: data.apique_id,
+      apique_id: apiqueId, // Devolver el ID generado
       message: "Apique creado exitosamente",
     };
   } catch (error) {
@@ -185,7 +180,6 @@ export const crearApique = async (data) => {
     connection.release();
   }
 };
-
 export const actualizarApique = async (projectId, apiqueId, data) => {
   validarCapas(data.layers || []);
 
