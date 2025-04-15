@@ -141,7 +141,7 @@ export const crearApique = async (data) => {
       `INSERT INTO apiques (
          proyecto_id, location, depth, date, 
         cbr_unaltered, depth_tomo, molde
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         data.project_id,
         data.location,
