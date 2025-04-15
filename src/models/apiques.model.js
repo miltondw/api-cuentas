@@ -27,7 +27,6 @@ const validarDatosApique = (data) => {
   const { project_id, apique_id, location, depth, date } = data;
 
   if (!project_id) throw new Error("El ID del proyecto es obligatorio");
-  if (!apique_id) throw new Error("El ID del apique es obligatorio");
   if (!location) throw new Error("La ubicación es obligatoria");
 
   if (depth && isNaN(parseFloat(depth))) {
