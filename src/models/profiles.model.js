@@ -42,14 +42,6 @@ const validarDatosPerfil = (data) => {
 
   if (!project_id) throw new Error("El ID del proyecto es obligatorio");
   if (!sounding_number) throw new Error("El número de sondeo es obligatorio");
-  // Verificar que los números sean válidos
-  if (
-    water_level !== null &&
-    water_level !== undefined &&
-    isNaN(parseFloat(water_level))
-  ) {
-    throw new Error("El nivel de agua debe ser un número válido");
-  }
 
   if (
     samples_number !== null &&
@@ -213,7 +205,7 @@ export const crearPerfil = async (data) => {
     // Crear el perfil
     const [profileResult] = await connection.query(
       `INSERT INTO profiles (project_id, sounding_number,water_level, profile_date, samples_number)
-       VALUES (?, ?, ?, ?, ?,?)`,
+       VALUES (?, ?, ?, ?, ?)`,
       [project_id, sounding_number, water_level, profile_date, samples_number]
     );
     const profile_id = profileResult.insertId;
