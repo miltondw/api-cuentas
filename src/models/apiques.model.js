@@ -131,11 +131,12 @@ export const crearApique = async (data) => {
     // Insertar apique sin especificar apique_id
     const [result] = await connection.query(
       `INSERT INTO apiques (
-         proyecto_id, location, depth, date, 
+         proyecto_id, apique,location, depth, date, 
         cbr_unaltered, depth_tomo, molde
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?,?, ?, ?, ?, ?, ?)`,
       [
         data.project_id,
+        data.apique,
         data.location,
         data.depth,
         data.date,
@@ -200,10 +201,12 @@ export const actualizarApique = async (projectId, apiqueId, data) => {
     // Actualizar apique
     await connection.query(
       `UPDATE apiques SET
+        apique = ?,
         location = ?, depth = ?, date = ?, cbr_unaltered = ?,
         depth_tomo = ?, molde = ?
        WHERE proyecto_id = ? AND apique_id = ?`,
       [
+        data.apique,
         data.location,
         data.depth,
         data.date,
