@@ -24,7 +24,7 @@ const executeQuery = async (query, params = []) => {
  * @throws {Error} - Si los datos no son válidos
  */
 const validarDatosApique = (data) => {
-  const { project_id, location } = data;
+  const { project_id, location, depth, date } = data;
 
   if (!project_id) throw new Error("El ID del proyecto es obligatorio");
   if (!location) throw new Error("La ubicación es obligatoria");
