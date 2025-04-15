@@ -34,7 +34,6 @@ const executeQuery = async (query, params = []) => {
 const validarDatosPerfil = (data) => {
   const {
     project_id,
-    profile_id,
     water_level,
     profile_date,
     samples_number,
@@ -42,7 +41,6 @@ const validarDatosPerfil = (data) => {
   } = data;
 
   if (!project_id) throw new Error("El ID del proyecto es obligatorio");
-  if (!profile_id) throw new Error("El ID del perfil es obligatorio");
   if (!sounding_number) throw new Error("El número de sondeo es obligatorio");
   // Verificar que los números sean válidos
   if (
@@ -196,7 +194,6 @@ export const crearPerfil = async (data) => {
 
   const {
     project_id,
-    profile_id,
     sounding_number,
     water_level,
     profile_date,
@@ -213,36 +210,17 @@ export const crearPerfil = async (data) => {
   await connection.beginTransaction();
 
   try {
-    // Verificar si ya existe un perfil con ese ID en el proyecto
-    const [existingProfiles] = await connection.query(
-      "SELECT profile_id FROM profiles WHERE project_id = ? AND profile_id = ?",
-      [project_id, profile_id]
-    );
-
-    if (existingProfiles && existingProfiles.length > 0) {
-      throw new Error(
-        `Ya existe un perfil con ID ${profile_id} en este proyecto`
-      );
-    }
-
     // Crear el perfil
     const [profileResult] = await connection.query(
-      `INSERT INTO profiles (project_id, profile_id, sounding_number,water_level, profile_date, samples_number)
+      `INSERT INTO profiles (project_id, sounding_number,water_level, profile_date, samples_number)
        VALUES (?, ?, ?, ?, ?,?)`,
-      [
-        project_id,
-        profile_id,
-        sounding_number,
-        water_level,
-        profile_date,
-        samples_number,
-      ]
+      [project_id, sounding_number, water_level, profile_date, samples_number]
     );
-
+    const profile_id = profileResult.insertId;
     // Insertar datos de golpes si existen
     if (blows_data && blows_data.length > 0) {
       const blowValues = blows_data.map((blow) => [
-        profile_id, // Usar profile_id en lugar de profileResult.insertId
+        profile_id,
         blow.depth,
         blow.blows6 || 0,
         blow.blows12 || 0,
@@ -260,8 +238,8 @@ export const crearPerfil = async (data) => {
     await connection.commit();
     return {
       success: true,
-      profile_id: profile_id,
-      project_id: project_id,
+      profile_id,
+      project_id,
       message: "Perfil creado con éxito",
     };
   } catch (error) {
