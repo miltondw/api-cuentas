@@ -27,7 +27,6 @@ const validarDatosApique = (data) => {
   const { project_id, apique_id, location, depth, date } = data;
 
   if (!project_id) throw new Error("El ID del proyecto es obligatorio");
-  if (!apique_id) throw new Error("El ID del apique es obligatorio");
   if (!location) throw new Error("La ubicación es obligatoria");
 
   if (depth && isNaN(parseFloat(depth))) {
@@ -140,11 +139,10 @@ export const crearApique = async (data) => {
     // Insertar apique
     await connection.query(
       `INSERT INTO apiques (
-        apique_id, proyecto_id, location, depth, date, 
+         proyecto_id, location, depth, date, 
         cbr_unaltered, depth_tomo, molde
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        data.apique_id,
         data.project_id,
         data.location,
         data.depth,
