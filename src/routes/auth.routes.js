@@ -209,11 +209,7 @@ router.post(
  *       401:
  *         description: Token de refresco no proporcionado o inválido
  */
-router.post(
-  "/refresh",
-  verifyCsrfToken, // Verificar CSRF token para refresh
-  refreshToken
-);
+router.post("/refresh", refreshToken);
 
 // Ruta de verificación
 /**
@@ -295,6 +291,10 @@ router.get("/admin", verificarToken, verificarRol(["admin"]), (req, res) => {
       rol: req.user.rol,
     },
   });
+});
+
+router.get("/csrf", generateCsrfToken, (req, res) => {
+  res.status(200).json({ csrfToken: req.csrfToken });
 });
 
 export default router;

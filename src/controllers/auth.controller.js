@@ -43,17 +43,14 @@ const generateTokens = (user) => {
 };
 
 // Configuración de cookies seguras
+
 const setCookieOptions = (maxAge) => {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // true en producción para HTTPS
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // None para permitir cookies cross-site en producción
+    secure: process.env.NODE_ENV === "production", // true in production for HTTPS
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // None for cross-site in production
     maxAge,
     path: "/",
-    domain:
-      process.env.NODE_ENV === "production"
-        ? "cuentas-ingeocimyc.vercel.app"
-        : "http://localhost:5173",
   };
 };
 
@@ -153,10 +150,8 @@ const loginUsuario = async (req, res) => {
     // 6. Generar tokens
     const { accessToken, refreshToken } = generateTokens(user);
 
-    // 7. Almacenar tokens en cookies seguras
-    const accessMaxAge = 15 * 60 * 1000; // 15 minutos
-    const refreshMaxAge = 7 * 24 * 60 * 60 * 1000; // 7 días
-
+    const accessMaxAge = 60 * 60 * 1000; // 1 hour to match ACCESS_TOKEN_EXPIRY = "1h"
+    const refreshMaxAge = 30 * 24 * 60 * 60 * 1000; // 30 days to match REFRESH_TOKEN_EXPIRY = "30d"
     res.cookie("accessToken", accessToken, setCookieOptions(accessMaxAge));
     res.cookie("refreshToken", refreshToken, setCookieOptions(refreshMaxAge));
     console.log("Cookies configuradas:", { accessToken, refreshToken });
@@ -185,19 +180,32 @@ const refreshToken = (req, res) => {
   try {
     // 1. Verificar que el refresh token sea válido
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const payload = { id: decoded.id, email: decoded.email, rol: decoded.rol };
 
     // 2. Generar nuevo access token
-    const newAccessToken = jwt.sign(
-      { id: decoded.id, email: decoded.email, rol: decoded.rol },
-      process.env.JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRY }
+    const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRY,
+    });
+
+    // 3. Generar nuevo refresh token
+    const jti = crypto.randomBytes(16).toString("hex");
+    const newRefreshToken = jwt.sign(
+      { ...payload, jti },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: REFRESH_TOKEN_EXPIRY }
     );
 
-    // 3. Almacenar nuevo access token en cookie
-    const accessMaxAge = 15 * 60 * 1000; // 15 minutos
+    // 4. Almacenar tokens en cookies
+    const accessMaxAge = 60 * 60 * 1000; // 1 hora
     res.cookie("accessToken", newAccessToken, setCookieOptions(accessMaxAge));
+    const refreshMaxAge = 30 * 24 * 60 * 60 * 1000; // 30 días
+    res.cookie(
+      "refreshToken",
+      newRefreshToken,
+      setCookieOptions(refreshMaxAge)
+    );
 
-    // 4. Responder con éxito
+    // 5. Responder con éxito
     res.status(200).json({
       message: "Token renovado exitosamente",
       user: {
