@@ -11,8 +11,8 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 const isProd = process.env.NODE_ENV === "production";
-const ACCESS_TOKEN_EXPIRY = "15m";
-const REFRESH_TOKEN_EXPIRY = "7d";
+const ACCESS_TOKEN_EXPIRY = "1h";
+const REFRESH_TOKEN_EXPIRY = "30d";
 
 // Generar tokens JWT
 const generateTokens = (user) => {
@@ -46,12 +46,14 @@ const generateTokens = (user) => {
 const setCookieOptions = (maxAge) => {
   return {
     httpOnly: true,
-    secure: isProd, // true en producción para HTTPS
-    sameSite: isProd ? "None" : "Lax", // None para permitir cookies cross-site en producción
+    secure: process.env.NODE_ENV === "production", // true en producción para HTTPS
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // None para permitir cookies cross-site en producción
     maxAge,
     path: "/",
-    // Prevenir ataques XSS
-    //domain: process.env.COOKIE_DOMAIN || undefined
+    domain:
+      process.env.NODE_ENV === "production"
+        ? "cuentas-ingeocimyc.vercel.app"
+        : "http://localhost:5173",
   };
 };
 
