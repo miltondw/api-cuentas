@@ -14,6 +14,7 @@ import gastosEmpresa from "./routes/gastos-empresa.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import resumen from "./routes/resumen-financiero.routes.js";
 import apiques from "./routes/apiques.routes.js";
+import serviceRequests from "./routes/serviceRequests.routes.js";
 import { notFoundHandler, handleError } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -97,12 +98,13 @@ requiredEnvVars.forEach((varName) => {
 
 app.use("/api", apiLimiter);
 app.use("/api/health", (req, res) => res.json({ status: "ok" }));
-app.use("/api/projects", projects);
 app.use("/api/gastos-mes", gastosEmpresa);
 app.use("/api/resumen", resumen);
 app.use("/api/auth", authRoutes);
+app.use("/api/projects", projects);
 app.use("/api/projects", profiles);
 app.use("/api/projects", apiques);
+app.use("/api/service-requests", serviceRequests);
 app.use(
   "/api-docs",
   swaggerUi.serve,
