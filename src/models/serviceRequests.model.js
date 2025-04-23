@@ -128,7 +128,7 @@ export const getServicesModel = async () => {
                 options: service.options
                   ? (() => {
                       try {
-                        return JSON.parse(service.options);
+                        return service.options;
                       } catch {
                         console.warn(
                           `Opciones inválidas para ${service.field}`
@@ -719,7 +719,7 @@ export const getServiceFieldsModel = async (serviceCode) => {
       options: field.options
         ? (() => {
             try {
-              return JSON.parse(field.options);
+              return field.options;
             } catch {
               console.warn(`Opciones inválidas para ${field.field_name}`);
               return null;
