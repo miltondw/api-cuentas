@@ -6,6 +6,7 @@ import {
   deleteServiceRequestModel,
   getSelectedServicesModel,
   getServiceFieldsModel,
+  getServicesModel,
 } from "../models/serviceRequests.model.js";
 
 const handleError = (
@@ -14,13 +15,14 @@ const handleError = (
   message = "Error en el servidor",
   status = 500
 ) => {
-  console.error(`${message}: ${error.message}`);
+  console.error(`${message}: ${error.message}`, error.stack);
 
   let statusCode = status;
-  if (
+  if (error.message.includes("no encontrado")) {
+    statusCode = 404; // Cambiado a 404 para "no encontrado"
+  } else if (
     error.message.includes("obligatorio") ||
-    error.message.includes("válido") ||
-    error.message.includes("no encontrado")
+    error.message.includes("válido")
   ) {
     statusCode = 400;
   }
@@ -35,6 +37,17 @@ const handleError = (
 const validateParam = (value, name) => {
   if (!value) {
     throw new Error(`El parámetro ${name} es obligatorio`);
+  }
+};
+
+export const getServices = async (req, res) => {
+  try {
+    console.log("Iniciando getServices..."); // Depuración
+    const result = await getServicesModel();
+    console.log("Resultado de getServicesModel:", result); // Depuración
+    res.json(result);
+  } catch (error) {
+    handleError(res, error, "Error al obtener servicios");
   }
 };
 

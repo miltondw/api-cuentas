@@ -80,6 +80,99 @@ const validateSelectedServices = (selectedServices) => {
 };
 
 /**
+ * Obtiene todas las categorías y servicios disponibles
+ * @returns {Array} - Lista de categorías con sus servicios
+ */
+export const getServicesModel = async () => {
+  try {
+    // Obtener categorías
+    const categories = await executeQuery(
+      "SELECT id, code, name AS category FROM service_categories"
+    );
+    console.log("Categorías recuperadas:", categories); // Depuración
+
+    if (!categories || categories.length === 0) {
+      throw new Error("No se encontraron categorías de servicios");
+    }
+
+    // Obtener servicios con campos adicionales
+    const services = await executeQuery(
+      `SELECT 
+        s.id, s.code, s.name, s.category_id,
+        saf.field_name AS field, saf.type, saf.required, saf.options, 
+        saf.depends_on_field, saf.depends_on_value, saf.label
+       FROM services s
+       LEFT JOIN service_additional_fields saf ON s.id = saf.service_id`
+    );
+    console.log("Servicios recuperados:", services); // Depuración
+
+    if (!services || services.length === 0) {
+      console.warn("No se encontraron servicios, retornando categorías vacías");
+    }
+
+    // Organizar servicios por categoría
+    const result = categories.map((category) => ({
+      id: category.id,
+      code: category.code,
+      category: category.category,
+      items: services
+        .filter((service) => service.category_id === category.id)
+        .reduce((acc, service) => {
+          const existingService = acc.find((s) => s.id === service.id);
+          const additionalInfo = service.field
+            ? {
+                field: service.field,
+                type: service.type,
+                label: service.label || service.field, // Usar field si label es null
+                required: !!service.required,
+                options: service.options
+                  ? (() => {
+                      try {
+                        return JSON.parse(service.options);
+                      } catch {
+                        console.warn(
+                          `Opciones inválidas para ${service.field}`
+                        );
+                        return null;
+                      }
+                    })()
+                  : null,
+                dependsOn: service.depends_on_field
+                  ? {
+                      field: service.depends_on_field,
+                      value: service.depends_on_value,
+                    }
+                  : null,
+              }
+            : null;
+
+          if (existingService) {
+            if (additionalInfo) {
+              existingService.additionalInfo.push(additionalInfo);
+            }
+          } else {
+            acc.push({
+              id: service.id,
+              code: service.code,
+              name: service.name,
+              additionalInfo: additionalInfo ? [additionalInfo] : [],
+            });
+          }
+          return acc;
+        }, []),
+    }));
+
+    return {
+      success: true,
+      services: result,
+    };
+  } catch (error) {
+    console.error("Error al obtener servicios:", error);
+    throw error;
+  }
+};
+
+/**
  * Crea una nueva solicitud de servicio
  * @param {Object} data - Datos de la solicitud (formData y selectedServices)
  * @returns {Object} - Resultado de la operación
@@ -133,14 +226,50 @@ export const createServiceRequestModel = async (data) => {
         Object.keys(service.additionalInfo).length > 0
       ) {
         const [validFields] = await connection.query(
-          "SELECT field_name FROM service_additional_fields WHERE service_id = ?",
+          "SELECT field_name, required, label FROM service_additional_fields WHERE service_id = ?",
           [existingService.id]
         );
         const validFieldNames = validFields.map((f) => f.field_name);
+
+        // Validar dependencias condicionales
+        for (const field of validFields) {
+          if (field.depends_on_field) {
+            const dependsOnValue =
+              service.additionalInfo[field.depends_on_field];
+            const [dependencyField] = await connection.query(
+              "SELECT depends_on_value FROM service_additional_fields WHERE service_id = ? AND field_name = ?",
+              [existingService.id, field.field_name]
+            );
+            if (
+              dependsOnValue &&
+              dependencyField?.depends_on_value &&
+              dependsOnValue !== dependencyField.depends_on_value &&
+              service.additionalInfo[field.field_name]
+            ) {
+              throw new Error(
+                `El campo ${
+                  field.label || field.field_name
+                } solo es válido cuando ${field.depends_on_field} es ${
+                  dependencyField.depends_on_value
+                }`
+              );
+            }
+          }
+        }
+
+        // Validar campos
         for (const fieldName of Object.keys(service.additionalInfo)) {
           if (!validFieldNames.includes(fieldName)) {
             throw new Error(
               `Campo no válido para ${service.item.code}: ${fieldName}`
+            );
+          }
+          const field = validFields.find((f) => f.field_name === fieldName);
+          if (field.required && !service.additionalInfo[fieldName]) {
+            throw new Error(
+              `El campo ${field.label || field.field_name} es requerido para ${
+                service.item.code
+              }`
             );
           }
         }
@@ -157,18 +286,20 @@ export const createServiceRequestModel = async (data) => {
         service.additionalInfo &&
         Object.keys(service.additionalInfo).length > 0
       ) {
-        const additionalValues = Object.entries(service.additionalInfo).map(
-          ([field_name, field_value]) => [
+        const additionalValues = Object.entries(service.additionalInfo)
+          .filter(([_, value]) => value !== null && value !== "")
+          .map(([field_name, field_value]) => [
             serviceResult.insertId,
             field_name,
             field_value,
-          ]
-        );
+          ]);
 
-        await connection.query(
-          `INSERT INTO service_additional_values (selected_service_id, field_name, field_value) VALUES ?`,
-          [additionalValues]
-        );
+        if (additionalValues.length > 0) {
+          await connection.query(
+            `INSERT INTO service_additional_values (selected_service_id, field_name, field_value) VALUES ?`,
+            [additionalValues]
+          );
+        }
       }
     }
 
@@ -262,10 +393,17 @@ export const getServiceRequestModel = async (id) => {
     }
 
     const servicesWithAdditionalInfo = selectedServices.map((service) => ({
-      ...service,
+      item: {
+        code: service.service_code,
+        name: service.service_name,
+      },
+      quantity: service.quantity,
       additionalInfo: additionalInfo
         .filter((info) => info.selected_service_id === service.id)
-        .map(({ field_name, field_value }) => ({ field_name, field_value })),
+        .reduce((acc, { field_name, field_value }) => {
+          acc[field_name] = field_value;
+          return acc;
+        }, {}),
     }));
 
     return {
@@ -287,6 +425,9 @@ export const getServiceRequestModel = async (id) => {
  */
 export const updateServiceRequestModel = async (id, data) => {
   const { formData, selectedServices } = data;
+
+  validateServiceRequestData(formData);
+  validateSelectedServices(selectedServices);
 
   const connection = await db.getConnection();
   await connection.beginTransaction();
@@ -360,14 +501,50 @@ export const updateServiceRequestModel = async (id, data) => {
         Object.keys(service.additionalInfo).length > 0
       ) {
         const [validFields] = await connection.query(
-          "SELECT field_name FROM service_additional_fields WHERE service_id = ?",
+          "SELECT field_name, required, label FROM service_additional_fields WHERE service_id = ?",
           [existingService.id]
         );
         const validFieldNames = validFields.map((f) => f.field_name);
+
+        // Validar dependencias condicionales
+        for (const field of validFields) {
+          if (field.depends_on_field) {
+            const dependsOnValue =
+              service.additionalInfo[field.depends_on_field];
+            const [dependencyField] = await connection.query(
+              "SELECT depends_on_value FROM service_additional_fields WHERE service_id = ? AND field_name = ?",
+              [existingService.id, field.field_name]
+            );
+            if (
+              dependsOnValue &&
+              dependencyField?.depends_on_value &&
+              dependsOnValue !== dependencyField.depends_on_value &&
+              service.additionalInfo[field.field_name]
+            ) {
+              throw new Error(
+                `El campo ${
+                  field.label || field.field_name
+                } solo es válido cuando ${field.depends_on_field} es ${
+                  dependencyField.depends_on_value
+                }`
+              );
+            }
+          }
+        }
+
+        // Validar campos
         for (const fieldName of Object.keys(service.additionalInfo)) {
           if (!validFieldNames.includes(fieldName)) {
             throw new Error(
               `Campo no válido para ${service.item.code}: ${fieldName}`
+            );
+          }
+          const field = validFields.find((f) => f.field_name === fieldName);
+          if (field.required && !service.additionalInfo[fieldName]) {
+            throw new Error(
+              `El campo ${field.label || field.field_name} es requerido para ${
+                service.item.code
+              }`
             );
           }
         }
@@ -384,18 +561,20 @@ export const updateServiceRequestModel = async (id, data) => {
         service.additionalInfo &&
         Object.keys(service.additionalInfo).length > 0
       ) {
-        const additionalValues = Object.entries(service.additionalInfo).map(
-          ([field_name, field_value]) => [
+        const additionalValues = Object.entries(service.additionalInfo)
+          .filter(([_, value]) => value !== null && value !== "")
+          .map(([field_name, field_value]) => [
             serviceResult.insertId,
             field_name,
             field_value,
-          ]
-        );
+          ]);
 
-        await connection.query(
-          `INSERT INTO service_additional_values (selected_service_id, field_name, field_value) VALUES ?`,
-          [additionalValues]
-        );
+        if (additionalValues.length > 0) {
+          await connection.query(
+            `INSERT INTO service_additional_values (selected_service_id, field_name, field_value) VALUES ?`,
+            [additionalValues]
+          );
+        }
       }
     }
 
@@ -475,7 +654,7 @@ export const getSelectedServicesModel = async (requestId) => {
     if (selectedServiceIds.length > 0) {
       additionalInfo = await executeQuery(
         `SELECT selected_service_id, field_name, field_value
-         FROM service_additional_values
+         FROM service_additional_fields
          WHERE selected_service_id IN (${selectedServiceIds
            .map(() => "?")
            .join(", ")})`,
@@ -484,10 +663,17 @@ export const getSelectedServicesModel = async (requestId) => {
     }
 
     const servicesWithAdditionalInfo = selectedServices.map((service) => ({
-      ...service,
+      item: {
+        code: service.service_code,
+        name: service.service_name,
+      },
+      quantity: service.quantity,
       additionalInfo: additionalInfo
         .filter((info) => info.selected_service_id === service.id)
-        .map(({ field_name, field_value }) => ({ field_name, field_value })),
+        .reduce((acc, { field_name, field_value }) => {
+          acc[field_name] = field_value;
+          return acc;
+        }, {}),
     }));
 
     return {
@@ -517,13 +703,40 @@ export const getServiceFieldsModel = async (serviceCode) => {
     }
 
     const fields = await executeQuery(
-      "SELECT field_name FROM service_additional_fields WHERE service_id = ?",
+      `SELECT field_name, type, required, options, depends_on_field, depends_on_value, label
+       FROM service_additional_fields
+       WHERE service_id = ?`,
       [service.id]
     );
 
+    console.log(`Campos recuperados para ${serviceCode}:`, fields); // Depuración
+
+    const formattedFields = fields.map((field) => ({
+      field: field.field_name,
+      type: field.type,
+      label: field.label || field.field_name, // Usar field_name si label es null
+      required: !!field.required,
+      options: field.options
+        ? (() => {
+            try {
+              return JSON.parse(field.options);
+            } catch {
+              console.warn(`Opciones inválidas para ${field.field_name}`);
+              return null;
+            }
+          })()
+        : null,
+      dependsOn: field.depends_on_field
+        ? {
+            field: field.depends_on_field,
+            value: field.depends_on_value,
+          }
+        : null,
+    }));
+
     return {
       success: true,
-      fields: fields.map((f) => f.field_name),
+      fields: formattedFields,
     };
   } catch (error) {
     console.error("Error al obtener campos adicionales:", error);

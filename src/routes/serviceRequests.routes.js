@@ -7,6 +7,7 @@ import {
   deleteServiceRequest,
   getSelectedServices,
   getServiceFields,
+  getServices,
 } from "../controllers/serviceRequests.controller.js";
 
 const router = express.Router();
@@ -182,7 +183,67 @@ router.post("/", createServiceRequest);
  *                   type: integer
  */
 router.get("/", getServiceRequests);
-
+/**
+ * @swagger
+ * /api/service-requests/services/all:
+ *   get:
+ *     summary: Obtiene todas las categorías y servicios disponibles
+ *     tags: [ServiceRequests]
+ *     responses:
+ *       200:
+ *         description: Lista de categorías con sus servicios
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   code:
+ *                     type: string
+ *                   category:
+ *                     type: string
+ *                   items:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         code:
+ *                           type: string
+ *                         name:
+ *                           type: string
+ *                         additionalInfo:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               field:
+ *                                 type: string
+ *                               type:
+ *                                 type: string
+ *                               label:
+ *                                 type: string
+ *                               required:
+ *                                 type: boolean
+ *                               options:
+ *                                 type: array
+ *                                 items:
+ *                                   type: string
+ *                               dependsOn:
+ *                                 type: object
+ *                                 properties:
+ *                                   field:
+ *                                     type: string
+ *                                   value:
+ *                                     type: string
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.get("/services/all", getServices);
 /**
  * @swagger
  * /api/service-requests/{id}:
@@ -233,6 +294,85 @@ router.get("/", getServiceRequests);
  *         description: Solicitud no encontrada
  */
 router.get("/:id", getServiceRequest);
+
+/**
+ * @swagger
+ * /api/service-requests/{id}/services:
+ *   get:
+ *     summary: Obtiene los servicios seleccionados de una solicitud
+ *     tags: [ServiceRequests]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista de servicios seleccionados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 services:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       service_code:
+ *                         type: string
+ *                       service_name:
+ *                         type: string
+ *                       quantity:
+ *                         type: integer
+ *                       additionalInfo:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             field_name:
+ *                               type: string
+ *                             field_value:
+ *                               type: string
+ *       404:
+ *         description: Solicitud no encontrada
+ */
+router.get("/:id/services", getSelectedServices);
+/**
+ * @swagger
+ * /api/service-requests/services/{code}/fields:
+ *   get:
+ *     summary: Obtiene los campos adicionales de un servicio
+ *     tags: [ServiceRequests]
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de campos adicionales
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 fields:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       404:
+ *         description: Servicio no encontrado
+ */
+router.get("/services/:code/fields", getServiceFields);
 
 /**
  * @swagger
@@ -299,85 +439,5 @@ router.put("/:id", updateServiceRequest);
  *         description: Solicitud no encontrada
  */
 router.delete("/:id", deleteServiceRequest);
-
-/**
- * @swagger
- * /api/service-requests/{id}/services:
- *   get:
- *     summary: Obtiene los servicios seleccionados de una solicitud
- *     tags: [ServiceRequests]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Lista de servicios seleccionados
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 services:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: integer
- *                       service_code:
- *                         type: string
- *                       service_name:
- *                         type: string
- *                       quantity:
- *                         type: integer
- *                       additionalInfo:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             field_name:
- *                               type: string
- *                             field_value:
- *                               type: string
- *       404:
- *         description: Solicitud no encontrada
- */
-router.get("/:id/services", getSelectedServices);
-
-/**
- * @swagger
- * /api/services/{code}/fields:
- *   get:
- *     summary: Obtiene los campos adicionales de un servicio
- *     tags: [ServiceRequests]
- *     parameters:
- *       - in: path
- *         name: code
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Lista de campos adicionales
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 fields:
- *                   type: array
- *                   items:
- *                     type: string
- *       404:
- *         description: Servicio no encontrado
- */
-router.get("/services/:code/fields", getServiceFields);
 
 export default router;
