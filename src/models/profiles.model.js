@@ -32,13 +32,7 @@ const executeQuery = async (query, params = []) => {
  * @throws {Error} - Si los datos no son válidos
  */
 const validarDatosPerfil = (data) => {
-  const {
-    project_id,
-    water_level,
-    profile_date,
-    samples_number,
-    sounding_number,
-  } = data;
+  const { project_id, profile_date, samples_number, sounding_number } = data;
 
   if (!project_id) throw new Error("El ID del proyecto es obligatorio");
   if (!sounding_number) throw new Error("El número de sondeo es obligatorio");
@@ -186,6 +180,7 @@ export const crearPerfil = async (data) => {
 
   const {
     project_id,
+    location,
     sounding_number,
     water_level,
     profile_date,
@@ -204,9 +199,16 @@ export const crearPerfil = async (data) => {
   try {
     // Crear el perfil
     const [profileResult] = await connection.query(
-      `INSERT INTO profiles (project_id, sounding_number,water_level, profile_date, samples_number)
-       VALUES (?, ?, ?, ?, ?)`,
-      [project_id, sounding_number, water_level, profile_date, samples_number]
+      `INSERT INTO profiles (project_id, location,sounding_number,water_level, profile_date, samples_number)
+       VALUES (?, ?, ?, ?, ?,?)`,
+      [
+        project_id,
+        location,
+        sounding_number,
+        water_level,
+        profile_date,
+        samples_number,
+      ]
     );
     const profile_id = profileResult.insertId;
     // Insertar datos de golpes si existen
@@ -256,6 +258,7 @@ export const actualizarPerfil = async (projectId, profileId, data) => {
 
   const {
     sounding_number,
+    location,
     water_level,
     profile_date,
     samples_number,
@@ -283,10 +286,11 @@ export const actualizarPerfil = async (projectId, profileId, data) => {
 
     // Actualizar los datos del perfil
     await connection.query(
-      `UPDATE profiles SET sounding_number=?, water_level = ?, profile_date = ?, samples_number = ?, 
+      `UPDATE profiles SET location=?, sounding_number=?, water_level = ?, profile_date = ?, samples_number = ?, 
       updated_at = CURRENT_TIMESTAMP
        WHERE project_id = ? AND profile_id = ?`,
       [
+        location,
         sounding_number,
         water_level,
         profile_date,
