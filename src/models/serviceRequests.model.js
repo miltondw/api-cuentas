@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 import { generateRequestNumber } from "../utils/requestNumberGenerator.js";
+import { getFirstResultFromQuery, getResultsFromQuery } from "../utils/dbUtils.js";
 
 const executeQuery = async (query, params = []) => {
   try {
@@ -212,12 +213,11 @@ export const createServiceRequestModel = async (data) => {
       ]
     );
 
-    const requestId = requestResult.insertId;
-
-    // Insertar servicios seleccionados
+    const requestId = requestResult.insertId;    // Insertar servicios seleccionados
     for (const service of selectedServices) {
       // Verificar que el servicio existe
-      const [existingService] = await connection.query(
+      const existingService = await getFirstResultFromQuery(
+        connection,
         "SELECT id FROM services WHERE code = ?",
         [service.item.code]
       );
@@ -233,32 +233,30 @@ export const createServiceRequestModel = async (data) => {
         service.additionalInfo &&
         Object.keys(service.additionalInfo).length > 0
       ) {
-        const [validFields] = await connection.query(
-          "SELECT field_name, required, label FROM service_additional_fields WHERE service_id = ?",
+        const validFields = await getResultsFromQuery(
+          connection,
+          "SELECT field_name, required, label, depends_on_field, depends_on_value FROM service_additional_fields WHERE service_id = ?",
           [existingService.id]
         );
+        
         const validFieldNames = validFields.map((f) => f.field_name);
 
         // Validar dependencias condicionales
         for (const field of validFields) {
           if (field.depends_on_field) {
-            const dependsOnValue =
-              service.additionalInfo[field.depends_on_field];
-            const [dependencyField] = await connection.query(
-              "SELECT depends_on_value FROM service_additional_fields WHERE service_id = ? AND field_name = ?",
-              [existingService.id, field.field_name]
-            );
+            const dependsOnValue = service.additionalInfo[field.depends_on_field];
+            
             if (
               dependsOnValue &&
-              dependencyField?.depends_on_value &&
-              dependsOnValue !== dependencyField.depends_on_value &&
+              field.depends_on_value &&
+              dependsOnValue !== field.depends_on_value &&
               service.additionalInfo[field.field_name]
             ) {
               throw new Error(
                 `El campo ${
                   field.label || field.field_name
                 } solo es válido cuando ${field.depends_on_field} es ${
-                  dependencyField.depends_on_value
+                  field.depends_on_value
                 }`
               );
             }
@@ -470,7 +468,8 @@ export const updateServiceRequestModel = async (id, data) => {
     );
 
     // Eliminar servicios seleccionados y valores adicionales existentes
-    const [selectedServicesToDelete] = await connection.query(
+    const selectedServicesToDelete = await getResultsFromQuery(
+      connection,
       "SELECT id FROM selected_services WHERE request_id = ?",
       [id]
     );
@@ -491,7 +490,8 @@ export const updateServiceRequestModel = async (id, data) => {
 
     // Insertar nuevos servicios seleccionados
     for (const service of selectedServices) {
-      const [existingService] = await connection.query(
+      const existingService = await getFirstResultFromQuery(
+        connection,
         "SELECT id FROM services WHERE code = ?",
         [service.item.code]
       );
@@ -507,32 +507,30 @@ export const updateServiceRequestModel = async (id, data) => {
         service.additionalInfo &&
         Object.keys(service.additionalInfo).length > 0
       ) {
-        const [validFields] = await connection.query(
-          "SELECT field_name, required, label FROM service_additional_fields WHERE service_id = ?",
+        const validFields = await getResultsFromQuery(
+          connection,
+          "SELECT field_name, required, label, depends_on_field, depends_on_value FROM service_additional_fields WHERE service_id = ?",
           [existingService.id]
         );
+        
         const validFieldNames = validFields.map((f) => f.field_name);
 
         // Validar dependencias condicionales
         for (const field of validFields) {
           if (field.depends_on_field) {
-            const dependsOnValue =
-              service.additionalInfo[field.depends_on_field];
-            const [dependencyField] = await connection.query(
-              "SELECT depends_on_value FROM service_additional_fields WHERE service_id = ? AND field_name = ?",
-              [existingService.id, field.field_name]
-            );
+            const dependsOnValue = service.additionalInfo[field.depends_on_field];
+            
             if (
               dependsOnValue &&
-              dependencyField?.depends_on_value &&
-              dependsOnValue !== dependencyField.depends_on_value &&
+              field.depends_on_value &&
+              dependsOnValue !== field.depends_on_value &&
               service.additionalInfo[field.field_name]
             ) {
               throw new Error(
                 `El campo ${
                   field.label || field.field_name
                 } solo es válido cuando ${field.depends_on_field} es ${
-                  dependencyField.depends_on_value
+                  field.depends_on_value
                 }`
               );
             }

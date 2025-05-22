@@ -19,7 +19,8 @@ Thumbs.db
 # Dependencias de producción (si usas alguna carpeta específica para build)
 dist/
 build/
-
+# Archivos de pdfs
+uploads/
 # Archivos de test de cobertura
 coverage/
 
