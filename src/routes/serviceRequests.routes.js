@@ -8,6 +8,7 @@ import {
   getSelectedServices,
   getServiceFields,
   getServices,
+  generateServiceRequestPdf, // Nueva función para generar PDF
 } from "../controllers/serviceRequests.controller.js";
 
 const router = express.Router();
@@ -294,6 +295,34 @@ router.get("/services/all", getServices);
  *         description: Solicitud no encontrada
  */
 router.get("/:id", getServiceRequest);
+
+/**
+ * @swagger
+ * /api/service-requests/{id}/pdf:
+ *   get:
+ *     summary: Genera y descarga el PDF de una solicitud
+ *     tags: [ServiceRequests]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la solicitud
+ *     responses:
+ *       200:
+ *         description: Archivo PDF generado
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Solicitud no encontrada
+ *       500:
+ *         description: Error generando el PDF
+ */
+router.get("/:id/pdf", generateServiceRequestPdf);
 
 /**
  * @swagger

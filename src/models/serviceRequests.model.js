@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import { generateRequestNumber } from "../utils/requestNumberGenerator.js";
 
 const executeQuery = async (query, params = []) => {
   try {
@@ -47,7 +48,7 @@ const validateServiceRequestData = (formData) => {
 
   if (
     formData.status &&
-    !["pending", "approved", "rejected", "completed"].includes(formData.status)
+    !["pendiente", "en proceso", "completado", "cancelado"].includes(formData.status)
   ) {
     throw new Error("Estado inválido");
   }
@@ -187,12 +188,19 @@ export const createServiceRequestModel = async (data) => {
   await connection.beginTransaction();
 
   try {
+    // Generar número de solicitud único (formato: SLAB-AAAA-XXX)
+    const requestNumber = await generateRequestNumber(async (query, params) => {
+      const [results] = await connection.query(query, params);
+      return results;
+    });
+
     // Insertar solicitud
     const [requestResult] = await connection.query(
       `INSERT INTO service_requests (
-        name, name_project, location, identification, phone, email, description, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        request_number, name, name_project, location, identification, phone, email, description, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        requestNumber,
         formData.name,
         formData.name_project,
         formData.location,
@@ -200,7 +208,7 @@ export const createServiceRequestModel = async (data) => {
         formData.phone,
         formData.email,
         formData.description,
-        formData.status || "pending",
+        formData.status || "pendiente",
       ]
     );
 
@@ -358,10 +366,9 @@ export const getServiceRequestsModel = async ({ page = 1, limit = 10 }) => {
  * @param {number} id - ID de la solicitud
  * @returns {Object} - Detalles de la solicitud
  */
-export const getServiceRequestModel = async (id) => {
-  try {
+export const getServiceRequestModel = async (id) => {  try {
     const [request] = await executeQuery(
-      `SELECT id, name, name_project, location, identification, phone, email, description, status, created_at, updated_at
+      `SELECT id, request_number, name, name_project, location, identification, phone, email, description, status, created_at, updated_at
        FROM service_requests
        WHERE id = ?`,
       [id]
@@ -602,6 +609,21 @@ export const deleteServiceRequestModel = async (id) => {
   await connection.beginTransaction();
 
   try {
+    // Verificar el estado actual de la solicitud
+    const [currentRequest] = await connection.query(
+      "SELECT status FROM service_requests WHERE id = ?",
+      [id]
+    );
+
+    if (!currentRequest || currentRequest.length === 0) {
+      throw new Error("Solicitud no encontrada");
+    }
+
+    // Solo permitir eliminar solicitudes en estado "pendiente"
+    if (currentRequest[0].status !== 'pendiente') {
+      throw new Error("Solo se pueden eliminar solicitudes en estado pendiente");
+    }
+
     const [result] = await connection.query(
       "DELETE FROM service_requests WHERE id = ?",
       [id]
