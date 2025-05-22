@@ -672,11 +672,10 @@ export const getSelectedServicesModel = async (requestId) => {
     );
 
     const selectedServiceIds = selectedServices.map((s) => s.id);
-    let additionalInfo = [];
-    if (selectedServiceIds.length > 0) {
+    let additionalInfo = [];    if (selectedServiceIds.length > 0) {
       additionalInfo = await executeQuery(
         `SELECT selected_service_id, field_name, field_value
-         FROM service_additional_fields
+         FROM service_additional_values
          WHERE selected_service_id IN (${selectedServiceIds
            .map(() => "?")
            .join(", ")})`,
