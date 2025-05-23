@@ -15,6 +15,7 @@ import authRoutes from "./routes/auth.routes.js";
 import resumen from "./routes/resumen-financiero.routes.js";
 import apiques from "./routes/apiques.routes.js";
 import serviceRequests from "./routes/serviceRequests.routes.js";
+import previewRoutes from "./routes/preview.routes.js";
 import { notFoundHandler, handleError } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -102,9 +103,13 @@ app.use("/api/gastos-mes", gastosEmpresa);
 app.use("/api/resumen", resumen);
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projects);
-app.use("/api/projects", profiles);
-app.use("/api/projects", apiques);
+app.use("/api/profiles", profiles);
+app.use("/api/gastos-empresa", gastosEmpresa);
+app.use("/api/auth", authRoutes);
+app.use("/api/resumen", resumen);
+app.use("/api/apiques", apiques);
 app.use("/api/service-requests", serviceRequests);
+app.use("/preview", previewRoutes);
 app.use(
   "/api-docs",
   swaggerUi.serve,

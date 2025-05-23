@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vista Previa de Plantilla</title>
+  <style>
+    :root {
+      --teal-principal: #008D97;
+      --texto-oscuro: #2c3e50;
+      --texto-claro: #ffffff;
+      --borde-suave: #bdc3c7;
+      --fondo-fila: #f8f9f9;
+      --fondo-seccion: #ecf0f1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--texto-oscuro);
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      max-width: 100%;
+      margin: 0 auto;
+      gap: 20px;
+    }
+
+    .form-container {
+      flex: 0 0 300px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .preview-container {
+      flex: 1;
+      position: relative;
+      height: calc(100vh - 40px);
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: var(--teal-principal);
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--borde-suave);
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    button {
+      background-color: var(--teal-principal);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .refresh-button {
+      background-color: #27ae60;
+    }
+    
+    .pdf-button {
+      background-color: #e74c3c;
+    }
+    
+    .separator {
+      height: 1px;
+      background-color: var(--borde-suave);
+      margin: 20px 0;
+    }
+    
+    .format-toggle {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    
+    .format-toggle button {
+      flex: 1;
+      margin: 0 5px;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="form-container">
+      <h1>Editor de Vista Previa</h1>
+      
+      <form id="previewForm">
+        <div class="form-group">
+          <label for="name">Nombre del Solicitante:</label>
+          <input type="text" id="name" name="name" value="Milton Díaz">
+        </div>
+        
+        <div class="form-group">
+          <label for="identification">Identificación:</label>
+          <input type="text" id="identification" name="identification" value="28398836">
+        </div>
+        
+        <div class="form-group">
+          <label for="phone">Celular:</label>
+          <input type="text" id="phone" name="phone" value="3002321421">
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Correo Electrónico:</label>
+          <input type="email" id="email" name="email" value="email@gmail.com">
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="form-group">
+          <label for="name_project">Nombre del Proyecto:</label>
+          <input type="text" id="name_project" name="name_project" value="Alcantarillado en Olaya Herrera">
+        </div>
+        
+        <div class="form-group">
+          <label for="location">Ubicación:</label>
+          <input type="text" id="location" name="location" value="Ocaña Norte de Santander">
+        </div>
+        
+        <div class="form-group">
+          <label for="description">Descripción:</label>
+          <textarea id="description" name="description">Aquí estaría una descripción del proyecto si fuera un proyecto real</textarea>
+        </div>
+        
+        <div class="buttons">
+          <button type="button" id="refreshButton" class="refresh-button">Actualizar Vista</button>
+          <button type="button" id="pdfButton" class="pdf-button">Generar PDF</button>
+        </div>
+      </form>
+    </div>
+    
+    <div class="preview-container">
+      <iframe id="previewFrame" src="/preview-template"></iframe>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('previewForm');
+      const refreshButton = document.getElementById('refreshButton');
+      const pdfButton = document.getElementById('pdfButton');
+      const previewFrame = document.getElementById('previewFrame');
+      
+      // Función para actualizar la vista previa
+      function updatePreview() {
+        const formData = new FormData(form);
+        const queryParams = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+          queryParams.append(key, value);
+        }
+        
+        const previewUrl = `/preview-template-with-form?${queryParams.toString()}`;
+        previewFrame.src = previewUrl;
+      }
+      
+      // Manejar la actualización manual
+      refreshButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        updatePreview();
+      });
+      
+      // Generar PDF (requeriría implementar un endpoint adicional)
+      pdfButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Función de generación de PDF disponible pronto. Por ahora, puedes utilizar la vista previa.');
+        
+        // Esta sería la implementación ideal cuando se tenga un endpoint para generación de PDF
+        /*
+        const formData = new FormData(form);
+        const queryParams = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+          queryParams.append(key, value);
+        }
+        
+        const pdfUrl = `/generate-pdf?${queryParams.toString()}`;
+        window.open(pdfUrl, '_blank');
+        */
+      });
+      
+      // Actualizar automáticamente después de cargar la página
+      updatePreview();
+    });
+  </script>
+</body>
+</html>
