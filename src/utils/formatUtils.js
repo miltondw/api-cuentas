@@ -25,6 +25,7 @@ export const formatValue = (value) => {
 
 /**
  * Genera el contenido HTML para los servicios agrupados por categoría
+ * en formato horizontal tipo Excel, una página por categoría
  * @param {Array} services - Array de servicios para procesar
  * @returns {string} HTML generado para los servicios
  */
@@ -53,7 +54,7 @@ export const generateServicesContent = (services) => {
 
   let serviciosContent = "";
 
-  // Procesar cada categoría
+  // Procesar cada categoría en una página separada
   for (const [categoryCode, services] of Object.entries(servicesByCategory)) {
     if (services.length === 0) continue;
 
@@ -66,92 +67,107 @@ export const generateServicesContent = (services) => {
       <div class="section-title">${
         categoryTitles[categoryCode] || categoryCode
       }</div>
-      <table class="service-table">
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Servicio</th>
-            <th>Cantidad</th>
-          </tr>
-        </thead>
-        <tbody>
     `;
 
-    // Agregar servicios de la categoría
+    // Para cada servicio en la categoría
     for (const service of services) {
       serviciosContent += `
-        <tr>
-          <td>${service.item.code}</td>
-          <td>${service.item.name}</td>
-          <td>${service.quantity}</td>
-        </tr>
-      `;      // Si hay instancias con información adicional, mostrarlas
+        <div class="service-header">
+          <strong>${service.item.code} - ${service.item.name}</strong> (Cantidad: ${service.quantity})
+        </div>
+      `;
+
+      // Si hay instancias con información adicional, mostrarlas en formato horizontal
       if (service.instances && Array.isArray(service.instances) && service.instances.length > 0) {
-        // Para cada instancia, mostrar su información adicional
+        // Recolectar todas las claves únicas de todas las instancias
+        const allKeys = new Set();
+        service.instances.forEach(instance => {
+          if (instance.additionalInfo) {
+            Object.keys(instance.additionalInfo).forEach(key => allKeys.add(key));
+          }
+        });
+        
+        // Si no hay claves, continuar con el siguiente servicio
+        if (allKeys.size === 0) continue;
+        
+        const keysArray = Array.from(allKeys).sort();
+        
+        // Construir tabla horizontal
+        serviciosContent += `
+          <table class="horizontal-info-table">
+            <thead>
+              <tr class="header-row">
+                <th class="instance-number-cell">Instancia</th>
+        `;
+        
+        // Encabezados (nombres de campos)
+        keysArray.forEach(key => {
+          serviciosContent += `<th>${formatFieldName(key)}</th>`;
+        });
+        
+        serviciosContent += `
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        
+        // Filas de datos (valores)
         for (let i = 0; i < service.instances.length; i++) {
           const instance = service.instances[i];
           
-          if (instance.additionalInfo && Object.keys(instance.additionalInfo).length > 0) {
-            serviciosContent += `
-              <tr>
-                <td colspan="3" style="padding: 0;">
-                  <div class="no-break">
-                    <div class="instance-header">Instancia ${i + 1} de ${service.instances.length}</div>
-                    <table class="additional-info-table">
-                      <tbody>
-                        ${Object.entries(instance.additionalInfo)
-                          .map(
-                            ([key, value]) => `
-                            <tr>
-                              <th class="info-label">${formatFieldName(key)}</th>
-                              <td class="info-value">${formatValue(value)}</td>
-                            </tr>
-                          `
-                          )
-                          .join("")}
-                      </tbody>
-                    </table>
-                  </div>
-                </td>
-              </tr>
-            `;
-          }
+          serviciosContent += `
+            <tr>
+              <td class="instance-number-cell">${i + 1}</td>
+          `;
+          
+          // Valores para cada clave
+          keysArray.forEach(key => {
+            const value = instance.additionalInfo && instance.additionalInfo[key];
+            serviciosContent += `<td>${value ? formatValue(value) : 'N/A'}</td>`;
+          });
+          
+          serviciosContent += `</tr>`;
         }
-      }
-      // Compatibilidad con el formato antiguo
-      else if (
-        service.additionalInfo &&
-        Object.keys(service.additionalInfo).length > 0
-      ) {
+        
         serviciosContent += `
-          <tr>
-            <td colspan="3" style="padding: 0;">
-              <div class="no-break">
-                <table class="additional-info-table">
-                  <tbody>
-                    ${Object.entries(service.additionalInfo)
-                      .map(
-                        ([key, value]) => `
-                        <tr>
-                          <th class="info-label">${formatFieldName(key)}</th>
-                          <td class="info-value">${formatValue(value)}</td>
-                        </tr>
-                      `
-                      )
-                      .join("")}
-                  </tbody>
-                </table>
-              </div>
-            </td>
-          </tr>
+            </tbody>
+          </table>
         `;
       }
+      // Compatibilidad con el formato antiguo
+      else if (service.additionalInfo && Object.keys(service.additionalInfo).length > 0) {
+        const keys = Object.keys(service.additionalInfo).sort();
+        
+        serviciosContent += `
+          <table class="horizontal-info-table">
+            <thead>
+              <tr class="header-row">
+        `;
+        
+        // Encabezados (nombres de campos)
+        keys.forEach(key => {
+          serviciosContent += `<th>${formatFieldName(key)}</th>`;
+        });
+        
+        serviciosContent += `
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+        `;
+        
+        // Valores para cada clave
+        keys.forEach(key => {
+          const value = service.additionalInfo[key];
+          serviciosContent += `<td>${value ? formatValue(value) : 'N/A'}</td>`;
+        });
+        
+        serviciosContent += `
+              </tr>
+            </tbody>
+          </table>
+        `;      }
     }
-
-    serviciosContent += `
-        </tbody>
-      </table>
-    `;
   }
 
   return serviciosContent;
