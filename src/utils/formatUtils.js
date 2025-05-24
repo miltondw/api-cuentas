@@ -85,10 +85,41 @@ export const generateServicesContent = (services) => {
           <td>${service.item.name}</td>
           <td>${service.quantity}</td>
         </tr>
-      `;
-
-      // Si hay información adicional, mostrarla en una tabla de dos columnas
-      if (
+      `;      // Si hay instancias con información adicional, mostrarlas
+      if (service.instances && Array.isArray(service.instances) && service.instances.length > 0) {
+        // Para cada instancia, mostrar su información adicional
+        for (let i = 0; i < service.instances.length; i++) {
+          const instance = service.instances[i];
+          
+          if (instance.additionalInfo && Object.keys(instance.additionalInfo).length > 0) {
+            serviciosContent += `
+              <tr>
+                <td colspan="3" style="padding: 0;">
+                  <div class="no-break">
+                    <div class="instance-header">Instancia ${i + 1} de ${service.instances.length}</div>
+                    <table class="additional-info-table">
+                      <tbody>
+                        ${Object.entries(instance.additionalInfo)
+                          .map(
+                            ([key, value]) => `
+                            <tr>
+                              <th class="info-label">${formatFieldName(key)}</th>
+                              <td class="info-value">${formatValue(value)}</td>
+                            </tr>
+                          `
+                          )
+                          .join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+        }
+      }
+      // Compatibilidad con el formato antiguo
+      else if (
         service.additionalInfo &&
         Object.keys(service.additionalInfo).length > 0
       ) {

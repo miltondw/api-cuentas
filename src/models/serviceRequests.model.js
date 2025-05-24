@@ -78,6 +78,35 @@ const validateSelectedServices = (selectedServices) => {
         `Cantidad inválida para el servicio en la posición ${index}`
       );
     }
+    
+    // Validar estructura de instancias si están presentes
+    if (service.instances) {
+      if (!Array.isArray(service.instances)) {
+        throw new Error(
+          `Las instancias del servicio en la posición ${index} deben ser un array`
+        );
+      }
+      
+      if (service.instances.length !== parseInt(service.quantity)) {
+        throw new Error(
+          `El número de instancias (${service.instances.length}) no coincide con la cantidad (${service.quantity}) para el servicio en la posición ${index}`
+        );
+      }
+      
+      service.instances.forEach((instance, instanceIndex) => {
+        if (!instance.additionalInfo || typeof instance.additionalInfo !== 'object') {
+          throw new Error(
+            `Información adicional requerida para la instancia ${instanceIndex} del servicio en la posición ${index}`
+          );
+        }
+      });
+    } else if (service.additionalInfo && typeof service.additionalInfo === 'object') {
+      // Si no hay instancias pero hay additionalInfo, convertir a formato de instancias
+      // para mantener compatibilidad con el código existente
+      service.instances = Array(parseInt(service.quantity)).fill().map(() => ({
+        additionalInfo: service.additionalInfo
+      }));
+    }
   });
 };
 
@@ -279,30 +308,67 @@ export const createServiceRequestModel = async (data) => {
             );
           }
         }
-      }
-
-      // Insertar servicio seleccionado
+      }      // Insertar servicio seleccionado
       const [serviceResult] = await connection.query(
         `INSERT INTO selected_services (request_id, service_id, quantity) VALUES (?, ?, ?)`,
         [requestId, existingService.id, service.quantity]
       );
+      
+      // Procesar instancias de servicio y sus valores adicionales
+      if (service.instances && Array.isArray(service.instances) && service.instances.length > 0) {
+        for (let i = 0; i < service.instances.length; i++) {
+          const instance = service.instances[i];
+          
+          // Insertar instancia de servicio
+          const [instanceResult] = await connection.query(
+            `INSERT INTO service_instances (selected_service_id, instance_number) VALUES (?, ?)`,
+            [serviceResult.insertId, i + 1]
+          );
+          
+          // Insertar valores adicionales para esta instancia
+          if (
+            instance.additionalInfo &&
+            Object.keys(instance.additionalInfo).length > 0
+          ) {
+            const additionalValues = Object.entries(instance.additionalInfo)
+              .filter(([_, value]) => value !== null && value !== "")
+              .map(([field_name, field_value]) => [
+                instanceResult.insertId,
+                field_name,
+                field_value,
+              ]);
 
-      // Insertar valores adicionales
-      if (
+            if (additionalValues.length > 0) {
+              await connection.query(
+                `INSERT INTO service_instance_values (service_instance_id, field_name, field_value) VALUES ?`,
+                [additionalValues]
+              );
+            }
+          }
+        }
+      }
+      // Compatibilidad con el formato antiguo, si hay additionalInfo pero no instances
+      else if (
         service.additionalInfo &&
         Object.keys(service.additionalInfo).length > 0
       ) {
+        // Crear una instancia por defecto
+        const [instanceResult] = await connection.query(
+          `INSERT INTO service_instances (selected_service_id, instance_number) VALUES (?, ?)`,
+          [serviceResult.insertId, 1]
+        );
+        
         const additionalValues = Object.entries(service.additionalInfo)
           .filter(([_, value]) => value !== null && value !== "")
           .map(([field_name, field_value]) => [
-            serviceResult.insertId,
+            instanceResult.insertId,
             field_name,
             field_value,
           ]);
 
         if (additionalValues.length > 0) {
           await connection.query(
-            `INSERT INTO service_additional_values (selected_service_id, field_name, field_value) VALUES ?`,
+            `INSERT INTO service_instance_values (service_instance_id, field_name, field_value) VALUES ?`,
             [additionalValues]
           );
         }
@@ -382,39 +448,90 @@ export const getServiceRequestModel = async (id) => {  try {
        JOIN services s ON ss.service_id = s.id
        WHERE ss.request_id = ?`,
       [id]
-    );
-
-    const selectedServiceIds = selectedServices.map((s) => s.id);
-    let additionalInfo = [];
+    );    const selectedServiceIds = selectedServices.map((s) => s.id);
+    
+    // Obtener todas las instancias de los servicios seleccionados
+    let serviceInstances = [];
     if (selectedServiceIds.length > 0) {
-      additionalInfo = await executeQuery(
-        `SELECT selected_service_id, field_name, field_value
-         FROM service_additional_values
-         WHERE selected_service_id IN (${selectedServiceIds
-           .map(() => "?")
-           .join(", ")})`,
+      serviceInstances = await executeQuery(
+        `SELECT si.id, si.selected_service_id, si.instance_number
+         FROM service_instances si
+         WHERE si.selected_service_id IN (${selectedServiceIds.map(() => "?").join(", ")})`,
         selectedServiceIds
       );
     }
 
-    const servicesWithAdditionalInfo = selectedServices.map((service) => ({
-      item: {
-        code: service.service_code,
-        name: service.service_name,
-      },
-      quantity: service.quantity,
-      additionalInfo: additionalInfo
+    // Obtener los valores adicionales para todas las instancias
+    let instanceValues = [];
+    if (serviceInstances.length > 0) {
+      const instanceIds = serviceInstances.map(inst => inst.id);
+      instanceValues = await executeQuery(
+        `SELECT siv.service_instance_id, siv.field_name, siv.field_value
+         FROM service_instance_values siv
+         WHERE siv.service_instance_id IN (${instanceIds.map(() => "?").join(", ")})`,
+        instanceIds
+      );
+    }
+
+    // Para compatibilidad con el formato antiguo, verificar si existen valores adicionales
+    let additionalInfo = [];
+    if (selectedServiceIds.length > 0) {
+      try {
+        additionalInfo = await executeQuery(
+          `SELECT selected_service_id, field_name, field_value
+           FROM service_additional_values
+           WHERE selected_service_id IN (${selectedServiceIds.map(() => "?").join(", ")})`,
+          selectedServiceIds
+        );
+      } catch (err) {
+        console.log("La tabla service_additional_values puede no existir, continuando...");
+      }
+    }
+
+    const servicesWithInstances = selectedServices.map((service) => {
+      // Obtener todas las instancias para este servicio
+      const instances = serviceInstances
+        .filter(inst => inst.selected_service_id === service.id)
+        .map(instance => {
+          // Obtener valores adicionales para esta instancia
+          const instanceAdditionalInfo = instanceValues
+            .filter(val => val.service_instance_id === instance.id)
+            .reduce((acc, { field_name, field_value }) => {
+              acc[field_name] = field_value;
+              return acc;
+            }, {});
+          
+          return {
+            instanceNumber: instance.instance_number,
+            additionalInfo: instanceAdditionalInfo
+          };
+        })
+        .sort((a, b) => a.instanceNumber - b.instanceNumber);
+
+      // Información adicional del formato antiguo para compatibilidad
+      const oldFormatInfo = additionalInfo
         .filter((info) => info.selected_service_id === service.id)
         .reduce((acc, { field_name, field_value }) => {
           acc[field_name] = field_value;
           return acc;
-        }, {}),
-    }));
+        }, {});
 
-    return {
+      return {
+        item: {
+          code: service.service_code,
+          name: service.service_name,
+        },
+        quantity: service.quantity,
+        instances: instances.length > 0 ? instances : Array(service.quantity).fill().map(() => ({
+          additionalInfo: oldFormatInfo
+        })),
+        // Mantenemos additionalInfo por compatibilidad
+        additionalInfo: instances.length > 0 ? instances[0].additionalInfo : oldFormatInfo
+      };
+    });    return {
       success: true,
       request,
-      selectedServices: servicesWithAdditionalInfo,
+      selectedServices: servicesWithInstances,
     };
   } catch (error) {
     console.error("Error al obtener solicitud:", error);
@@ -465,24 +582,9 @@ export const updateServiceRequestModel = async (id, data) => {
         formData.status || "pending",
         id,
       ]
-    );
-
-    // Eliminar servicios seleccionados y valores adicionales existentes
-    const selectedServicesToDelete = await getResultsFromQuery(
-      connection,
-      "SELECT id FROM selected_services WHERE request_id = ?",
-      [id]
-    );
-    const selectedServiceIds = selectedServicesToDelete.map((s) => s.id);
-
-    if (selectedServiceIds.length > 0) {
-      await connection.query(
-        `DELETE FROM service_additional_values WHERE selected_service_id IN (${selectedServiceIds
-          .map(() => "?")
-          .join(", ")})`,
-        selectedServiceIds
-      );
-    }
+    );    // Eliminar servicios seleccionados y sus instancias existentes
+    // Al eliminar un selected_service, se eliminan sus instancias gracias a la restricción ON DELETE CASCADE
+    // y a su vez, al eliminar las instancias se eliminan sus valores adicionales
     await connection.query(
       "DELETE FROM selected_services WHERE request_id = ?",
       [id]
@@ -553,30 +655,67 @@ export const updateServiceRequestModel = async (id, data) => {
             );
           }
         }
-      }
-
-      // Insertar servicio seleccionado
+      }      // Insertar servicio seleccionado
       const [serviceResult] = await connection.query(
         `INSERT INTO selected_services (request_id, service_id, quantity) VALUES (?, ?, ?)`,
         [id, existingService.id, service.quantity]
       );
+      
+      // Procesar instancias de servicio y sus valores adicionales
+      if (service.instances && Array.isArray(service.instances) && service.instances.length > 0) {
+        for (let i = 0; i < service.instances.length; i++) {
+          const instance = service.instances[i];
+          
+          // Insertar instancia de servicio
+          const [instanceResult] = await connection.query(
+            `INSERT INTO service_instances (selected_service_id, instance_number) VALUES (?, ?)`,
+            [serviceResult.insertId, i + 1]
+          );
+          
+          // Insertar valores adicionales para esta instancia
+          if (
+            instance.additionalInfo &&
+            Object.keys(instance.additionalInfo).length > 0
+          ) {
+            const additionalValues = Object.entries(instance.additionalInfo)
+              .filter(([_, value]) => value !== null && value !== "")
+              .map(([field_name, field_value]) => [
+                instanceResult.insertId,
+                field_name,
+                field_value,
+              ]);
 
-      // Insertar valores adicionales
-      if (
+            if (additionalValues.length > 0) {
+              await connection.query(
+                `INSERT INTO service_instance_values (service_instance_id, field_name, field_value) VALUES ?`,
+                [additionalValues]
+              );
+            }
+          }
+        }
+      }
+      // Compatibilidad con el formato antiguo, si hay additionalInfo pero no instances
+      else if (
         service.additionalInfo &&
         Object.keys(service.additionalInfo).length > 0
       ) {
+        // Crear una instancia por defecto
+        const [instanceResult] = await connection.query(
+          `INSERT INTO service_instances (selected_service_id, instance_number) VALUES (?, ?)`,
+          [serviceResult.insertId, 1]
+        );
+        
         const additionalValues = Object.entries(service.additionalInfo)
           .filter(([_, value]) => value !== null && value !== "")
           .map(([field_name, field_value]) => [
-            serviceResult.insertId,
+            instanceResult.insertId,
             field_name,
             field_value,
           ]);
 
         if (additionalValues.length > 0) {
           await connection.query(
-            `INSERT INTO service_additional_values (selected_service_id, field_name, field_value) VALUES ?`,
+            `INSERT INTO service_instance_values (service_instance_id, field_name, field_value) VALUES ?`,
             [additionalValues]
           );
         }
@@ -667,33 +806,62 @@ export const getSelectedServicesModel = async (requestId) => {
        JOIN services s ON ss.service_id = s.id
        WHERE ss.request_id = ?`,
       [requestId]
-    );
-
-    const selectedServiceIds = selectedServices.map((s) => s.id);
-    let additionalInfo = [];    if (selectedServiceIds.length > 0) {
-      additionalInfo = await executeQuery(
-        `SELECT selected_service_id, field_name, field_value
-         FROM service_additional_values
-         WHERE selected_service_id IN (${selectedServiceIds
-           .map(() => "?")
-           .join(", ")})`,
+    );    const selectedServiceIds = selectedServices.map((s) => s.id);
+    
+    // Obtener todas las instancias de los servicios seleccionados
+    let serviceInstances = [];
+    if (selectedServiceIds.length > 0) {
+      serviceInstances = await executeQuery(
+        `SELECT si.id, si.selected_service_id, si.instance_number
+         FROM service_instances si
+         WHERE si.selected_service_id IN (${selectedServiceIds.map(() => "?").join(", ")})`,
         selectedServiceIds
       );
     }
 
-    const servicesWithAdditionalInfo = selectedServices.map((service) => ({
-      item: {
-        code: service.service_code,
-        name: service.service_name,
-      },
-      quantity: service.quantity,
-      additionalInfo: additionalInfo
-        .filter((info) => info.selected_service_id === service.id)
-        .reduce((acc, { field_name, field_value }) => {
-          acc[field_name] = field_value;
-          return acc;
-        }, {}),
-    }));
+    // Obtener los valores adicionales para todas las instancias
+    let instanceValues = [];
+    if (serviceInstances.length > 0) {
+      const instanceIds = serviceInstances.map(inst => inst.id);
+      instanceValues = await executeQuery(
+        `SELECT siv.service_instance_id, siv.field_name, siv.field_value
+         FROM service_instance_values siv
+         WHERE siv.service_instance_id IN (${instanceIds.map(() => "?").join(", ")})`,
+        instanceIds
+      );
+    }
+
+    const servicesWithInstances = selectedServices.map((service) => {
+      // Obtener todas las instancias para este servicio
+      const instances = serviceInstances
+        .filter(inst => inst.selected_service_id === service.id)
+        .map(instance => {
+          // Obtener valores adicionales para esta instancia
+          const additionalInfo = instanceValues
+            .filter(val => val.service_instance_id === instance.id)
+            .reduce((acc, { field_name, field_value }) => {
+              acc[field_name] = field_value;
+              return acc;
+            }, {});
+          
+          return {
+            instanceNumber: instance.instance_number,
+            additionalInfo
+          };
+        })
+        .sort((a, b) => a.instanceNumber - b.instanceNumber);
+
+      return {
+        item: {
+          code: service.service_code,
+          name: service.service_name,
+        },
+        quantity: service.quantity,
+        instances: instances,
+        // Mantenemos additionalInfo por compatibilidad, usando la primera instancia si existe
+        additionalInfo: instances.length > 0 ? instances[0].additionalInfo : {}
+      };
+    });
 
     return {
       success: true,
