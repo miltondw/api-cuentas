@@ -1,41 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitud de Servicios de Ensayos de Laboratorio</title>
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
     <style>
         /* --- Variables de Color y Configuración de Página --- */
         :root {
-            --teal-principal: #008D97;
-            --texto-oscuro: #2c3e50;
+            --teal-principal: #008d97;
+            --texto-oscuro: #010101;
             --texto-claro: #ffffff;
             --borde-suave: #bdc3c7;
             --fondo-fila: #f8f9f9;
-            --fondo-seccion: #ecf0f1;
-        }        /* --- Estilos Generales y Preparación para PDF --- */        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            --fondo-seccion: #d9d9d9;
+        }
+
+        /* --- Estilos Generales y Preparación para PDF --- */
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
             font-size: 9pt;
             color: var(--texto-oscuro);
             margin: 0;
             padding: 0;
             -webkit-print-color-adjust: exact;
-            print-color-adjust: exact; /* Propiedad estándar para compatibilidad */
+            print-color-adjust: exact;
+            /* Propiedad estándar para compatibilidad */
             width: 100%;
             box-sizing: border-box;
-        }        .container {
-            padding: 10px 20px; /* Reducir los márgenes para aprovechar más espacio */
+        }
+
+        .container {
+            padding: 10px 20px;
+            /* Reducir los márgenes para aprovechar más espacio */
             max-width: 100%;
         }
-        
+
         main {
-            padding-top: 0; /* Sin padding adicional arriba */
-            padding-bottom: 60px; /* Espacio para firmas y pie de página */
-            overflow-x: hidden; /* Evitar desbordamiento horizontal */
-        }        /* --- Títulos de Sección --- */
+            padding-top: 0;
+            /* Sin padding adicional arriba */
+            padding-bottom: 60px;
+            /* Espacio para firmas y pie de página */
+            overflow-x: hidden;
+            /* Evitar desbordamiento horizontal */
+        }
+
+        /* --- Títulos de Sección --- */
         .section-title {
-            background-color: var(--teal-principal);
-            color: var(--texto-claro);
+            background-color: var(--fondo-seccion);
+            color: var(--texto-oscuro);
             font-size: 12pt;
             font-weight: bold;
             text-transform: uppercase;
@@ -46,21 +63,27 @@
             page-break-inside: avoid;
             page-break-after: avoid;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             letter-spacing: 1px;
-        }/* --- Estilos de Tabla General --- */
+        }
+
+        /* --- Estilos de Tabla General --- */
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 25px;
             page-break-inside: avoid;
         }
-        th, td {
+
+        th,
+        td {
             padding: 8px;
             text-align: left;
             vertical-align: top;
             border: 1px solid var(--borde-suave);
             font-size: 8pt;
+            text-align: center;
+            place-content: center;
         }
 
         /* --- Tabla de Información (Contacto y Servicio) --- */
@@ -68,6 +91,16 @@
             background-color: var(--fondo-seccion);
             font-weight: bold;
             width: 150px;
+        }
+
+        .info-table .header-green th {
+            background-color: var(--teal-principal);
+            color: var(--texto-claro);
+        }
+
+        .header-black th {
+            background-color: var(--texto-oscuro);
+            color: var(--texto-claro);
         }
 
         /* --- Tabla de Servicios por Categoría --- */
@@ -78,21 +111,27 @@
             text-align: center;
             vertical-align: middle;
         }
+
         .service-table td {
             font-size: 9pt;
             vertical-align: middle;
         }
+
         .service-table tr:nth-child(even) {
             background-color: var(--fondo-fila);
-        }        /* --- Tabla de Información Adicional --- */
+        }
+
+        /* --- Tabla de Información Adicional --- */
         .additional-info-table {
             margin: 5px 0;
             page-break-inside: avoid;
             width: 100%;
         }
+
         .additional-info-table tr {
             background-color: var(--fondo-fila);
         }
+
         .additional-info-table th.info-label {
             background-color: var(--fondo-seccion);
             font-weight: bold;
@@ -101,13 +140,16 @@
             width: 40%;
             padding: 8px 12px;
             vertical-align: middle;
-        }        .additional-info-table td.info-value {
+        }
+
+        .additional-info-table td.info-value {
             font-size: 8pt;
             text-align: left;
             padding: 8px 12px;
             vertical-align: middle;
         }
-          .instance-header {
+
+        .instance-header {
             background-color: #f2f6f9;
             padding: 5px 10px;
             margin-top: 5px;
@@ -117,30 +159,31 @@
             border-left: 3px solid var(--teal-principal);
             border-radius: 3px;
         }
-        
+
         /* --- Nuevo formato horizontal tipo Excel --- */
         .service-header {
-            background-color: var(--fondo-seccion);
+            background-color: var(--teal-principal);
             padding: 8px 12px;
             margin-top: 15px;
             font-size: 9pt;
             font-weight: bold;
             border-top-left-radius: 4px;
             border-top-right-radius: 4px;
-            border-bottom: 2px solid var(--teal-principal);
-            color: var(--texto-oscuro);
+            border-bottom: 2px solid var(--fondo-seccion);
+            color: var(--texto-claro);
             page-break-after: avoid;
+            text-transform: uppercase;
         }
-        
+
         .horizontal-info-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
-            font-size: 8pt;
+            font-size: 9pt;
             table-layout: fixed;
         }
-        
-        .horizontal-info-table th, 
+
+        .horizontal-info-table th,
         .horizontal-info-table td {
             padding: 6px;
             border: 1px solid var(--borde-suave);
@@ -151,24 +194,26 @@
             word-wrap: break-word;
             max-width: 150px;
         }
-        
+
         .horizontal-info-table .header-row {
             background-color: var(--fondo-seccion);
             font-weight: bold;
         }
-        
+
         .horizontal-info-table .header-row th {
             color: var(--texto-oscuro);
             font-size: 7pt;
             height: 40px;
             vertical-align: bottom;
         }
-        
+
         .horizontal-info-table .instance-number-cell {
             width: 60px;
             font-weight: bold;
             background-color: var(--fondo-fila);
-        }        /* --- Firmas --- */
+        }
+
+        /* --- Firmas --- */
         .signatures {
             display: flex;
             justify-content: space-around;
@@ -176,12 +221,14 @@
             padding: 0 20px;
             page-break-inside: avoid;
         }
+
         .signature-box {
             width: 40%;
             text-align: center;
             padding-top: 8px;
             border-top: 1px solid var(--texto-oscuro);
         }
+
         .signature-box p {
             margin: 3px 0;
             font-weight: bold;
@@ -200,15 +247,18 @@
             background-color: var(--teal-principal);
             padding: 10px 15px;
         }
+
         .footer .contact-info {
             display: flex;
             justify-content: center;
             gap: 15px;
             align-items: center;
         }
+
         .footer p {
             margin: 0;
         }
+
         .footer .company-info {
             margin-top: 5px;
             opacity: 0.9;
@@ -218,70 +268,69 @@
         .page-break {
             page-break-before: always;
         }
+
         .no-break {
             page-break-inside: avoid;
         }
+
+        .info-table .text-left {
+            text-align: left;
+        }
     </style>
-</head>
-<body>
-
-<div class="container">
-    <main>
-        <div class="section-title">Datos de Contacto</div>
-        <table class="info-table">
-            <tbody>
-                <tr>
-                    <th>SOLICITANTE</th>
-                    <td colspan="3">{{solicitante}}</td>
-                </tr>
-                <tr>
-                    <th>IDENTIFICACIÓN</th>
-                    <td>{{identificacion}}</td>
-                    <th>FECHA DE SOLICITUD</th>
-                    <td>{{fechaSolicitud}}</td>
-                </tr>
-                <tr>
-                    <th>CELULAR</th>
-                    <td>{{celular}}</td>
-                    <th>CORREO ELECTRÓNICO</th>
-                    <td>{{email}}</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="section-title">Información del Proyecto</div>
-        <table class="info-table">
-            <tbody>
-                <tr>
-                    <th>PROYECTO</th>
-                    <td>{{proyecto}}</td>
-                </tr>
-                <tr>
-                    <th>UBICACIÓN</th>
-                    <td>{{ubicacion}}</td>
-                </tr>
-                <tr>
-                    <th>DESCRIPCIÓN</th>
-                    <td>{{descripcion}}</td>
-                </tr>
-            </tbody>
-        </table>
-
-        {{serviciosContent}}
-    </main>
-
-    <div class="signatures">
-        <div class="signature-box">
-            <p>Firma del Solicitante</p>
-            <p>{{solicitante}}</p>
-            <p>{{identificacion}}</p>
-        </div>
-        <div class="signature-box">
-            <p>Firma INGEOCIMYC</p>
-            <p>Representante Autorizado</p>
+    <div class="container">
+        <main>
+            <div class="section-title">Datos de Contacto</div>
+            <table class="info-table">
+                <tbody>
+                    <tr class="header-green">
+                        <th>SOLICITANTE</th>
+                        <td class="text-left" colspan="3">{{solicitante}}</td>
+                    </tr>
+                    <tr class="header-black">
+                        <th>IDENTIFICACIÓN</th>
+                        <td>{{identificacion}}</td>
+                        <th>FECHA DE SOLICITUD</th>
+                        <td>{{fechaSolicitud}}</td>
+                    </tr>
+                    <tr>
+                        <th>CELULAR</th>
+                        <td>{{celular}}</td>
+                        <th>CORREO ELECTRÓNICO</th>
+                        <td>{{email}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="section-title">Información del Servicio</div>
+            <table class="info-table">
+                <tbody>
+                    <tr class="header-green">
+                        <th>PROYECTO</th>
+                        <td class="text-left">{{proyecto}}</td>
+                    </tr>
+                    <tr class="header-black">
+                        <th>UBICACIÓN</th>
+                        <td class="text-left">{{ubicacion}}</td>
+                    </tr>
+                    <tr>
+                        <th>DESCRIPCIÓN</th>
+                        <td class="text-left">{{descripcion}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {{serviciosContent}}
+        </main>
+        <div class="signatures">
+            <div class="signature-box">
+                <p>Firma del Solicitante</p>
+                <p>{{solicitante}}</p>
+                <p>{{identificacion}}</p>
+            </div>
+            <div class="signature-box">
+                <p>Firma INGEOCIMYC</p>
+                <p>Representante Autorizado</p>
+            </div>
         </div>
     </div>
-</div>
-
 </body>
+
 </html>

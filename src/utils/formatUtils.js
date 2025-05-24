@@ -78,95 +78,108 @@ export const generateServicesContent = (services) => {
       `;
 
       // Si hay instancias con información adicional, mostrarlas en formato horizontal
-      if (service.instances && Array.isArray(service.instances) && service.instances.length > 0) {
+      if (
+        service.instances &&
+        Array.isArray(service.instances) &&
+        service.instances.length > 0
+      ) {
         // Recolectar todas las claves únicas de todas las instancias
         const allKeys = new Set();
-        service.instances.forEach(instance => {
+        service.instances.forEach((instance) => {
           if (instance.additionalInfo) {
-            Object.keys(instance.additionalInfo).forEach(key => allKeys.add(key));
+            Object.keys(instance.additionalInfo).forEach((key) =>
+              allKeys.add(key)
+            );
           }
         });
-        
+
         // Si no hay claves, continuar con el siguiente servicio
         if (allKeys.size === 0) continue;
-        
+
         const keysArray = Array.from(allKeys).sort();
-        
+
         // Construir tabla horizontal
         serviciosContent += `
           <table class="horizontal-info-table">
             <thead>
               <tr class="header-row">
-                <th class="instance-number-cell">Instancia</th>
+                <th class="instance-number-cell">Número de Muestra</th>
         `;
-        
+
         // Encabezados (nombres de campos)
-        keysArray.forEach(key => {
+        keysArray.forEach((key) => {
           serviciosContent += `<th>${formatFieldName(key)}</th>`;
         });
-        
+
         serviciosContent += `
               </tr>
             </thead>
             <tbody>
         `;
-        
+
         // Filas de datos (valores)
         for (let i = 0; i < service.instances.length; i++) {
           const instance = service.instances[i];
-          
+
           serviciosContent += `
             <tr>
               <td class="instance-number-cell">${i + 1}</td>
           `;
-          
+
           // Valores para cada clave
-          keysArray.forEach(key => {
-            const value = instance.additionalInfo && instance.additionalInfo[key];
-            serviciosContent += `<td>${value ? formatValue(value) : 'N/A'}</td>`;
+          keysArray.forEach((key) => {
+            const value =
+              instance.additionalInfo && instance.additionalInfo[key];
+            serviciosContent += `<td>${
+              value ? formatValue(value) : "N/A"
+            }</td>`;
           });
-          
+
           serviciosContent += `</tr>`;
         }
-        
+
         serviciosContent += `
             </tbody>
           </table>
         `;
       }
       // Compatibilidad con el formato antiguo
-      else if (service.additionalInfo && Object.keys(service.additionalInfo).length > 0) {
+      else if (
+        service.additionalInfo &&
+        Object.keys(service.additionalInfo).length > 0
+      ) {
         const keys = Object.keys(service.additionalInfo).sort();
-        
+
         serviciosContent += `
           <table class="horizontal-info-table">
             <thead>
               <tr class="header-row">
         `;
-        
+
         // Encabezados (nombres de campos)
-        keys.forEach(key => {
+        keys.forEach((key) => {
           serviciosContent += `<th>${formatFieldName(key)}</th>`;
         });
-        
+
         serviciosContent += `
               </tr>
             </thead>
             <tbody>
               <tr>
         `;
-        
+
         // Valores para cada clave
-        keys.forEach(key => {
+        keys.forEach((key) => {
           const value = service.additionalInfo[key];
-          serviciosContent += `<td>${value ? formatValue(value) : 'N/A'}</td>`;
+          serviciosContent += `<td>${value ? formatValue(value) : "N/A"}</td>`;
         });
-        
+
         serviciosContent += `
               </tr>
             </tbody>
           </table>
-        `;      }
+        `;
+      }
     }
   }
 
