@@ -16,11 +16,13 @@ const __dirname = path.dirname(__filename);
  * Genera un PDF de solicitud de servicio.
  * @param {object} serviceRequest - Datos de la solicitud (solicitante, proyecto, etc.).
  * @param {Array<object>} selectedServices - Array de servicios seleccionados, cada uno con sus instancias.
- * @returns {Promise<string>} La ruta al archivo PDF generado.
+ * @param {boolean} returnBuffer - Si es true, devuelve el PDF como un buffer en lugar de guardarlo en disco.
+ * @returns {Promise<string|Buffer>} La ruta al archivo PDF generado o el buffer del PDF.
  */
 export const generateServiceRequestPDF = async (
   serviceRequest,
-  selectedServices
+  selectedServices,
+  returnBuffer = false
 ) => {
   try {
     if (!serviceRequest || !selectedServices) {
@@ -101,15 +103,18 @@ export const generateServiceRequestPDF = async (
 
     // --- 4. Generar el contenido de servicios utilizando la función utility ---
     const serviciosContent = generateServicesContent(selectedServices);
-    template = template.replace("{{serviciosContent}}", serviciosContent);
-
-    // --- 5. Generar el PDF usando Puppeteer ---
-    const pdfDir = path.join(__dirname, "..", "..", "uploads", "pdfs");
-    await fs.mkdir(pdfDir, { recursive: true });
-    const pdfPath = path.join(
-      pdfDir,
-      `solicitud-${serviceRequest.request_number || serviceRequest.id}.pdf`
-    );
+    template = template.replace("{{serviciosContent}}", serviciosContent);    // --- 5. Generar el PDF usando Puppeteer ---
+    let pdfPath = null;
+    
+    // Solo crear directorio y archivo si no estamos devolviendo un buffer
+    if (!returnBuffer) {
+      const pdfDir = path.join(__dirname, "..", "..", "uploads", "pdfs");
+      await fs.mkdir(pdfDir, { recursive: true });
+      pdfPath = path.join(
+        pdfDir,
+        `solicitud-${serviceRequest.request_number || serviceRequest.id}.pdf`
+      );
+    }
 
     const browser = await puppeteer.launch({
       headless: "new",
@@ -191,10 +196,7 @@ export const generateServiceRequestPDF = async (
     </div>
 
 </div>
-`;
-
-    await page.pdf({
-      path: pdfPath,
+`;    const pdfOptions = {
       format: "A4",
       margin: {
         top: "50mm", // Margen superior amplio para el encabezado
@@ -206,12 +208,24 @@ export const generateServiceRequestPDF = async (
       displayHeaderFooter: true,
       headerTemplate: headerHTML,
       footerTemplate: footerHTML,
-    });
+    };
+    
+    // Si se solicita un buffer, no establecemos path
+    if (!returnBuffer) {
+      pdfOptions.path = pdfPath;
+    }
+    
+    const pdfResult = await page.pdf(pdfOptions);
 
     await browser.close();
 
-    console.log(`PDF generado exitosamente en: ${pdfPath}`);
-    return pdfPath;
+    if (returnBuffer) {
+      console.log(`PDF generado exitosamente como buffer`);
+      return pdfResult; // Devuelve el buffer del PDF
+    } else {
+      console.log(`PDF generado exitosamente en: ${pdfPath}`);
+      return pdfPath; // Devuelve la ruta del archivo
+    }
   } catch (error) {
     console.error("Error al generar el PDF:", error);
     throw error;

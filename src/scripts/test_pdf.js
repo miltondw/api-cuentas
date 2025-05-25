@@ -196,12 +196,23 @@ const testData = {
 // Generar el PDF usando los datos de prueba
 async function runTest() {
   try {
-    console.log('Generando PDF de prueba...');
-    const pdfPath = await generateServiceRequestPDF(testData.formData, testData.selectedServices);
-    console.log(`PDF generado exitosamente en: ${pdfPath}`);
+    // 1. Probar generación de PDF y guardarlo en disco
+    console.log('Modo 1: Generando PDF de prueba y guardándolo en disco...');
+    const pdfPath = await generateServiceRequestPDF(testData.formData, testData.selectedServices, false);
+    console.log(`PDF guardado exitosamente en: ${pdfPath}`);
+    
+    // 2. Probar generación de PDF como buffer (para entorno de producción)
+    console.log('\nModo 2: Generando PDF como buffer (para producción)...');
+    const pdfBuffer = await generateServiceRequestPDF(testData.formData, testData.selectedServices, true);
+    console.log(`PDF generado como buffer. Tamaño: ${pdfBuffer.length} bytes`);
+    console.log('Este buffer podría enviarse directamente como respuesta HTTP sin guardarlo en disco.');
+    
+    console.log('\n✅ Prueba completada exitosamente. Ambos modos funcionan correctamente.');
   } catch (error) {
-    console.error('Error al generar el PDF de prueba:', error);
+    console.error('❌ Error al generar el PDF de prueba:', error);
   }
 }
 
-runTest();
+// Ejecutar la prueba
+console.log('Iniciando prueba de generación de PDF...');
+runTest().then(() => console.log('Prueba finalizada.'));

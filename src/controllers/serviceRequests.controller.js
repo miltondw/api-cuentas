@@ -97,24 +97,34 @@ export const createServiceRequest = async (req, res) => {
     }
 
     // Crear solicitud
-    const result = await createServiceRequestModel(req.body);
-
-    if (result.success && result.request_id) {
+    const result = await createServiceRequestModel(req.body);    if (result.success && result.request_id) {
       try {
         // Obtener detalles completos para generar el PDF
         const requestDetails = await getServiceRequestModel(result.request_id);
         if (requestDetails.success) {
-          // Generar PDF
-          const pdfPath = await generateServiceRequestPDF(
-            requestDetails.request,
-            requestDetails.selectedServices
-          );
+          // Determinar si usamos buffer o archivo basado en el entorno
+          const useBuffer = process.env.NODE_ENV === 'production';
           
-          // Añadir información del PDF a la respuesta
-          result.pdf = {
-            generated: true,
-            path: pdfPath
-          };
+          if (useBuffer) {
+            // En producción, no generamos el PDF ahora, lo haremos bajo demanda
+            result.pdf = {
+              generated: false,
+              message: "El PDF será generado bajo demanda"
+            };
+          } else {
+            // En desarrollo, generamos y guardamos el PDF
+            const pdfPath = await generateServiceRequestPDF(
+              requestDetails.request,
+              requestDetails.selectedServices,
+              false // No retornar buffer
+            );
+            
+            // Añadir información del PDF a la respuesta
+            result.pdf = {
+              generated: true,
+              path: pdfPath
+            };
+          }
         }
       } catch (pdfError) {
         console.error("Error generando PDF:", pdfError);
@@ -194,21 +204,34 @@ export const updateServiceRequest = async (req, res) => {
     }
 
     const result = await updateServiceRequestModel(id, req.body);
-    
-    // Regenerar PDF si la actualización fue exitosa
+      // Regenerar PDF si la actualización fue exitosa
     if (result.success) {
       try {
         const requestDetails = await getServiceRequestModel(id);
         if (requestDetails.success) {
-          // Regenerar el PDF
-          const pdfPath = await generateServiceRequestPDF(
-            requestDetails.request,
-            requestDetails.selectedServices
-          );
-          result.pdf = {
-            generated: true,
-            path: pdfPath
-          };
+          // Determinar si usamos buffer o archivo basado en el entorno
+          const useBuffer = process.env.NODE_ENV === 'production';
+          
+          if (useBuffer) {
+            // En producción, no generamos el PDF ahora, lo haremos bajo demanda
+            result.pdf = {
+              generated: false,
+              message: "El PDF será generado bajo demanda"
+            };
+          } else {
+            // En desarrollo, generamos y guardamos el PDF
+            const pdfPath = await generateServiceRequestPDF(
+              requestDetails.request,
+              requestDetails.selectedServices,
+              false // No retornar buffer
+            );
+            
+            // Añadir información del PDF a la respuesta
+            result.pdf = {
+              generated: true,
+              path: pdfPath
+            };
+          }
         }
       } catch (pdfError) {
         console.error("Error regenerando PDF:", pdfError);
@@ -276,23 +299,46 @@ export const generateServiceRequestPdf = async (req, res) => {
       });
     }
 
-    // Generar PDF
-    const pdfPath = await generateServiceRequestPDF(
-      requestDetails.request,
-      requestDetails.selectedServices
-    );
+    // Variable para almacenar si debemos usar el buffer (para entornos como Render)
+    // Esta variable puede ser controlada por una variable de entorno
+    const useBuffer = process.env.NODE_ENV === 'production' || req.query.buffer === 'true';
 
-    // Verificar que el archivo existe
-    if (!fs.existsSync(pdfPath)) {
-      return res.status(500).json({
-        success: false,
-        message: "Error al generar el PDF de la solicitud"
-      });
+    if (useBuffer) {
+      // Generar PDF como buffer (opción 3)
+      const pdfBuffer = await generateServiceRequestPDF(
+        requestDetails.request,
+        requestDetails.selectedServices,
+        true // returnBuffer = true
+      );
+
+      // Configurar encabezados para la descarga del PDF
+      const fileName = `Solicitud-${requestDetails.request.request_number || id}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      // Enviar el buffer directamente como respuesta
+      return res.send(pdfBuffer);
+    } else {
+      // Comportamiento anterior para entorno de desarrollo (guardar en disco)
+      const pdfPath = await generateServiceRequestPDF(
+        requestDetails.request,
+        requestDetails.selectedServices,
+        false // returnBuffer = false (comportamiento normal)
+      );
+
+      // Verificar que el archivo existe
+      if (!fs.existsSync(pdfPath)) {
+        return res.status(500).json({
+          success: false,
+          message: "Error al generar el PDF de la solicitud"
+        });
+      }
+
+      // Enviar el archivo como respuesta para descarga
+      const fileName = `Solicitud-${requestDetails.request.request_number || id}.pdf`;
+      return res.download(pdfPath, fileName);
     }
-
-    // Enviar el archivo como respuesta para descarga
-    const fileName = `Solicitud-${requestDetails.request.request_number || id}.pdf`;
-    res.download(pdfPath, fileName);
   } catch (error) {
     handleError(res, error, "Error al generar PDF");
   }
