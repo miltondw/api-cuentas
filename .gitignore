@@ -1,6 +1,9 @@
 # Node.js
 /node_modules/
 
+# Puppeteer cache (Chrome binaries)
+.cache/
+
 # Archivos de entorno
 .env
 .todo

@@ -297,9 +297,7 @@ export const generateServiceRequestPdf = async (req, res) => {
         success: false,
         message: "Solicitud no encontrada"
       });
-    }
-
-    // Variable para almacenar si debemos usar el buffer (para entornos como Render)
+    }    // Variable para almacenar si debemos usar el buffer (para entornos como Render)
     // Esta variable puede ser controlada por una variable de entorno
     const useBuffer = process.env.NODE_ENV === 'production' || req.query.buffer === 'true';
 
@@ -313,12 +311,32 @@ export const generateServiceRequestPdf = async (req, res) => {
 
       // Configurar encabezados para la descarga del PDF
       const fileName = `Solicitud-${requestDetails.request.request_number || id}.pdf`;
+      
+      // Asegurar que el buffer es válido
+      if (!Buffer.isBuffer(pdfBuffer)) {
+        console.error('Error: El PDF generado no es un buffer válido:', typeof pdfBuffer);
+        throw new Error('El PDF generado no es un buffer válido');
+      }
+      
+      if (pdfBuffer.length === 0) {
+        console.error('Error: El PDF generado está vacío');
+        throw new Error('El PDF generado está vacío');
+      }
+      
+      console.log(`Enviando PDF como buffer. Tamaño: ${pdfBuffer.length} bytes`);
+      
+      // Configurar encabezados HTTP correctos para archivo binario
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.setHeader('Content-Length', pdfBuffer.length);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Accept-Ranges', 'bytes');
       
-      // Enviar el buffer directamente como respuesta
-      return res.send(pdfBuffer);
+      // Enviar el buffer directamente como respuesta binaria
+      res.write(pdfBuffer, 'binary');
+      return res.end();
     } else {
       // Comportamiento anterior para entorno de desarrollo (guardar en disco)
       const pdfPath = await generateServiceRequestPDF(

@@ -217,11 +217,20 @@ export const generateServiceRequestPDF = async (
     
     const pdfResult = await page.pdf(pdfOptions);
 
-    await browser.close();
-
-    if (returnBuffer) {
-      console.log(`PDF generado exitosamente como buffer`);
-      return pdfResult; // Devuelve el buffer del PDF
+    await browser.close();    if (returnBuffer) {
+      console.log(`PDF generado exitosamente como buffer. Tamaño: ${pdfResult.length} bytes`);
+      
+      // Verificar que el resultado sea válido (puede ser Buffer o Uint8Array)
+      if (!pdfResult || pdfResult.length === 0) {
+        throw new Error('Error: El PDF generado está vacío o es nulo');
+      }
+      
+      // Convertir a Buffer si es necesario
+      const buffer = Buffer.isBuffer(pdfResult) ? pdfResult : Buffer.from(pdfResult);
+      
+      console.log(`Buffer final - Tamaño: ${buffer.length} bytes, Tipo: ${buffer.constructor.name}`);
+      
+      return buffer; // Devuelve el buffer del PDF
     } else {
       console.log(`PDF generado exitosamente en: ${pdfPath}`);
       return pdfPath; // Devuelve la ruta del archivo
