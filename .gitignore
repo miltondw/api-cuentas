@@ -1,6 +1,7 @@
 # Node.js
 /node_modules/
 
+/nest-migration/node_modules/
 # Puppeteer cache (Chrome binaries)
 .cache/
 

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Servicios de Ensayos de Laboratorio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+    <style>
+        /* --- Variables de Color y Configuración de Página --- */
+        :root {
+            --teal-principal: #008d97;
+            --texto-oscuro: #010101;
+            --texto-claro: #ffffff;
+            --borde-suave: #bdc3c7;
+            --fondo-fila: #f8f9f9;
+            --fondo-seccion: #d9d9d9;
+        }
+
+        /* --- Estilos Generales y Preparación para PDF --- */
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            font-size: 9pt;
+            color: var(--texto-oscuro);
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .container {
+            padding: 10px 20px;
+            max-width: 100%;
+        }
+
+        main {
+            padding-top: 0;
+            padding-bottom: 60px;
+            overflow-x: hidden;
+        }
+
+        /* --- Títulos de Sección --- */
+        .section-title {
+            background-color: var(--teal-principal);
+            color: var(--texto-claro);
+            padding: 8px 12px;
+            margin: 12px 0 8px 0;
+            font-size: 10pt;
+            font-weight: bold;
+            border-radius: 3px;
+            page-break-after: avoid;
+            text-transform: uppercase;
+        }
+
+        /* --- Tablas de Información General --- */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+
+        .info-table th,
+        .info-table td {
+            padding: 8px 12px;
+            border: 1px solid var(--borde-suave);
+            text-align: left;
+            vertical-align: middle;
+            font-size: 9pt;
+        }
+
+        .info-table th {
+            background-color: var(--fondo-seccion);
+            font-weight: bold;
+            text-align: center;
+            width: 25%;
+        }
+
+        .info-table .header-green th {
+            background-color: var(--teal-principal);
+            color: var(--texto-claro);
+        }
+
+        .info-table .header-black th {
+            background-color: var(--texto-oscuro);
+            color: var(--texto-claro);
+        }
+
+        /* --- Tabla de Servicios --- */
+        .services-section {
+            margin-top: 20px;
+        }
+
+        .service-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 9pt;
+        }
+
+        .service-table th {
+            background-color: var(--fondo-seccion);
+            font-weight: bold;
+            font-size: 9pt;
+            text-align: center;
+            vertical-align: middle;
+            padding: 10px 8px;
+            border: 1px solid var(--borde-suave);
+        }
+
+        .service-table td {
+            font-size: 9pt;
+            vertical-align: middle;
+            padding: 8px;
+            border: 1px solid var(--borde-suave);
+        }
+
+        .service-table tr:nth-child(even) {
+            background-color: var(--fondo-fila);
+        }
+
+        /* --- Firmas --- */
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            page-break-inside: avoid;
+        }
+
+        .signature-box {
+            width: 45%;
+            text-align: center;
+            border: 1px solid var(--borde-suave);
+            padding: 20px 10px;
+            background-color: var(--fondo-fila);
+        }
+
+        .signature-box p {
+            margin: 5px 0;
+            font-size: 9pt;
+        }
+
+        .signature-box p:first-child {
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* --- Utilidades --- */
+        .page-break {
+            page-break-before: always;
+        }
+
+        .no-break {
+            page-break-inside: avoid;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+    </style>
+
+    <div class="container">
+        <main>
+            <!-- Datos de Contacto -->
+            <div class="section-title">Datos de Contacto</div>
+            <table class="info-table">
+                <tbody>
+                    <tr class="header-green">
+                        <th>SOLICITANTE</th>
+                        <td class="text-left" colspan="3">{{solicitante}}</td>
+                    </tr>
+                    <tr class="header-black">
+                        <th>IDENTIFICACIÓN</th>
+                        <td>{{identificacion}}</td>
+                        <th>FECHA DE SOLICITUD</th>
+                        <td>{{fechaSolicitud}}</td>
+                    </tr>
+                    <tr>
+                        <th>CELULAR</th>
+                        <td>{{celular}}</td>
+                        <th>CORREO ELECTRÓNICO</th>
+                        <td>{{email}}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Información del Servicio -->
+            <div class="section-title">Información del Servicio</div>
+            <table class="info-table">
+                <tbody>
+                    <tr class="header-green">
+                        <th>PROYECTO</th>
+                        <td class="text-left">{{proyecto}}</td>
+                    </tr>
+                    <tr class="header-black">
+                        <th>UBICACIÓN</th>
+                        <td class="text-left">{{ubicacion}}</td>
+                    </tr>
+                    <tr>
+                        <th>DESCRIPCIÓN</th>
+                        <td class="text-left">{{descripcion}}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Servicios Solicitados -->
+            <div class="section-title">Servicios Solicitados</div>
+            <table class="service-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">No.</th>
+                        <th style="width: 60%;">Descripción del Servicio</th>
+                        <th style="width: 10%;">Cantidad</th>
+                        <th style="width: 25%;">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{serviciosContent}}
+                </tbody>
+            </table>
+        </main>
+
+        <!-- Firmas -->
+        <div class="signatures">
+            <div class="signature-box">
+                <p>Firma del Solicitante</p>
+                <p>{{solicitante}}</p>
+                <p>{{identificacion}}</p>
+            </div>
+            <div class="signature-box">
+                <p>Firma INGEOCIMYC</p>
+                <p>Representante Autorizado</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
