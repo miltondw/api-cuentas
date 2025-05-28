@@ -16,7 +16,7 @@ async function migrateData() {
 
     // Ejecutar el script SQL de estructura si es necesario
     const sqlPath = path.join(__dirname, '../../scripts/cliente.sql');
-    
+
     try {
       await fs.access(sqlPath);
       console.log('📂 Ejecutando script de estructura de base de datos...');

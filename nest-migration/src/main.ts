@@ -19,10 +19,10 @@ async function bootstrap() {
 
   // CORS configuration
   const corsOrigins = configService.get('CORS_ORIGINS');
-  const allowedOrigins = corsOrigins 
+  const allowedOrigins = corsOrigins
     ? corsOrigins.split(',').map(origin => origin.trim())
     : [configService.get('FRONTEND_URL') || 'http://localhost:5173'];
-    
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
