@@ -22,13 +22,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
   async validate(payload: any) {
-    // Use email from payload instead of sub for user lookup
-    const user = await this.authService.validateUser(payload.email);
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    };
+    try {
+      // For debugging
+      /*    console.log('JWT payload:', JSON.stringify(payload));
+      
+      if (!payload.email) {
+        console.error('JWT payload missing email field');
+        return null;
+      } */
+
+      // Use email from payload instead of sub for user lookup
+      const user = await this.authService.validateUser(payload.email);
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      };
+    } catch (error) {
+      console.error('JWT validation error:', error.message);
+      return null; // This will trigger unauthorized response
+    }
   }
 }

@@ -8,10 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   Query,
-  HttpStatus,
-  HttpCode,
   UseGuards,
-  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,27 +22,27 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
-import { ServiceRequestsService } from './service-requests.service';
+import { ServiceRequestsService } from '../service-requests/service-requests.service';
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
-} from './dto/service-request.dto';
+} from '../service-requests/dto/service-request.dto';
 import {
   ServiceRequest,
   ServiceRequestStatus,
-} from './entities/service-request.entity';
+} from '../service-requests/entities/service-request.entity';
 
-@ApiTags('Service Requests')
-@Controller('service-requests')
+@ApiTags('Client Service Requests')
+@Controller('client/service-requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
-export class ServiceRequestsController {
+export class ClientServiceRequestsController {
   constructor(
     private readonly serviceRequestsService: ServiceRequestsService,
   ) {}
+
   @Post()
   @Public() // Permitir que los clientes creen solicitudes sin autenticación
-  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Crear una nueva solicitud de servicio (Acceso público)',
   })
@@ -54,36 +51,26 @@ export class ServiceRequestsController {
     description: 'Solicitud de servicio creada exitosamente',
     type: ServiceRequest,
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Datos de entrada inválidos',
-  })
   async create(
     @Body() createServiceRequestDto: CreateServiceRequestDto,
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.create(createServiceRequestDto);
   }  @Get()
-  @Roles('admin') // Only admin can access this endpoint
-  @ApiOperation({ summary: 'Obtener todas las solicitudes de servicio (Admin)' })
+  @Roles('admin', 'client', 'lab')
+  @ApiOperation({ summary: 'Obtener todas las solicitudes de servicio' })
   @ApiQuery({
     name: 'status',
     required: false,
     enum: ServiceRequestStatus,
     description: 'Filtrar por estado de la solicitud',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de solicitudes de servicio',
-    type: [ServiceRequest],
-  })
-  async findAll(@Query('status') status?: string): Promise<ServiceRequest[]> {
-    const logger = new Logger('ServiceRequestsController');
-    logger.log('Admin accessing service-requests findAll endpoint');
+  })  async findAll(@Query('status') status?: string): Promise<ServiceRequest[]> {
+    console.log('Accessing client/service-requests findAll endpoint');
     if (status) {
       return this.serviceRequestsService.findByStatus(status);
     }
     return this.serviceRequestsService.findAll();
   }
+
   @Get(':id')
   @Roles('admin', 'client', 'lab')
   @ApiOperation({ summary: 'Obtener una solicitud de servicio por ID' })
@@ -92,36 +79,21 @@ export class ServiceRequestsController {
     description: 'ID de la solicitud de servicio',
     type: 'number',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Solicitud de servicio encontrada',
-    type: ServiceRequest,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Solicitud de servicio no encontrada',
-  })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.findOne(id);
   }
+
   @Patch(':id')
-  @Roles('admin', 'lab')
-  @ApiOperation({ summary: 'Actualizar una solicitud de servicio' })
+  @Roles('admin', 'client', 'lab')
+  @ApiOperation({
+    summary: 'Actualizar parcialmente una solicitud de servicio',
+  })
   @ApiParam({
     name: 'id',
     description: 'ID de la solicitud de servicio',
     type: 'number',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Solicitud de servicio actualizada exitosamente',
-    type: ServiceRequest,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Solicitud de servicio no encontrada',
   })
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -129,22 +101,14 @@ export class ServiceRequestsController {
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.update(id, updateServiceRequestDto);
   }
+
   @Delete(':id')
-  @Roles('admin')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Eliminar una solicitud de servicio (Admin)' })
+  @Roles('admin', 'lab')
+  @ApiOperation({ summary: 'Eliminar una solicitud de servicio' })
   @ApiParam({
     name: 'id',
     description: 'ID de la solicitud de servicio',
     type: 'number',
-  })
-  @ApiResponse({
-    status: 204,
-    description: 'Solicitud de servicio eliminada exitosamente',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Solicitud de servicio no encontrada',
   })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.serviceRequestsService.remove(id);

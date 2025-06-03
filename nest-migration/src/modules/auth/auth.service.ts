@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,6 +19,22 @@ export class AuthService {
     private userRepository: Repository<User>,
     private jwtService: JwtService,
   ) {}
+  // Add validateUser method that's required by the JWT strategy
+  async validateUser(email: string): Promise<any> {
+    console.log(`Validating user with email: ${email}`);
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      console.error(`User with email ${email} not found`);
+      throw new NotFoundException(`User not found`);
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+  }
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
@@ -35,13 +52,14 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
-    }    // Generar token JWT
-    const payload = { 
-      sub: user.id, 
+    } // Generar token JWT
+    const payload = {
+      sub: user.id,
       userId: user.id,
-      email: user.email, 
-      role: user.role 
+      email: user.email,
+      role: user.role,
     };
+    console.log('Login payload:', JSON.stringify(payload));
     const accessToken = this.jwtService.sign(payload);
 
     return {
@@ -52,18 +70,26 @@ export class AuthService {
         role: user.role,
       },
     };
-  }  async register(registerDto: RegisterDto) {
-    const { email, password, name, firstName, lastName, role, jwt2 } = registerDto;
+  }
+  async register(registerDto: RegisterDto) {
+    const { email, password, name, firstName, lastName, role, jwt2 } =
+      registerDto;
 
     // Construct the full name from firstName + lastName or use name directly
-    const fullName = name || (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || 'User');
-      // Determine the role - default to USUARIO
+    const fullName =
+      name ||
+      (firstName && lastName
+        ? `${firstName} ${lastName}`
+        : firstName || lastName || 'User');
+    // Determine the role - default to USUARIO
     const userRole = role || UserRole.CLIENT;
 
     // Validate admin registration
     if (userRole === UserRole.ADMIN) {
       if (!jwt2 || jwt2 !== process.env.JWT_SECRET_2) {
-        throw new ForbiddenException('Código de autorización inválido para crear cuenta de administrador');
+        throw new ForbiddenException(
+          'Código de autorización inválido para crear cuenta de administrador',
+        );
       }
     }
 
@@ -77,7 +103,7 @@ export class AuthService {
     }
 
     // Hash de la contraseña
-    const hashedPassword = await bcrypt.hash(password, 12);    // Crear nuevo usuario
+    const hashedPassword = await bcrypt.hash(password, 12); // Crear nuevo usuario
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
@@ -85,7 +111,7 @@ export class AuthService {
       role: userRole,
     });
 
-    const savedUser = await this.userRepository.save(user);    // Generar token JWT
+    const savedUser = await this.userRepository.save(user); // Generar token JWT
     const payload = {
       sub: savedUser.id,
       userId: savedUser.id,
@@ -102,17 +128,5 @@ export class AuthService {
         role: savedUser.role,
       },
     };
-  }
-
-  async validateUser(userEmail: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { email: userEmail },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Usuario no válido');
-    }
-
-    return user;
   }
 }
