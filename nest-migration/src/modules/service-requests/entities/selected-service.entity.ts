@@ -5,9 +5,12 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { ServiceRequest } from './service-request.entity';
 import { Service } from '../../services/entities/service.entity';
+import { ServiceInstance } from './service-instance.entity';
+import { ServiceAdditionalValue } from '../../services/entities/service-additional-value.entity';
 
 @Entity('selected_services')
 export class SelectedService {
@@ -24,17 +27,29 @@ export class SelectedService {
   quantity: number;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  created_at: Date;
 
   @ManyToOne(() => ServiceRequest, request => request.selectedServices, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'request_id' })
   request: ServiceRequest;
-
   @ManyToOne(() => Service, service => service.selectedServices, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'service_id' })
   service: Service;
+  @OneToMany(
+    () => ServiceInstance,
+    serviceInstance => serviceInstance.selectedService,
+    {
+      cascade: true,
+    },
+  )
+  serviceInstances: ServiceInstance[];
+
+  @OneToMany(() => ServiceAdditionalValue, value => value.selectedService, {
+    cascade: true,
+  })
+  additionalValues: ServiceAdditionalValue[];
 }

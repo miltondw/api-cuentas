@@ -161,11 +161,10 @@ export class UpdateServiceRequestDto {
   @IsString()
   @IsNotEmpty()
   description?: string;
-
   @ApiPropertyOptional({
     description: 'Estado de la solicitud',
     enum: ServiceRequestStatus,
-    example: ServiceRequestStatus.APPROVED,
+    example: ServiceRequestStatus.COMPLETADO,
   })
   @IsOptional()
   @IsEnum(ServiceRequestStatus)

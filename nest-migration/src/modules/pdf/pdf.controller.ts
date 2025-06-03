@@ -22,6 +22,7 @@ import { PDFService, PDFGenerationOptions } from './pdf.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('PDF Generation')
 @ApiBearerAuth()
@@ -29,10 +30,9 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @Controller('pdf')
 export class PDFController {
   constructor(private readonly pdfService: PDFService) {}
-
   @Get('service-request/:id')
-  @Roles('admin', 'user', 'viewer')
-  @ApiOperation({ summary: 'Generate PDF for service request' })
+  @Public() // Hacer este endpoint público para permitir descarga de PDFs sin autenticación
+  @ApiOperation({ summary: 'Generate PDF for service request (Public access)' })
   @ApiParam({ name: 'id', description: 'Service Request ID', type: 'number' })
   @ApiQuery({
     name: 'buffer',
@@ -48,7 +48,7 @@ export class PDFController {
   })
   @ApiResponse({
     status: 200,
-    description: 'PDF generated successfully',
+    description: 'PDF generado exitosamente y disponible públicamente',
     content: {
       'application/pdf': {
         schema: {
@@ -59,8 +59,6 @@ export class PDFController {
     },
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Service request not found' })
   async generateServiceRequestPDF(
     @Param('id', ParseIntPipe) id: number,

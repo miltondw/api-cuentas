@@ -33,14 +33,14 @@ export class ProjectsService {
 
   async findAll(): Promise<Project[]> {
     return this.projectRepository.find({
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
   }
 
   async findByStatus(status: ProjectStatus): Promise<Project[]> {
     return this.projectRepository.find({
       where: { estado: status },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
   }
 

@@ -88,7 +88,7 @@ export class ServiceRequestsService {
         'selectedServices.service',
         'selectedServices.service.category',
       ],
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
   }
 
@@ -136,7 +136,7 @@ export class ServiceRequestsService {
         'selectedServices.service',
         'selectedServices.service.category',
       ],
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
   }
 }

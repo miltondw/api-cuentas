@@ -25,14 +25,19 @@ export class ApiquesService {
     await queryRunner.startTransaction();
 
     try {
-      // Validate project exists (this would be done by foreign key constraint)
-
-      // Create apique
-      const apique = this.apiqueRepository.create({
-        ...createApiqueDto,
+      // Validate project exists (this would be done by foreign key constraint)      // Create apique
+      const apiqueData = {
+        proyectoId: createApiqueDto.proyecto_id,
+        apique: createApiqueDto.apique,
+        location: createApiqueDto.location,
+        depth: createApiqueDto.depth,
         date: createApiqueDto.date ? new Date(createApiqueDto.date) : null,
-      });
+        cbrUnaltered: createApiqueDto.cbr_unaltered,
+        depthTomo: createApiqueDto.depth_tomo,
+        molde: createApiqueDto.molde,
+      };
 
+      const apique = this.apiqueRepository.create(apiqueData);
       const savedApique = await queryRunner.manager.save(apique);
 
       // Create layers if provided
@@ -40,7 +45,7 @@ export class ApiquesService {
         const layers = createApiqueDto.layers.map(layerData =>
           this.layerRepository.create({
             ...layerData,
-            apique_id: savedApique.apique_id,
+            apiqueId: savedApique.id,
           }),
         );
 
@@ -50,7 +55,7 @@ export class ApiquesService {
       await queryRunner.commitTransaction();
 
       // Return apique with layers
-      return this.findOne(savedApique.proyecto_id, savedApique.apique_id);
+      return this.findOne(savedApique.proyectoId, savedApique.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -58,27 +63,23 @@ export class ApiquesService {
       await queryRunner.release();
     }
   }
-
   async findAllByProject(projectId: number): Promise<Apique[]> {
     return this.apiqueRepository.find({
-      where: { proyecto_id: projectId },
-      relations: ['layers'],
-      order: {
+      where: { proyectoId: projectId },
+      relations: ['layers'],      order: {
         apique: 'ASC',
-        layers: { layer_number: 'ASC' },
+        layers: { layerNumber: 'ASC' },
       },
     });
   }
-
   async findOne(projectId: number, apiqueId: number): Promise<Apique> {
     const apique = await this.apiqueRepository.findOne({
       where: {
-        proyecto_id: projectId,
-        apique_id: apiqueId,
+        proyectoId: projectId,
+        id: apiqueId,
       },
-      relations: ['layers'],
-      order: {
-        layers: { layer_number: 'ASC' },
+      relations: ['layers'],      order: {
+        layers: { layerNumber: 'ASC' },
       },
     });
 
@@ -103,43 +104,42 @@ export class ApiquesService {
     try {
       // Check if apique exists
       const existingApique = await this.apiqueRepository.findOne({
-        where: { proyecto_id: projectId, apique_id: apiqueId },
+        where: { proyectoId: projectId, id: apiqueId },
       });
 
       if (!existingApique) {
         throw new NotFoundException(
           `Apique with ID ${apiqueId} not found in project ${projectId}`,
         );
-      }
-
-      // Update apique data
+      }      // Update apique data
       const updateData = {
-        ...updateApiqueDto,
+        proyectoId: updateApiqueDto.proyecto_id || existingApique.proyectoId,
+        apique: updateApiqueDto.apique,
+        location: updateApiqueDto.location,
+        depth: updateApiqueDto.depth,
         date: updateApiqueDto.date
           ? new Date(updateApiqueDto.date)
-          : existingApique.date,
+          : existingApique.date,        cbrUnaltered: updateApiqueDto.cbr_unaltered,
+        depthTomo: updateApiqueDto.depth_tomo,
+        molde: updateApiqueDto.molde,
       };
-
-      // Remove layers from update data as they need special handling
-      const { layers, ...apiqueUpdateData } = updateData;
 
       await queryRunner.manager.update(
         Apique,
-        { proyecto_id: projectId, apique_id: apiqueId },
-        apiqueUpdateData,
-      );
+        { proyectoId: projectId, id: apiqueId },
+        updateData,
+      );      // Extract layers from updateApiqueDto
+      const layersToUpdate = updateApiqueDto.layers;
 
       // Handle layers update if provided
-      if (layers !== undefined) {
+      if (layersToUpdate !== undefined) {
         // Delete existing layers
-        await queryRunner.manager.delete(Layer, { apique_id: apiqueId });
-
-        // Create new layers
-        if (layers.length > 0) {
-          const newLayers = layers.map(layerData =>
+        await queryRunner.manager.delete(Layer, { apiqueId: apiqueId });        // Create new layers
+        if (layersToUpdate.length > 0) {
+          const newLayers = layersToUpdate.map(layerData =>
             this.layerRepository.create({
               ...layerData,
-              apique_id: apiqueId,
+              apiqueId: apiqueId,
             }),
           );
 
@@ -167,7 +167,7 @@ export class ApiquesService {
     try {
       // Check if apique exists
       const existingApique = await this.apiqueRepository.findOne({
-        where: { proyecto_id: projectId, apique_id: apiqueId },
+        where: { proyectoId: projectId, id: apiqueId },
       });
 
       if (!existingApique) {
@@ -177,12 +177,12 @@ export class ApiquesService {
       }
 
       // Delete layers first (cascade should handle this, but being explicit)
-      await queryRunner.manager.delete(Layer, { apique_id: apiqueId });
+      await queryRunner.manager.delete(Layer, { apiqueId: apiqueId });
 
       // Delete apique
       await queryRunner.manager.delete(Apique, {
-        proyecto_id: projectId,
-        apique_id: apiqueId,
+        proyectoId: projectId,
+        id: apiqueId,
       });
 
       await queryRunner.commitTransaction();
@@ -230,7 +230,7 @@ export class ApiquesService {
             .reduce((sum, a) => sum + Number(a.depth), 0) /
           apiques.filter(a => a.depth).length
         : 0;
-    const cbrTests = apiques.filter(a => a.cbr_unaltered).length;
+    const cbrTests = apiques.filter(a => a.cbrUnaltered).length;
 
     return {
       totalApiques,

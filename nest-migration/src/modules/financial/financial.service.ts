@@ -22,14 +22,16 @@ export class FinancialService {
     @InjectRepository(FinancialSummary)
     private financialSummaryRepository: Repository<FinancialSummary>,
   ) {}
-
   // Company Expenses Methods
   async createCompanyExpense(
     createDto: CreateCompanyExpenseDto,
   ): Promise<CompanyExpense> {
+    // Convert string to Date for database comparison
+    const mesDate = new Date(`${createDto.mes}-01`);
+    
     // Check if expense for this month already exists
     const existingExpense = await this.companyExpenseRepository.findOne({
-      where: { mes: createDto.mes },
+      where: { mes: mesDate },
     });
 
     if (existingExpense) {
@@ -38,7 +40,10 @@ export class FinancialService {
       );
     }
 
-    const expense = this.companyExpenseRepository.create(createDto);
+    const expense = this.companyExpenseRepository.create({
+      ...createDto,
+      mes: mesDate,
+    });
     return this.companyExpenseRepository.save(expense);
   }
 
@@ -47,17 +52,24 @@ export class FinancialService {
       order: { mes: 'DESC' },
     });
   }
-
   async findCompanyExpensesByYear(year: string): Promise<CompanyExpense[]> {
-    return this.companyExpenseRepository.find({
-      where: { mes: Like(`${year}%`) },
-      order: { mes: 'ASC' },
-    });
+    // Create date range for the year
+    const startDate = new Date(`${year}-01-01`);
+    const endDate = new Date(`${year}-12-31`);
+    
+    return this.companyExpenseRepository
+      .createQueryBuilder('expense')
+      .where('expense.mes >= :startDate', { startDate })
+      .andWhere('expense.mes <= :endDate', { endDate })
+      .orderBy('expense.mes', 'ASC')
+      .getMany();
   }
-
   async findCompanyExpenseByMonth(mes: string): Promise<CompanyExpense> {
+    // Convert string to Date for database comparison
+    const mesDate = new Date(`${mes}-01`);
+    
     const expense = await this.companyExpenseRepository.findOne({
-      where: { mes },
+      where: { mes: mesDate },
     });
 
     if (!expense) {
@@ -77,18 +89,22 @@ export class FinancialService {
 
     if (!expense) {
       throw new NotFoundException(`Company expense with ID ${id} not found`);
-    }
+    }    // If month is being updated, check for duplicates
+    if (updateDto.mes) {
+      // Convert string to Date for comparison
+      const updateMesDate = new Date(`${updateDto.mes}-01`);
+      const formattedExistingMes = expense.mes.toISOString().substring(0, 7); // Format: YYYY-MM
+      
+      if (updateDto.mes !== formattedExistingMes) {
+        const existingExpense = await this.companyExpenseRepository.findOne({
+          where: { mes: updateMesDate },
+        });
 
-    // If month is being updated, check for duplicates
-    if (updateDto.mes && updateDto.mes !== expense.mes) {
-      const existingExpense = await this.companyExpenseRepository.findOne({
-        where: { mes: updateDto.mes },
-      });
-
-      if (existingExpense) {
-        throw new BadRequestException(
-          `Company expense for month ${updateDto.mes} already exists`,
-        );
+        if (existingExpense) {
+          throw new BadRequestException(
+            `Company expense for month ${updateDto.mes} already exists`,
+          );
+        }
       }
     }
 
@@ -185,12 +201,10 @@ export class FinancialService {
           `Financial summary for month ${updateDto.mes} already exists`,
         );
       }
-    }
-
-    // Recalculate profit margin if income or profit changes
+    }    // Recalculate profit margin if income or profit changes
     if (updateDto.ingresos_totales || updateDto.utilidad_neta) {
-      const newIncome = updateDto.ingresos_totales ?? summary.ingresos_totales;
-      const newProfit = updateDto.utilidad_neta ?? summary.utilidad_neta;
+      const newIncome = updateDto.ingresos_totales ?? summary.ingresosTotales;
+      const newProfit = updateDto.utilidad_neta ?? summary.utilidadNeta;
 
       if (newIncome > 0) {
         updateDto.margen_utilidad =
@@ -215,8 +229,9 @@ export class FinancialService {
   ): Promise<FinancialSummary> {
     // This method would integrate with projects to calculate actual income
     // For now, it's a placeholder for future implementation
+    const mesDate = new Date(`${mes}-01`);
     const companyExpenses = await this.companyExpenseRepository.findOne({
-      where: { mes },
+      where: { mes: mesDate },
     });
 
     if (!companyExpenses) {
@@ -249,23 +264,21 @@ export class FinancialService {
       summaries = await this.findFinancialSummariesByYear(year);
     } else {
       summaries = await this.findAllFinancialSummaries();
-    }
-
-    const totalIncome = summaries.reduce(
-      (sum, s) => sum + Number(s.ingresos_totales),
+    }    const totalIncome = summaries.reduce(
+      (sum, s) => sum + Number(s.ingresosTotales),
       0,
     );
     const totalExpenses = summaries.reduce(
-      (sum, s) => sum + Number(s.gastos_totales),
+      (sum, s) => sum + Number(s.gastosTotales),
       0,
     );
     const totalProfit = summaries.reduce(
-      (sum, s) => sum + Number(s.utilidad_neta),
+      (sum, s) => sum + Number(s.utilidadNeta),
       0,
     );
     const averageMargin =
       summaries.length > 0
-        ? summaries.reduce((sum, s) => sum + Number(s.margen_utilidad), 0) /
+        ? summaries.reduce((sum, s) => sum + Number(s.margenUtilidad), 0) /
           summaries.length
         : 0;
 

@@ -10,6 +10,9 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { ServiceRequest } from '../service-requests/entities/service-request.entity';
 import { SelectedService } from '../service-requests/entities/selected-service.entity';
+import { ServiceInstance } from '../service-requests/entities/service-instance.entity';
+import { ServiceInstanceValue } from '../service-requests/entities/service-instance-value.entity';
+import { generateHorizontalInstancesContent } from './utils/format-utils';
 
 export interface PDFGenerationOptions {
   returnBuffer?: boolean;
@@ -34,6 +37,10 @@ export class PDFService {
     private serviceRequestRepository: Repository<ServiceRequest>,
     @InjectRepository(SelectedService)
     private selectedServiceRepository: Repository<SelectedService>,
+    @InjectRepository(ServiceInstance)
+    private serviceInstanceRepository: Repository<ServiceInstance>,
+    @InjectRepository(ServiceInstanceValue)
+    private serviceInstanceValueRepository: Repository<ServiceInstanceValue>,
   ) {
     // Initialize paths
     this.templatesPath = path.join(process.cwd(), 'src', 'templates');
@@ -74,24 +81,34 @@ export class PDFService {
       );
     }
   }
-
   private async getServiceRequestData(
     requestId: number,
   ): Promise<ServiceRequestPDFData> {
     // Get service request
     const request = await this.serviceRequestRepository.findOne({
       where: { id: requestId },
-      relations: ['user'],
+      relations: [
+        'selectedServices',
+        'selectedServices.service',
+        'selectedServices.service.category',
+      ],
     });
 
     if (!request) {
       throw new BadRequestException(
         `Service request with ID ${requestId} not found`,
       );
-    } // Get associated services
+    }
+
+    // Get associated services with instances and values
     const services = await this.selectedServiceRepository.find({
       where: { requestId: requestId },
-      relations: ['service'],
+      relations: [
+        'service',
+        'service.category',
+        'serviceInstances',
+        'serviceInstances.serviceInstanceValues',
+      ],
       order: { id: 'ASC' },
     });
 
@@ -167,8 +184,8 @@ export class PDFService {
       '{{date}}': new Date().toLocaleDateString('es-CO'),
       '{{solicitante}}': request.name || '',
       '{{identificacion}}': request.identification || '',
-      '{{fechaSolicitud}}': request.createdAt
-        ? new Date(request.createdAt).toLocaleDateString('es-CO')
+      '{{fechaSolicitud}}': request.created_at
+        ? new Date(request.created_at).toLocaleDateString('es-CO')
         : '',
       '{{celular}}': request.phone || '',
       '{{email}}': request.email || '',
@@ -188,32 +205,83 @@ export class PDFService {
 
     return template;
   }
+
   private generateServicesContent(services: SelectedService[]): string {
     if (!services || services.length === 0) {
-      return '<tr><td colspan="4" style="text-align: center; padding: 20px;">No services found</td></tr>';
+      return '<p>No hay servicios seleccionados</p>';
     }
 
-    return services
-      .map((selectedService, index) => {
-        const { service } = selectedService;
+    // --- Agrupar servicios por categoría ---
+    const servicesByCategory: Record<string, SelectedService[]> = {};
+    for (const selectedService of services) {
+      const service = selectedService.service;
+      if (!service) continue;
+      
+      const categoryCode = service.code.split('-')[0]; // SR, EDS, EMC, DMC, etc.
+      if (!servicesByCategory[categoryCode]) {
+        servicesByCategory[categoryCode] = [];
+      }
+      servicesByCategory[categoryCode].push(selectedService);
+    }
+
+    // Títulos de categorías
+    const categoryTitles: Record<string, string> = {
+      SR: 'Servicios de Caracterización',
+      EDS: 'Estudios de Suelos',
+      EMC: 'Ensayos de Muestras de Concreto',
+      DMC: 'Diseño de Mezclas de Concreto',
+    };
+
+    let serviciosContent = '';
+
+    // Procesar cada categoría en una página separada
+    for (const [categoryCode, categoryServices] of Object.entries(servicesByCategory)) {
+      if (categoryServices.length === 0) continue;
+
+      // Agregar salto de página si no es la primera categoría
+      if (serviciosContent) {
+        serviciosContent += '<div class="page-break"></div>';
+      }
+
+      serviciosContent += `
+        <div class="section-title">${
+          categoryTitles[categoryCode] || categoryCode
+        }</div>
+      `;
+
+      // Para cada servicio en la categoría
+      for (const selectedService of categoryServices) {
+        const { service, serviceInstances } = selectedService;
         const quantity = selectedService.quantity || 1;
 
-        return `
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 12px 8px; text-align: center; font-weight: bold;">${index + 1}</td>
-          <td style="padding: 12px 8px;">
-            <div style="font-weight: bold; margin-bottom: 4px;">${service?.name || 'Unknown Service'}</div>
-            <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Código: ${service?.code || 'N/A'}</div>
-            <div style="font-size: 11px; color: #666;">Categoría: ${service?.category || 'N/A'}</div>
-          </td>
-          <td style="padding: 12px 8px; text-align: center; font-weight: bold;">${quantity}</td>
-          <td style="padding: 12px 8px; text-align: center;">
-            <div style="width: 100px; height: 20px; border: 1px solid #ccc; margin: 0 auto;"></div>
-          </td>
-        </tr>
-      `;
-      })
-      .join('');
+        serviciosContent += `
+          <div class="service-header">
+            <strong>${service?.code} - ${service?.name}</strong> (Cantidad: ${quantity})
+          </div>
+        `;
+
+        // Si hay instancias con información adicional, mostrarlas en formato horizontal
+        if (serviceInstances && serviceInstances.length > 0) {
+          // Formatear instancias para el generador horizontal
+          const instances = serviceInstances
+            .map(instance => ({
+              instanceNumber: instance.instanceNumber,
+              additionalInfo: instance.serviceInstanceValues.reduce(
+                (acc, value) => {
+                  acc[value.fieldName] = value.fieldValue;
+                  return acc;
+                },
+                {} as Record<string, any>,
+              ),
+            }))
+            .sort((a, b) => a.instanceNumber - b.instanceNumber);
+
+          serviciosContent += generateHorizontalInstancesContent(instances);
+        }
+      }
+    }
+
+    return serviciosContent;
   }
 
   private async generatePDFFromHTML(
@@ -339,10 +407,16 @@ export class PDFService {
       </div>
     `;
   }
-
   private formatValue(value: any): string {
     if (value === null || value === undefined || value === '') {
-      return 'N/A';
+      return '&nbsp;'; // Retorna un espacio HTML para celdas vacías
+    }
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+      try {
+        return new Date(value).toLocaleDateString('es-CO');
+      } catch {
+        return String(value);
+      }
     }
     return String(value);
   }

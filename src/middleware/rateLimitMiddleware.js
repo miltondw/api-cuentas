@@ -1,5 +1,27 @@
 import rateLimit from "express-rate-limit";
 
+// Función para obtener la IP real del cliente
+const getClientIP = (req) => {
+  // Si trust proxy está deshabilitado, usar req.ip directamente
+  if (!req.app.get('trust proxy')) {
+    return req.ip || req.connection.remoteAddress;
+  }
+  
+  // Con trust proxy habilitado, priorizar headers de proxy
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIp = req.headers['x-real-ip'];
+  const cfConnectingIp = req.headers['cf-connecting-ip'];
+  
+  if (cfConnectingIp) return cfConnectingIp;
+  if (realIp) return realIp;
+  if (forwarded) {
+    // X-Forwarded-For puede contener múltiples IPs, tomar la primera
+    return forwarded.split(',')[0].trim();
+  }
+  
+  return req.ip || req.connection.remoteAddress || 'unknown';
+};
+
 // Limitar los intentos de login para prevenir ataques de fuerza bruta
 export const loginLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutos
@@ -12,7 +34,7 @@ export const loginLimiter = rateLimit({
     remainingTime: (req) =>
       Math.ceil(req.rateLimit.resetTime - Date.now()) / 1000 / 60,
   },
-  keyGenerator: (req) => req.ip, // Usa la IP como identificador
+  keyGenerator: getClientIP, // Usar función personalizada para obtener IP
 });
 
 // Limitar las solicitudes de registro para evitar la creación masiva de cuentas
@@ -25,5 +47,5 @@ export const registerLimiter = rateLimit({
     error:
       "Demasiados intentos de registro. Por favor, intente de nuevo después de 1 hora.",
   },
-  keyGenerator: (req) => req.ip,
+  keyGenerator: getClientIP, // Usar función personalizada para obtener IP
 });

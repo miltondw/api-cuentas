@@ -11,15 +11,20 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
-    PassportModule,
-    JwtModule.registerAsync({
+    PassportModule,    JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET') || 'defaultSecret',
-        signOptions: {
-          expiresIn: configService.get('JWT_EXPIRES_IN') || '24h',
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const jwtSecret = configService.get('JWT_SECRET');
+        if (!jwtSecret) {
+          throw new Error('JWT_SECRET environment variable is required');
+        }
+        return {
+          secret: jwtSecret,
+          signOptions: {
+            expiresIn: configService.get('JWT_EXPIRES_IN') || '24h',
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

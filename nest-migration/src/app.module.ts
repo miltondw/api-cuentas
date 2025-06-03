@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler'; // Re-enabled with proper configuration
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -10,6 +10,13 @@ import { LabModule } from './modules/lab/lab.module';
 import { ProjectManagementModule } from './modules/project-management/project-management.module';
 import { ClientModule } from './modules/client/client.module';
 import { PDFModule } from './modules/pdf/pdf.module';
+import { ServiceRequestsModule } from './modules/service-requests/service-requests.module';
+import { ServicesModule } from './modules/services/services.module';
+import { ResumenModule } from './modules/resumen/resumen.module';
+import { ApiquesModule } from './modules/apiques/apiques.module';
+import { ProfilesModule } from './modules/profiles/profiles.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { FinancialModule } from './modules/financial/financial.module';
 
 @Module({
   imports: [
@@ -40,29 +47,62 @@ import { PDFModule } from './modules/pdf/pdf.module';
                 rejectUnauthorized: false,
               }
             : false,
-      }),
-      inject: [ConfigService],
+      }),      inject: [ConfigService],
     }),
-
-    // Rate limiting
+    
+    // Rate limiting with smart IP detection
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => [
-        {
-          ttl: parseInt(configService.get('RATE_LIMIT_WINDOW_MS') || '900000'),
-          limit: parseInt(
-            configService.get('RATE_LIMIT_MAX_REQUESTS') || '100',
-          ),
-        },
-      ],
+      useFactory: (configService: ConfigService) => {
+        const trustProxy = configService.get('TRUST_PROXY') === 'true';
+        
+        return {
+          throttlers: [
+            {
+              ttl: parseInt(configService.get('RATE_LIMIT_WINDOW_MS') || '900000'), // 15 minutes
+              limit: parseInt(configService.get('RATE_LIMIT_MAX_REQUESTS') || '100'),
+            },
+          ],
+          skipIf: () => false,
+          // Función inteligente para obtener la IP basada en trust proxy
+          getTracker: (req) => {
+            // Si trust proxy está deshabilitado, usar la IP directa
+            if (!trustProxy) {
+              return req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'localhost';
+            }
+            
+            // Con trust proxy habilitado, usar headers de proxy
+            const forwarded = req.headers['x-forwarded-for'];
+            const realIp = req.headers['x-real-ip'];
+            const cfConnectingIp = req.headers['cf-connecting-ip'];
+            
+            if (cfConnectingIp) return cfConnectingIp as string;
+            if (realIp) return realIp as string;
+            if (forwarded) {
+              const ips = (forwarded as string).split(',');
+              return ips[0].trim();
+            }
+            return req.ip || req.connection?.remoteAddress || 'unknown';
+          },
+        };
+      },
       inject: [ConfigService],
-    }), // Feature modules
+    }),
+    
+    // Feature modules
     AuthModule,
     AdminModule,
     LabModule,
     ProjectManagementModule,
     ClientModule,
     PDFModule,
+    ServiceRequestsModule,
+    ServicesModule,
+    ResumenModule,
+    ApiquesModule,
+    ProfilesModule,
+    ProjectsModule,
+    FinancialModule,
   ],
 })
 export class AppModule {}

@@ -115,14 +115,14 @@ export class CreateApiqueDto {
   @Type(() => Number)
   @Min(0)
   depth_tomo?: number;
-
   @ApiPropertyOptional({
-    description: 'Type of mold used',
-    example: 'Estándar',
+    description: 'Type of mold used (numeric code)',
+    example: 1,
   })
   @IsOptional()
-  @IsString()
-  molde?: string;
+  @IsNumber()
+  @Type(() => Number)
+  molde?: number;
 
   @ApiPropertyOptional({
     description: 'Layers found in the apique',
@@ -168,7 +168,7 @@ export class LayerResponseDto {
   observation?: string;
 
   @ApiProperty()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty()
   updatedAt: Date;
@@ -208,7 +208,7 @@ export class ApiqueResponseDto {
   layers: LayerResponseDto[];
 
   @ApiProperty()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty()
   updatedAt: Date;

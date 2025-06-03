@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -34,10 +35,13 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
-    }
-
-    // Generar token JWT
-    const payload = { sub: user.email, email: user.email, role: user.role };
+    }    // Generar token JWT
+    const payload = { 
+      sub: user.id, 
+      userId: user.id,
+      email: user.email, 
+      role: user.role 
+    };
     const accessToken = this.jwtService.sign(payload);
 
     return {
@@ -48,10 +52,20 @@ export class AuthService {
         role: user.role,
       },
     };
-  }
+  }  async register(registerDto: RegisterDto) {
+    const { email, password, name, firstName, lastName, role, jwt2 } = registerDto;
 
-  async register(registerDto: RegisterDto) {
-    const { email, password, name } = registerDto;
+    // Construct the full name from firstName + lastName or use name directly
+    const fullName = name || (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || 'User');
+      // Determine the role - default to USUARIO
+    const userRole = role || UserRole.CLIENT;
+
+    // Validate admin registration
+    if (userRole === UserRole.ADMIN) {
+      if (!jwt2 || jwt2 !== process.env.JWT_SECRET_2) {
+        throw new ForbiddenException('Código de autorización inválido para crear cuenta de administrador');
+      }
+    }
 
     // Verificar si el usuario ya existe
     const existingUser = await this.userRepository.findOne({
@@ -63,21 +77,18 @@ export class AuthService {
     }
 
     // Hash de la contraseña
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Crear nuevo usuario
+    const hashedPassword = await bcrypt.hash(password, 12);    // Crear nuevo usuario
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
-      name,
-      role: UserRole.CLIENT, // Por defecto los nuevos usuarios son clientes
+      name: fullName,
+      role: userRole,
     });
 
-    const savedUser = await this.userRepository.save(user);
-
-    // Generar token JWT
+    const savedUser = await this.userRepository.save(user);    // Generar token JWT
     const payload = {
-      sub: savedUser.email,
+      sub: savedUser.id,
+      userId: savedUser.id,
       email: savedUser.email,
       role: savedUser.role,
     };

@@ -89,6 +89,7 @@ npm run start:prod
 ## 📋 Plan de Migración Gradual
 
 ### Fase 1: ✅ Completada
+
 - [x] Configuración inicial de Nest.js
 - [x] Configuración de TypeORM y base de datos
 - [x] Módulo de autenticación (JWT)
@@ -99,14 +100,16 @@ npm run start:prod
 - [x] Manejo global de errores
 
 ### Fase 2: 🚧 Pendiente
+
 - [ ] Migración del módulo de proyectos
-- [ ] Migración del módulo de perfiles  
+- [ ] Migración del módulo de perfiles
 - [ ] Migración del módulo financiero
 - [ ] Migración del módulo de apiques
 - [ ] Sistema de generación de PDFs
 - [ ] Migración de middleware personalizado
 
 ### Fase 3: 🚧 Pendiente
+
 - [ ] Testing unitario y de integración
 - [ ] Optimización de consultas a base de datos
 - [ ] Implementación de caché (Redis)
@@ -116,6 +119,7 @@ npm run start:prod
 ## 🔄 Comparación Express vs Nest.js
 
 ### Express.js (Actual)
+
 ```javascript
 // router.get('/service-requests', async (req, res) => {
 app.get('/service-requests', async (req, res) => {
@@ -129,10 +133,13 @@ app.get('/service-requests', async (req, res) => {
 ```
 
 ### Nest.js (Nuevo)
+
 ```typescript
 @Controller('service-requests')
 export class ServiceRequestsController {
-  constructor(private readonly serviceRequestsService: ServiceRequestsService) {}
+  constructor(
+    private readonly serviceRequestsService: ServiceRequestsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Obtener todas las solicitudes de servicio' })
@@ -174,7 +181,7 @@ npm run test:e2e
 Una vez que la aplicación esté corriendo, puedes acceder a la documentación Swagger en:
 
 ```
-http://localhost:5050/api/docs
+http://localhost:5050/api-docs
 ```
 
 ## 🔧 Scripts Disponibles
@@ -191,15 +198,15 @@ npm run test           # Tests
 
 ## 🚦 Estado de Migración
 
-| Módulo | Express | Nest.js | Estado |
-|--------|---------|---------|---------|
-| Autenticación | ✅ | ✅ | Migrado |
-| Service Requests | ✅ | ✅ | Migrado |
-| Services | ✅ | ✅ | Migrado |
-| Proyectos | ✅ | 🚧 | Pendiente |
-| Perfiles | ✅ | 🚧 | Pendiente |
-| Finanzas | ✅ | 🚧 | Pendiente |
-| PDFs | ✅ | 🚧 | Pendiente |
+| Módulo           | Express | Nest.js | Estado    |
+| ---------------- | ------- | ------- | --------- |
+| Autenticación    | ✅      | ✅      | Migrado   |
+| Service Requests | ✅      | ✅      | Migrado   |
+| Services         | ✅      | ✅      | Migrado   |
+| Proyectos        | ✅      | 🚧      | Pendiente |
+| Perfiles         | ✅      | 🚧      | Pendiente |
+| Finanzas         | ✅      | 🚧      | Pendiente |
+| PDFs             | ✅      | 🚧      | Pendiente |
 
 ## 📞 Soporte
 

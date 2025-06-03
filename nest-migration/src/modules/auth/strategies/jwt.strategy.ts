@@ -21,10 +21,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       secretOrKey: jwtSecret,
     });
   }
-
   async validate(payload: any) {
-    const user = await this.authService.validateUser(payload.sub);
+    // Use email from payload instead of sub for user lookup
+    const user = await this.authService.validateUser(payload.email);
     return {
+      id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,

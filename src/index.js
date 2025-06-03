@@ -23,7 +23,15 @@ const app = express();
 const PORT = process.env.PORT || 5050;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-app.set("trust proxy", true);
+// Configurar trust proxy basado en la variable de entorno
+// En desarrollo local (localhost) debería ser false para evitar problemas con rate limiting
+const trustProxy = process.env.TRUST_PROXY === 'true' || NODE_ENV === 'production';
+app.set("trust proxy", trustProxy);
+
+console.log(`🔧 Trust proxy configurado: ${trustProxy} (NODE_ENV: ${NODE_ENV})`);
+if (!trustProxy) {
+  console.log("⚠️  Trust proxy deshabilitado para desarrollo local");
+}
 
 app.use(helmet());
 app.use(

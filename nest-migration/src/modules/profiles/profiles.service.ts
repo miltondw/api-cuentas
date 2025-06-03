@@ -22,9 +22,8 @@ export class ProfilesService {
     @InjectRepository(Blow)
     private blowRepository: Repository<Blow>,
   ) {}
-
   async create(createProfileDto: CreateProfileDto): Promise<Profile> {
-    const { blows, ...profileData } = createProfileDto;
+    const { blows } = createProfileDto;
 
     // Check if sounding number already exists for the project
     const existingProfile = await this.profileRepository.findOne({
@@ -40,7 +39,24 @@ export class ProfilesService {
       );
     }
 
-    // Create profile
+    // Create profile with proper data mapping
+    const profileData = {
+      projectId: createProfileDto.projectId,
+      soundingNumber: createProfileDto.soundingNumber,
+      waterLevel: createProfileDto.waterLevel?.toString(), // Convert to string
+      profileDate: createProfileDto.profileDate
+        ? new Date(createProfileDto.profileDate)
+        : null,
+      samplesNumber: createProfileDto.samplesNumber,
+      location: createProfileDto.location,
+      description: createProfileDto.description,
+      latitude: createProfileDto.latitude,
+      longitude: createProfileDto.longitude,
+      depth: createProfileDto.depth,
+      observations: createProfileDto.observations,
+      profileData: createProfileDto.profileData,
+    };
+
     const profile = this.profileRepository.create(profileData);
     const savedProfile = await this.profileRepository.save(profile);
 
@@ -63,7 +79,7 @@ export class ProfilesService {
       .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.project', 'project')
       .leftJoinAndSelect('profile.blows', 'blows')
-      .orderBy('profile.createdAt', 'DESC')
+      .orderBy('profile.created_at', 'DESC')
       .addOrderBy('blows.depth', 'ASC');
 
     if (projectId) {
@@ -90,7 +106,7 @@ export class ProfilesService {
     return this.profileRepository.find({
       where: { projectId },
       relations: ['project', 'blows'],
-      order: { createdAt: 'DESC', blows: { depth: 'ASC' } },
+      order: { created_at: 'DESC', blows: { depth: 'ASC' } },
     });
   }
 
@@ -111,12 +127,11 @@ export class ProfilesService {
 
     return profile;
   }
-
   async update(
     id: number,
     updateProfileDto: UpdateProfileDto,
   ): Promise<Profile> {
-    const { blows, ...profileData } = updateProfileDto;
+    const { blows, ...updateData } = updateProfileDto;
 
     const profile = await this.findOne(id);
 
@@ -138,6 +153,15 @@ export class ProfilesService {
         );
       }
     }
+
+    // Prepare update data with proper type conversions
+    const profileData = {
+      ...updateData,
+      waterLevel: updateData.waterLevel?.toString(), // Convert to string
+      profileDate: updateData.profileDate
+        ? new Date(updateData.profileDate)
+        : profile.profileDate,
+    };
 
     // Update profile
     await this.profileRepository.update(id, profileData);

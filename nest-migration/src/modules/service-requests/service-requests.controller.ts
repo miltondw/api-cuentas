@@ -23,6 +23,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { ServiceRequestsService } from './service-requests.service';
 import {
   CreateServiceRequestDto,
@@ -33,19 +34,18 @@ import {
   ServiceRequestStatus,
 } from './entities/service-request.entity';
 
-@ApiTags('Service Requests - Client')
-@Controller('client/service-requests')
+@ApiTags('Service Requests')
+@Controller('service-requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class ServiceRequestsController {
   constructor(
     private readonly serviceRequestsService: ServiceRequestsService,
   ) {}
-
   @Post()
-  @Roles('admin', 'client')
+  @Public() // Permitir que los clientes creen solicitudes sin autenticación
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Crear una nueva solicitud de servicio' })
+  @ApiOperation({ summary: 'Crear una nueva solicitud de servicio (Acceso público)' })
   @ApiResponse({
     status: 201,
     description: 'Solicitud de servicio creada exitosamente',

@@ -49,7 +49,8 @@ export class ApiquesController {
   async create(
     @Body() createApiqueDto: CreateApiqueDto,
   ): Promise<ApiqueResponseDto> {
-    return this.apiquesService.create(createApiqueDto);
+    const apique = await this.apiquesService.create(createApiqueDto);
+    return this.transformToResponseDto(apique);
   }
 
   @Get('project/:projectId')
@@ -67,7 +68,8 @@ export class ApiquesController {
   async findByProject(
     @Param('projectId', ParseIntPipe) projectId: number,
   ): Promise<ApiqueResponseDto[]> {
-    return this.apiquesService.findAllByProject(projectId);
+    const apiques = await this.apiquesService.findAllByProject(projectId);
+    return apiques.map(apique => this.transformToResponseDto(apique));
   }
 
   @Get(':projectId/:apiqueId')
@@ -87,7 +89,8 @@ export class ApiquesController {
     @Param('projectId', ParseIntPipe) projectId: number,
     @Param('apiqueId', ParseIntPipe) apiqueId: number,
   ): Promise<ApiqueResponseDto> {
-    return this.apiquesService.findOne(projectId, apiqueId);
+    const apique = await this.apiquesService.findOne(projectId, apiqueId);
+    return this.transformToResponseDto(apique);
   }
 
   @Put(':projectId/:apiqueId')
@@ -109,7 +112,12 @@ export class ApiquesController {
     @Param('apiqueId', ParseIntPipe) apiqueId: number,
     @Body() updateApiqueDto: UpdateApiqueDto,
   ): Promise<ApiqueResponseDto> {
-    return this.apiquesService.update(projectId, apiqueId, updateApiqueDto);
+    const apique = await this.apiquesService.update(
+      projectId,
+      apiqueId,
+      updateApiqueDto,
+    );
+    return this.transformToResponseDto(apique);
   }
 
   @Delete(':projectId/:apiqueId')
@@ -144,5 +152,23 @@ export class ApiquesController {
     @Param('projectId', ParseIntPipe) projectId: number,
   ): Promise<any> {
     return this.apiquesService.getApiqueStatistics(projectId);
+  }
+
+  // Helper method to transform entity to response DTO
+  private transformToResponseDto(apique: any): ApiqueResponseDto {
+    return {
+      apique_id: apique.id,
+      proyecto_id: apique.proyectoId,
+      apique: apique.apique,
+      location: apique.location,
+      depth: apique.depth,
+      date: apique.date,
+      cbr_unaltered: apique.cbr_unaltered,
+      depth_tomo: apique.depth_tomo,
+      molde: apique.molde,
+      layers: apique.layers || [],
+      created_at: apique.created_at,
+      updatedAt: apique.updatedAt,
+    };
   }
 }

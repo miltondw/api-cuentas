@@ -9,10 +9,10 @@ import {
 import { SelectedService } from './selected-service.entity';
 
 export enum ServiceRequestStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  COMPLETED = 'completed',
+  PENDIENTE = 'pendiente',
+  EN_PROCESO = 'en proceso',
+  COMPLETADO = 'completado',
+  CANCELADO = 'cancelado',
 }
 
 @Entity('service_requests')
@@ -40,16 +40,15 @@ export class ServiceRequest {
 
   @Column({ type: 'text' })
   description: string;
-
   @Column({
     type: 'enum',
     enum: ServiceRequestStatus,
-    default: ServiceRequestStatus.PENDING,
+    default: ServiceRequestStatus.PENDIENTE,
   })
   status: ServiceRequestStatus;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;

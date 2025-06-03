@@ -20,7 +20,7 @@ export class ServiceCategory {
   name: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;

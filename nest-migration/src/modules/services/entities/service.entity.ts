@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { ServiceCategory } from './service-category.entity';
 import { SelectedService } from '../../service-requests/entities/selected-service.entity';
+import { ServiceAdditionalField } from './service-additional-field.entity';
 
 @Entity('services')
 export class Service {
@@ -26,7 +27,7 @@ export class Service {
   name: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
@@ -36,7 +37,11 @@ export class Service {
   })
   @JoinColumn({ name: 'category_id' })
   category: ServiceCategory;
-
   @OneToMany(() => SelectedService, selectedService => selectedService.service)
   selectedServices: SelectedService[];
+
+  @OneToMany(() => ServiceAdditionalField, field => field.service, {
+    cascade: true,
+  })
+  additionalFields: ServiceAdditionalField[];
 }

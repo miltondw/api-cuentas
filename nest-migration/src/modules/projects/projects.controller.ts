@@ -29,10 +29,10 @@ import {
 } from './dto/project.dto';
 import { Project, ProjectStatus } from './entities/project.entity';
 
-@ApiTags('Projects - Management')
-@Controller('project-management/projects')
+@ApiTags('Projects')
+@Controller('projects')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 

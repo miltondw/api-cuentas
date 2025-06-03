@@ -4,37 +4,28 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { Apique } from './apique.entity';
 
 @Entity('layers')
 export class Layer {
-  @PrimaryGeneratedColumn()
-  layer_id: number;
+  @PrimaryGeneratedColumn({ name: 'layer_id' })
+  id: number;
 
-  @Column({ type: 'int' })
-  apique_id: number;
+  @Column({ name: 'apique_id', type: 'int' })
+  apiqueId: number;
 
-  @Column({ type: 'int' })
-  layer_number: number;
+  @Column({ name: 'layer_number', type: 'int' })
+  layerNumber: number;
 
-  @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
   thickness: number;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  sample_id: string;
+  @Column({ name: 'sample_id', type: 'varchar', length: 50, nullable: true })
+  sampleId: string;
 
   @Column({ type: 'text', nullable: true })
   observation: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
   // Relationships
   @ManyToOne(() => Apique, apique => apique.layers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'apique_id' })

@@ -1,5 +1,6 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { UserRole } from '../entities/user.entity';
 
 export class LoginDto {
   @ApiProperty({
@@ -24,10 +25,29 @@ export class RegisterDto {
   @ApiProperty({
     description: 'Nombre completo del usuario',
     example: 'Juan Pérez',
+    required: false,
   })
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  name?: string;
+
+  @ApiProperty({
+    description: 'Primer nombre del usuario',
+    example: 'Juan',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @ApiProperty({
+    description: 'Apellido del usuario',
+    example: 'Pérez',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  lastName?: string;
 
   @ApiProperty({
     description: 'Correo electrónico del usuario',
@@ -45,6 +65,24 @@ export class RegisterDto {
   @IsNotEmpty()
   @MinLength(6)
   password: string;
+  @ApiProperty({
+    description: 'Rol del usuario',
+    enum: UserRole,
+    example: UserRole.CLIENT,
+    required: false,
+  })
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+
+  @ApiProperty({
+    description: 'JWT2 code for admin registration',
+    example: 'secret-admin-code',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  jwt2?: string;
 }
 
 export class AuthResponseDto {
@@ -53,7 +91,6 @@ export class AuthResponseDto {
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   accessToken: string;
-
   @ApiProperty({
     description: 'Información del usuario autenticado',
   })

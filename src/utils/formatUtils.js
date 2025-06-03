@@ -4,6 +4,33 @@
  * @returns {string} Texto formateado
  */
 export const formatFieldName = (fieldName) => {
+  // Mapeo de campos comunes a nombres más legibles
+  const fieldMap = {
+    'workingLife': 'Vida Útil (años)',
+    'cementType': 'Tipo de Cemento',
+    'aggregateSize': 'Tamaño de Agregado',
+    'slumpRange': 'Asentamiento (cm)',
+    'resistanceAge': 'Edad de Resistencia (días)',
+    'compressionStrength': 'Resistencia a Compresión (MPa)',
+    'sampleDate': 'Fecha de Muestra',
+    'testDate': 'Fecha de Ensayo',
+    'projectLocation': 'Ubicación del Proyecto',
+    'structuralElement': 'Elemento Estructural',
+    'mixDesign': 'Diseño de Mezcla',
+    'cureTime': 'Tiempo de Curado',
+    'temperature': 'Temperatura (°C)',
+    'humidity': 'Humedad (%)',
+    'testMethod': 'Método de Ensayo',
+    'sampleId': 'ID de Muestra',
+    'batchNumber': 'Número de Lote'
+  };
+
+  // Si existe un mapeo específico, usarlo
+  if (fieldMap[fieldName]) {
+    return fieldMap[fieldName];
+  }
+
+  // Si no, usar el formateo automático
   return fieldName
     .replace(/([A-Z])/g, " $1") // Inserta espacio antes de mayúsculas
     .replace(/^./, (str) => str.toUpperCase()) // Primera letra mayúscula
@@ -96,14 +123,12 @@ export const generateServicesContent = (services) => {
         // Si no hay claves, continuar con el siguiente servicio
         if (allKeys.size === 0) continue;
 
-        const keysArray = Array.from(allKeys).sort();
-
-        // Construir tabla horizontal
+        const keysArray = Array.from(allKeys).sort();        // Construir tabla horizontal
         serviciosContent += `
           <table class="horizontal-info-table">
             <thead>
               <tr class="header-row">
-                <th class="instance-number-cell">Número de Muestra</th>
+                <th class="instance-number-cell">N° Muestra</th>
         `;
 
         // Encabezados (nombres de campos)
@@ -131,7 +156,7 @@ export const generateServicesContent = (services) => {
             const value =
               instance.additionalInfo && instance.additionalInfo[key];
             serviciosContent += `<td>${
-              value ? formatValue(value) : "N/A"
+              value ? formatValue(value) : "&nbsp;"
             }</td>`;
           });
 
@@ -166,12 +191,10 @@ export const generateServicesContent = (services) => {
             </thead>
             <tbody>
               <tr>
-        `;
-
-        // Valores para cada clave
+        `;        // Valores para cada clave
         keys.forEach((key) => {
           const value = service.additionalInfo[key];
-          serviciosContent += `<td>${value ? formatValue(value) : "N/A"}</td>`;
+          serviciosContent += `<td>${value ? formatValue(value) : "&nbsp;"}</td>`;
         });
 
         serviciosContent += `

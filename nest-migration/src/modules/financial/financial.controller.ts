@@ -29,10 +29,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-@ApiTags('Financial - Project Management')
-@ApiBearerAuth()
+@ApiTags('Gastos Empresa')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('project-management/financial')
+@Controller('gastos-mes')
 export class FinancialController {
   constructor(private readonly financialService: FinancialService) {}
 
