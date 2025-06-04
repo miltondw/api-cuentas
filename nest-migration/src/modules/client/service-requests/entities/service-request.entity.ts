@@ -20,6 +20,9 @@ export class ServiceRequest {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'request_number', type: 'varchar', length: 50, nullable: true })
+  requestNumber: string;
+
   @Column({ type: 'varchar', length: 255 })
   name: string;
 

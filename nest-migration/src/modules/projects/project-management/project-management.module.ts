@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ProjectsModule } from '../projects/projects.module';
+import { ProjectsModule } from '../projects.module';
 import { FinancialModule } from '../financial/financial.module';
 
 @Module({

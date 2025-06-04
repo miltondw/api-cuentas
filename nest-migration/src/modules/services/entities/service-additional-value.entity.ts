@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { SelectedService } from '../../service-requests/entities/selected-service.entity';
+import { SelectedService } from '../../client/service-requests/entities/selected-service.entity';
 import { ServiceAdditionalField } from './service-additional-field.entity';
 
 @Entity('service_additional_values')

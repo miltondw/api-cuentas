@@ -21,10 +21,10 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Public } from '../auth/decorators/public.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
 import { ServiceRequestsService } from './service-requests.service';
 import {
   CreateServiceRequestDto,
@@ -63,8 +63,8 @@ export class ServiceRequestsController {
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.create(createServiceRequestDto);
   }  @Get()
-  @Roles('admin') // Only admin can access this endpoint
-  @ApiOperation({ summary: 'Obtener todas las solicitudes de servicio (Admin)' })
+  @Roles('admin', 'client', 'lab') // Allow multiple roles to access
+  @ApiOperation({ summary: 'Obtener todas las solicitudes de servicio' })
   @ApiQuery({
     name: 'status',
     required: false,
@@ -192,9 +192,8 @@ export class ServiceRequestsController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.findOne(id);
-  }
-  @Patch(':id')
-  @Roles('admin', 'lab')
+  }  @Patch(':id')
+  @Roles('admin', 'client', 'lab')
   @ApiOperation({ summary: 'Actualizar una solicitud de servicio' })
   @ApiParam({
     name: 'id',
@@ -215,11 +214,10 @@ export class ServiceRequestsController {
     @Body() updateServiceRequestDto: UpdateServiceRequestDto,
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.update(id, updateServiceRequestDto);
-  }
-  @Delete(':id')
-  @Roles('admin')
+  }  @Delete(':id')
+  @Roles('admin', 'lab')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Eliminar una solicitud de servicio (Admin)' })
+  @ApiOperation({ summary: 'Eliminar una solicitud de servicio' })
   @ApiParam({
     name: 'id',
     description: 'ID de la solicitud de servicio',

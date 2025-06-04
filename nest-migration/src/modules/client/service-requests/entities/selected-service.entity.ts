@@ -8,9 +8,9 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ServiceRequest } from './service-request.entity';
-import { Service } from '../../services/entities/service.entity';
 import { ServiceInstance } from './service-instance.entity';
-import { ServiceAdditionalValue } from '../../services/entities/service-additional-value.entity';
+import { Service } from '@/modules/services/entities/service.entity';
+import { ServiceAdditionalValue } from '@/modules/services/entities/service-additional-value.entity';
 
 @Entity('selected_services')
 export class SelectedService {

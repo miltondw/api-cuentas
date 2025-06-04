@@ -9,7 +9,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ServiceCategory } from './service-category.entity';
-import { SelectedService } from '../../service-requests/entities/selected-service.entity';
+import { SelectedService } from '../../client/service-requests/entities/selected-service.entity';
 import { ServiceAdditionalField } from './service-additional-field.entity';
 
 @Entity('services')

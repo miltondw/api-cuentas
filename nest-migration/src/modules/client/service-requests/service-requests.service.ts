@@ -4,20 +4,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  DataSource,
-} from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import {
   ServiceRequest,
   ServiceRequestStatus,
 } from './entities/service-request.entity';
 import { SelectedService } from './entities/selected-service.entity';
-import { Service } from '../services/entities/service.entity';
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
 } from './dto/service-request.dto';
+import { Service } from '@/modules/services/entities/service.entity';
 
 // Definir los tipos para los filtros y la paginación
 interface ServiceRequestFilters {
@@ -105,18 +102,20 @@ export class ServiceRequestsService {
       await queryRunner.release();
     }
   }
-
   async findAll(): Promise<ServiceRequest[]> {
     return this.serviceRequestRepository.find({
       relations: [
         'selectedServices',
         'selectedServices.service',
         'selectedServices.service.category',
+        'selectedServices.service.additionalFields',
+        'selectedServices.additionalValues',
+        'selectedServices.serviceInstances',
+        'selectedServices.serviceInstances.serviceInstanceValues',
       ],
       order: { created_at: 'DESC' },
     });
   }
-
   async findOne(id: number): Promise<ServiceRequest> {
     const serviceRequest = await this.serviceRequestRepository.findOne({
       where: { id },
@@ -124,6 +123,10 @@ export class ServiceRequestsService {
         'selectedServices',
         'selectedServices.service',
         'selectedServices.service.category',
+        'selectedServices.service.additionalFields',
+        'selectedServices.additionalValues',
+        'selectedServices.serviceInstances',
+        'selectedServices.serviceInstances.serviceInstanceValues',
       ],
     });
 
@@ -152,7 +155,6 @@ export class ServiceRequestsService {
     const serviceRequest = await this.findOne(id);
     await this.serviceRequestRepository.remove(serviceRequest);
   }
-
   async findByStatus(status: string): Promise<ServiceRequest[]> {
     return this.serviceRequestRepository.find({
       where: { status: status as any },
@@ -160,6 +162,11 @@ export class ServiceRequestsService {
         'selectedServices',
         'selectedServices.service',
         'selectedServices.service.category',
+        'selectedServices.service.additionalFields',
+        'selectedServices.additionalValues',
+        'selectedServices.additionalValues.field',
+        'selectedServices.serviceInstances',
+        'selectedServices.serviceInstances.serviceInstanceValues',
       ],
       order: { created_at: 'DESC' },
     });
@@ -174,14 +181,25 @@ export class ServiceRequestsService {
     limit: number;
   }> {
     const { page, limit, sortBy, sortOrder } = pagination;
-    const skip = (page - 1) * limit;
-
-    // Opción para filtrar por tipo de servicio (requiere JOIN)
+    const skip = (page - 1) * limit; // Crear query con todas las relaciones necesarias para información adicional
     let query = this.serviceRequestRepository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.selectedServices', 'selectedServices')
       .leftJoinAndSelect('selectedServices.service', 'service')
-      .leftJoinAndSelect('service.category', 'category');
+      .leftJoinAndSelect('service.category', 'category')
+      .leftJoinAndSelect('service.additionalFields', 'additionalFields')
+      .leftJoinAndSelect(
+        'selectedServices.additionalValues',
+        'additionalValues',
+      )
+      .leftJoinAndSelect(
+        'selectedServices.serviceInstances',
+        'serviceInstances',
+      )
+      .leftJoinAndSelect(
+        'serviceInstances.serviceInstanceValues',
+        'serviceInstanceValues',
+      );
 
     // Aplicar filtros directamente con el query builder
     if (filters.status) {
@@ -216,10 +234,13 @@ export class ServiceRequestsService {
 
     // Filtro de fechas
     if (filters.startDate && filters.endDate) {
-      query = query.andWhere('request.created_at BETWEEN :startDate AND :endDate', {
-        startDate: new Date(filters.startDate),
-        endDate: new Date(filters.endDate),
-      });
+      query = query.andWhere(
+        'request.created_at BETWEEN :startDate AND :endDate',
+        {
+          startDate: new Date(filters.startDate),
+          endDate: new Date(filters.endDate),
+        },
+      );
     }
 
     // Filtrar por tipo de servicio si está especificado

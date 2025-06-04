@@ -6,16 +6,16 @@ import { ServiceRequest } from './entities/service-request.entity';
 import { SelectedService } from './entities/selected-service.entity';
 import { ServiceInstance } from './entities/service-instance.entity';
 import { ServiceInstanceValue } from './entities/service-instance-value.entity';
-import { Service } from '../services/entities/service.entity';
+import { Service } from '@/modules/services/entities/service.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      ServiceRequest, 
-      SelectedService, 
-      ServiceInstance, 
-      ServiceInstanceValue, 
-      Service
+      ServiceRequest,
+      SelectedService,
+      ServiceInstance,
+      ServiceInstanceValue,
+      Service,
     ]),
   ],
   controllers: [ServiceRequestsController],

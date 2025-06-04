@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { User } from './src/modules/auth/entities/user.entity';
-import { AuthService } from './src/modules/auth/auth.service';
+import { User } from '../src/modules/auth/entities/user.entity';
+import { AuthService } from '../src/modules/auth/auth.service';
 
 async function testJWTValidation() {
   console.log('🔍 Testing JWT validation without server...\n');

@@ -5,18 +5,23 @@ import { ThrottlerModule } from '@nestjs/throttler'; // Re-enabled with proper c
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
+//ADMIN
 import { AdminModule } from './modules/admin/admin.module';
+//LAB
 import { LabModule } from './modules/lab/lab.module';
-import { ProjectManagementModule } from './modules/project-management/project-management.module';
-import { ClientModule } from './modules/client/client.module';
-import { PDFModule } from './modules/pdf/pdf.module';
-import { ServiceRequestsModule } from './modules/service-requests/service-requests.module';
-import { ServicesModule } from './modules/services/services.module';
-import { ResumenModule } from './modules/resumen/resumen.module';
-import { ApiquesModule } from './modules/apiques/apiques.module';
-import { ProfilesModule } from './modules/profiles/profiles.module';
+import { ApiquesModule } from './modules/lab/apiques/apiques.module';
+import { ProfilesModule } from './modules/lab/profiles/profiles.module';
+//PROJECTS
 import { ProjectsModule } from './modules/projects/projects.module';
-import { FinancialModule } from './modules/financial/financial.module';
+import { ProjectManagementModule } from './modules/projects/project-management/project-management.module';
+import { ResumenModule } from './modules/projects/resumen/resumen.module';
+import { FinancialModule } from './modules/projects/financial/financial.module';
+//CLIENT
+import { ClientModule } from './modules/client/client.module';
+//PDF
+import { PDFModule } from './modules/pdf/pdf.module';
+//SERVICES
+import { ServicesModule } from './modules/services/services.module';
 
 @Module({
   imports: [
@@ -24,7 +29,7 @@ import { FinancialModule } from './modules/financial/financial.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-    }),    // Database configuration
+    }), // Database configuration
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -45,35 +50,45 @@ import { FinancialModule } from './modules/financial/financial.module';
                 rejectUnauthorized: false,
               }
             : false,
-      }),inject: [ConfigService],
+      }),
+      inject: [ConfigService],
     }),
-    
+
     // Rate limiting with smart IP detection
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const trustProxy = configService.get('TRUST_PROXY') === 'true';
-        
+
         return {
           throttlers: [
             {
-              ttl: parseInt(configService.get('RATE_LIMIT_WINDOW_MS') || '900000'), // 15 minutes
-              limit: parseInt(configService.get('RATE_LIMIT_MAX_REQUESTS') || '100'),
+              ttl: parseInt(
+                configService.get('RATE_LIMIT_WINDOW_MS') || '900000',
+              ), // 15 minutes
+              limit: parseInt(
+                configService.get('RATE_LIMIT_MAX_REQUESTS') || '100',
+              ),
             },
           ],
           skipIf: () => false,
           // Función inteligente para obtener la IP basada en trust proxy
-          getTracker: (req) => {
+          getTracker: req => {
             // Si trust proxy está deshabilitado, usar la IP directa
             if (!trustProxy) {
-              return req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'localhost';
+              return (
+                req.ip ||
+                req.connection?.remoteAddress ||
+                req.socket?.remoteAddress ||
+                'localhost'
+              );
             }
-            
+
             // Con trust proxy habilitado, usar headers de proxy
             const forwarded = req.headers['x-forwarded-for'];
             const realIp = req.headers['x-real-ip'];
             const cfConnectingIp = req.headers['cf-connecting-ip'];
-            
+
             if (cfConnectingIp) return cfConnectingIp as string;
             if (realIp) return realIp as string;
             if (forwarded) {
@@ -86,7 +101,6 @@ import { FinancialModule } from './modules/financial/financial.module';
       },
       inject: [ConfigService],
     }),
-    
     // Feature modules
     AuthModule,
     AdminModule,
@@ -94,7 +108,6 @@ import { FinancialModule } from './modules/financial/financial.module';
     ProjectManagementModule,
     ClientModule,
     PDFModule,
-    ServiceRequestsModule,
     ServicesModule,
     ResumenModule,
     ApiquesModule,
