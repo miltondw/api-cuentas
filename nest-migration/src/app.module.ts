@@ -24,9 +24,7 @@ import { FinancialModule } from './modules/financial/financial.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-    }),
-
-    // Database configuration
+    }),    // Database configuration
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -36,7 +34,7 @@ import { FinancialModule } from './modules/financial/financial.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [__dirname + '/modules/**/*.entity{.ts,.js}'],
         synchronize: false, // Disabled to prevent issues with existing database
         logging: configService.get('NODE_ENV') === 'development',
         timezone: 'Z',
@@ -47,7 +45,7 @@ import { FinancialModule } from './modules/financial/financial.module';
                 rejectUnauthorized: false,
               }
             : false,
-      }),      inject: [ConfigService],
+      }),inject: [ConfigService],
     }),
     
     // Rate limiting with smart IP detection

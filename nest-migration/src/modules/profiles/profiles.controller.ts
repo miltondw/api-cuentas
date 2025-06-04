@@ -56,26 +56,108 @@ export class ProfilesController {
   create(@Body() createProfileDto: CreateProfileDto) {
     return this.profilesService.create(createProfileDto);
   }
-
   @Get()
-  @Roles('admin', 'ingeniero', 'tecnico')
+  @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Obtener todos los perfiles' })
   @ApiQuery({
     name: 'projectId',
     required: false,
     description: 'Filtrar por ID del proyecto',
   })
+  @ApiQuery({
+    name: 'soundingNumber',
+    required: false,
+    description: 'Filtrar por número de sondeo',
+  })
+  @ApiQuery({
+    name: 'startDepth',
+    required: false,
+    description: 'Filtrar por profundidad mínima',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'endDepth',
+    required: false,
+    description: 'Filtrar por profundidad máxima',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Fecha de inicio para filtrar (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'Fecha de fin para filtrar (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'hasSPT',
+    required: false,
+    description: 'Filtrar por perfiles que tienen pruebas SPT',
+    type: Boolean,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Número de página para paginación',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Límite de resultados por página',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'Campo por el cual ordenar',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Orden de clasificación (ASC o DESC)',
+    enum: ['ASC', 'DESC'],
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de perfiles obtenida exitosamente',
   })
-  findAll(@Query('projectId') projectId?: string) {
-    const projectIdNum = projectId ? parseInt(projectId, 10) : undefined;
-    return this.profilesService.findAll(projectIdNum);
-  }
+  findAll(
+    @Query('projectId') projectId?: string,
+    @Query('soundingNumber') soundingNumber?: string,
+    @Query('startDepth') startDepth?: number,
+    @Query('endDepth') endDepth?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('hasSPT') hasSPT?: boolean,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ) {
+    const filters = {
+      projectId: projectId ? parseInt(projectId, 10) : undefined,
+      soundingNumber: soundingNumber ? parseInt(soundingNumber, 10) : undefined,
+      startDepth,
+      endDepth,
+      startDate,
+      endDate,
+      hasSPT,
+    };
 
+    const pagination = {
+      page: page ? page : 1,
+      limit: limit ? limit : 10,
+      sortBy: sortBy ? sortBy : 'created_at',
+      sortOrder: sortOrder ? sortOrder : 'DESC',
+    };
+
+    return this.profilesService.findAllWithFilters(filters, pagination);
+  }
   @Get('project/:projectId')
-  @Roles('admin', 'ingeniero', 'tecnico')
+  @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Obtener perfiles por proyecto' })
   @ApiParam({ name: 'projectId', description: 'ID del proyecto' })
   @ApiResponse({
@@ -89,9 +171,8 @@ export class ProfilesController {
   findByProject(@Param('projectId', ParseIntPipe) projectId: number) {
     return this.profilesService.findByProject(projectId);
   }
-
   @Get('project/:projectId/sounding/:soundingNumber')
-  @Roles('admin', 'ingeniero', 'tecnico')
+  @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Obtener perfil por número de sondeo' })
   @ApiParam({ name: 'projectId', description: 'ID del proyecto' })
   @ApiParam({ name: 'soundingNumber', description: 'Número de sondeo' })
@@ -109,9 +190,8 @@ export class ProfilesController {
   ) {
     return this.profilesService.findBySounding(projectId, soundingNumber);
   }
-
   @Get(':id')
-  @Roles('admin', 'ingeniero', 'tecnico')
+  @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Obtener un perfil por ID' })
   @ApiParam({ name: 'id', description: 'ID del perfil' })
   @ApiResponse({
@@ -125,9 +205,8 @@ export class ProfilesController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.profilesService.findOne(id);
   }
-
   @Patch(':id')
-  @Roles('admin', 'ingeniero')
+  @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Actualizar un perfil' })
   @ApiParam({ name: 'id', description: 'ID del perfil' })
   @ApiResponse({
@@ -166,9 +245,8 @@ export class ProfilesController {
     return this.profilesService.remove(id);
   }
 
-  // Blow-specific endpoints
-  @Post(':profileId/blows')
-  @Roles('admin', 'ingeniero')
+  // Blow-specific endpoints  @Post(':profileId/blows')
+  @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Agregar golpeo a un perfil' })
   @ApiParam({ name: 'profileId', description: 'ID del perfil' })
   @ApiResponse({
@@ -185,9 +263,8 @@ export class ProfilesController {
   ) {
     return this.profilesService.addBlow(profileId, createBlowDto);
   }
-
   @Get(':profileId/blows')
-  @Roles('admin', 'ingeniero', 'tecnico')
+  @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Obtener golpeos de un perfil' })
   @ApiParam({ name: 'profileId', description: 'ID del perfil' })
   @ApiResponse({
@@ -201,9 +278,8 @@ export class ProfilesController {
   getBlowsByProfile(@Param('profileId', ParseIntPipe) profileId: number) {
     return this.profilesService.getBlowsByProfile(profileId);
   }
-
   @Patch('blows/:blowId')
-  @Roles('admin', 'ingeniero')
+  @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Actualizar un golpeo' })
   @ApiParam({ name: 'blowId', description: 'ID del golpeo' })
   @ApiResponse({
@@ -220,9 +296,8 @@ export class ProfilesController {
   ) {
     return this.profilesService.updateBlow(blowId, updateBlowDto);
   }
-
   @Delete('blows/:blowId')
-  @Roles('admin', 'ingeniero')
+  @Roles('admin', 'lab')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar un golpeo' })
   @ApiParam({ name: 'blowId', description: 'ID del golpeo' })

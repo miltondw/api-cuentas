@@ -18,19 +18,17 @@ async function checkUsers() {
     );
 
     console.log('Usuarios encontrados:');
-    console.table(users);
-
-    // Verificar si existe el usuario específico
+    console.table(users);    // Verificar si existe el usuario específico
     const [specificUser] = await connection.execute(
       'SELECT usuario_id, name, email, role, created_at FROM usuarios WHERE email = ?',
-      ['mitlon@ingeocimyc.com'],
+      ['milton@ingeocimyc.com'],
     );
 
     if (specificUser.length > 0) {
-      console.log('\nUsuario mitlon@ingeocimyc.com encontrado:');
+      console.log('\nUsuario milton@ingeocimyc.com encontrado:');
       console.table(specificUser);
     } else {
-      console.log('\nUsuario mitlon@ingeocimyc.com NO encontrado');
+      console.log('\nUsuario milton@ingeocimyc.com NO encontrado');
     }
   } catch (error) {
     console.error('Error:', error);

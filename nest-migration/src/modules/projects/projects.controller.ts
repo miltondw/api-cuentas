@@ -71,6 +71,49 @@ export class ProjectsController {
     required: false,
     description: 'Fecha de fin para filtrar (YYYY-MM-DD)',
   })
+  @ApiQuery({
+    name: 'solicitante',
+    required: false,
+    description: 'Filtrar por nombre del solicitante',
+  })
+  @ApiQuery({
+    name: 'nombreProyecto',
+    required: false,
+    description: 'Filtrar por nombre del proyecto',
+  })
+  @ApiQuery({
+    name: 'obrero',
+    required: false,
+    description: 'Filtrar por nombre del obrero',
+  })
+  @ApiQuery({
+    name: 'metodoDePago',
+    required: false,
+    description: 'Filtrar por método de pago',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Número de página para paginación',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Límite de resultados por página',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'Campo por el cual ordenar (ej. fecha, nombreProyecto)',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Orden de clasificación (ASC o DESC)',
+    enum: ['ASC', 'DESC'],
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de proyectos',
@@ -80,20 +123,36 @@ export class ProjectsController {
     @Query('status') status?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-  ): Promise<Project[]> {
-    if (status) {
-      return this.projectsService.findByStatus(status as ProjectStatus);
-    }
+    @Query('solicitante') solicitante?: string,
+    @Query('nombreProyecto') nombreProyecto?: string,
+    @Query('obrero') obrero?: string,
+    @Query('metodoDePago') metodoDePago?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ): Promise<{data: Project[], total: number, page: number, limit: number}> {
+    const filters = {
+      status: status ? status as ProjectStatus : undefined,
+      startDate,
+      endDate,
+      solicitante,
+      nombreProyecto,
+      obrero,
+      metodoDePago,
+    };
 
-    if (startDate && endDate) {
-      return this.projectsService.findByDateRange(startDate, endDate);
-    }
+    const pagination = {
+      page: page ? page : 1,
+      limit: limit ? limit : 10,
+      sortBy: sortBy ? sortBy : 'created_at',
+      sortOrder: sortOrder ? sortOrder : 'DESC',
+    };
 
-    return this.projectsService.findAll();
+    return this.projectsService.findAllWithFilters(filters, pagination);
   }
-
   @Get('summary')
-  @Roles('admin', 'user')
+  @Roles('admin')
   @ApiOperation({ summary: 'Obtener resumen de proyectos' })
   @ApiResponse({
     status: 200,
@@ -102,9 +161,8 @@ export class ProjectsController {
   async getProjectSummary() {
     return this.projectsService.getProjectSummary();
   }
-
   @Get(':id')
-  @Roles('admin', 'user')
+  @Roles('admin')
   @ApiOperation({ summary: 'Obtener un proyecto por ID' })
   @ApiParam({
     name: 'id',
@@ -123,9 +181,8 @@ export class ProjectsController {
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<Project> {
     return this.projectsService.findOne(id);
   }
-
   @Patch(':id')
-  @Roles('admin', 'user')
+  @Roles('admin')
   @ApiOperation({ summary: 'Actualizar un proyecto' })
   @ApiParam({
     name: 'id',
@@ -147,9 +204,8 @@ export class ProjectsController {
   ): Promise<Project> {
     return this.projectsService.update(id, updateProjectDto);
   }
-
   @Patch(':id/payment')
-  @Roles('admin', 'user')
+  @Roles('admin')
   @ApiOperation({ summary: 'Agregar un abono al proyecto' })
   @ApiParam({
     name: 'id',

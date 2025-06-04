@@ -4,14 +4,39 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { ServiceRequest } from './entities/service-request.entity';
+import {
+  Repository,
+  DataSource,
+} from 'typeorm';
+import {
+  ServiceRequest,
+  ServiceRequestStatus,
+} from './entities/service-request.entity';
 import { SelectedService } from './entities/selected-service.entity';
 import { Service } from '../services/entities/service.entity';
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
 } from './dto/service-request.dto';
+
+// Definir los tipos para los filtros y la paginación
+interface ServiceRequestFilters {
+  status?: ServiceRequestStatus;
+  name?: string;
+  nameProject?: string;
+  location?: string;
+  email?: string;
+  startDate?: string;
+  endDate?: string;
+  serviceType?: string;
+}
+
+interface PaginationParams {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'ASC' | 'DESC';
+}
 
 @Injectable()
 export class ServiceRequestsService {
@@ -138,5 +163,82 @@ export class ServiceRequestsService {
       ],
       order: { created_at: 'DESC' },
     });
+  }
+  async findAllWithFilters(
+    filters: ServiceRequestFilters,
+    pagination: PaginationParams,
+  ): Promise<{
+    data: ServiceRequest[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const { page, limit, sortBy, sortOrder } = pagination;
+    const skip = (page - 1) * limit;
+
+    // Opción para filtrar por tipo de servicio (requiere JOIN)
+    let query = this.serviceRequestRepository
+      .createQueryBuilder('request')
+      .leftJoinAndSelect('request.selectedServices', 'selectedServices')
+      .leftJoinAndSelect('selectedServices.service', 'service')
+      .leftJoinAndSelect('service.category', 'category');
+
+    // Aplicar filtros directamente con el query builder
+    if (filters.status) {
+      query = query.andWhere('request.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    if (filters.name) {
+      query = query.andWhere('request.name LIKE :name', {
+        name: `%${filters.name}%`,
+      });
+    }
+
+    if (filters.nameProject) {
+      query = query.andWhere('request.nameProject LIKE :nameProject', {
+        nameProject: `%${filters.nameProject}%`,
+      });
+    }
+
+    if (filters.location) {
+      query = query.andWhere('request.location LIKE :location', {
+        location: `%${filters.location}%`,
+      });
+    }
+
+    if (filters.email) {
+      query = query.andWhere('request.email LIKE :email', {
+        email: `%${filters.email}%`,
+      });
+    }
+
+    // Filtro de fechas
+    if (filters.startDate && filters.endDate) {
+      query = query.andWhere('request.created_at BETWEEN :startDate AND :endDate', {
+        startDate: new Date(filters.startDate),
+        endDate: new Date(filters.endDate),
+      });
+    }
+
+    // Filtrar por tipo de servicio si está especificado
+    if (filters.serviceType) {
+      query = query.andWhere('service.name LIKE :serviceType', {
+        serviceType: `%${filters.serviceType}%`,
+      });
+    }
+
+    // Aplicar ordenamiento, paginación y obtener resultados
+    query.orderBy(`request.${sortBy}`, sortOrder).skip(skip).take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 }

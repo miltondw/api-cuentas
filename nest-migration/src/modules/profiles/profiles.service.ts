@@ -14,6 +14,24 @@ import {
   UpdateBlowDto,
 } from './dto/profile.dto';
 
+// Definir interfaces para filtros y paginación
+interface ProfileFilters {
+  projectId?: number;
+  soundingNumber?: number;
+  startDepth?: number;
+  endDepth?: number;
+  startDate?: string;
+  endDate?: string;
+  hasSPT?: boolean;
+}
+
+interface PaginationParams {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'ASC' | 'DESC';
+}
+
 @Injectable()
 export class ProfilesService {
   constructor(
@@ -246,5 +264,90 @@ export class ProfilesService {
       where: { profileId },
       order: { depth: 'ASC' },
     });
+  }
+
+  async findAllWithFilters(
+    filters: ProfileFilters,
+    pagination: PaginationParams,
+  ): Promise<{ data: Profile[]; total: number; page: number; limit: number }> {
+    const { page, limit, sortBy, sortOrder } = pagination;
+    const skip = (page - 1) * limit;
+
+    // Crear el query builder para más flexibilidad
+    let queryBuilder = this.profileRepository
+      .createQueryBuilder('profile')
+      .leftJoinAndSelect('profile.project', 'project')
+      .leftJoinAndSelect('profile.blows', 'blows');
+
+    // Aplicar filtros
+    if (filters.projectId) {
+      queryBuilder = queryBuilder.andWhere('profile.projectId = :projectId', {
+        projectId: filters.projectId,
+      });
+    }
+
+    if (filters.soundingNumber) {
+      queryBuilder = queryBuilder.andWhere(
+        'profile.soundingNumber = :soundingNumber',
+        { soundingNumber: filters.soundingNumber },
+      );
+    }
+
+    if (filters.startDepth && filters.endDepth) {
+      queryBuilder = queryBuilder.andWhere('profile.depth BETWEEN :startDepth AND :endDepth', {
+        startDepth: filters.startDepth,
+        endDepth: filters.endDepth,
+      });
+    } else if (filters.startDepth) {
+      queryBuilder = queryBuilder.andWhere('profile.depth >= :startDepth', {
+        startDepth: filters.startDepth,
+      });
+    } else if (filters.endDepth) {
+      queryBuilder = queryBuilder.andWhere('profile.depth <= :endDepth', {
+        endDepth: filters.endDepth,
+      });
+    }
+
+    if (filters.startDate && filters.endDate) {
+      queryBuilder = queryBuilder.andWhere(
+        'profile.profileDate BETWEEN :startDate AND :endDate',
+        {
+          startDate: new Date(filters.startDate),
+          endDate: new Date(filters.endDate),
+        },
+      );
+    }
+
+    if (filters.hasSPT !== undefined) {
+      if (filters.hasSPT) {
+        // Si hasSPT es true, buscar perfiles que tengan al menos un golpe registrado
+        queryBuilder = queryBuilder.andWhere('EXISTS (SELECT 1 FROM blow WHERE blow.profileId = profile.id)');
+      } else {
+        // Si hasSPT es false, buscar perfiles que no tengan golpes registrados
+        queryBuilder = queryBuilder.andWhere('NOT EXISTS (SELECT 1 FROM blow WHERE blow.profileId = profile.id)');
+      }
+    }
+
+    // Aplicar ordenamiento
+    if (sortBy === 'depth' || sortBy === 'soundingNumber' || sortBy === 'profileDate') {
+      queryBuilder = queryBuilder.orderBy(`profile.${sortBy}`, sortOrder);
+    } else {
+      queryBuilder = queryBuilder.orderBy('profile.created_at', sortOrder as any);
+    }
+
+    // Aplicar paginación
+    queryBuilder = queryBuilder
+      .skip(skip)
+      .take(limit);
+
+    // Ejecutar consulta
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 }

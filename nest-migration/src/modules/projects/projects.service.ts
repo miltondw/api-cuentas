@@ -4,13 +4,31 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, Like, FindOptionsOrder } from 'typeorm';
 import { Project, ProjectStatus } from './entities/project.entity';
 import {
   CreateProjectDto,
   UpdateProjectDto,
   PaymentDto,
 } from './dto/project.dto';
+
+// Definir los tipos para los filtros y la paginación
+interface ProjectFilters {
+  status?: ProjectStatus;
+  startDate?: string;
+  endDate?: string;
+  solicitante?: string;
+  nombreProyecto?: string;
+  obrero?: string;
+  metodoDePago?: string;
+}
+
+interface PaginationParams {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'ASC' | 'DESC';
+}
 
 @Injectable()
 export class ProjectsService {
@@ -152,6 +170,64 @@ export class ProjectsService {
       completedProjects: completedCount,
       totalIncome,
       totalPending,
+    };
+  }
+
+  async findAllWithFilters(
+    filters: ProjectFilters,
+    pagination: PaginationParams,
+  ): Promise<{ data: Project[]; total: number; page: number; limit: number }> {
+    const { page, limit, sortBy, sortOrder } = pagination;
+    const skip = (page - 1) * limit;
+
+    // Construir las condiciones de filtrado
+    const whereConditions: any = {};
+
+    if (filters.status) {
+      whereConditions.estado = filters.status;
+    }
+
+    if (filters.solicitante) {
+      whereConditions.solicitante = Like(`%${filters.solicitante}%`);
+    }
+
+    if (filters.nombreProyecto) {
+      whereConditions.nombreProyecto = Like(`%${filters.nombreProyecto}%`);
+    }
+
+    if (filters.obrero) {
+      whereConditions.obrero = Like(`%${filters.obrero}%`);
+    }
+
+    if (filters.metodoDePago) {
+      whereConditions.metodoDePago = filters.metodoDePago;
+    }
+
+    // Filtro de fechas
+    if (filters.startDate && filters.endDate) {
+      whereConditions.fecha = Between(
+        new Date(filters.startDate),
+        new Date(filters.endDate),
+      );
+    }
+
+    // Construir objeto de ordenamiento
+    const order: FindOptionsOrder<Project> = {};
+    order[sortBy] = sortOrder;
+
+    // Obtener datos y total
+    const [data, total] = await this.projectRepository.findAndCount({
+      where: whereConditions,
+      order,
+      skip,
+      take: limit,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
     };
   }
 }

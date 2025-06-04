@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpStatus,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +18,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { ApiquesService } from './apiques.service';
 import {
@@ -57,6 +59,61 @@ export class ApiquesController {
   @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Get all apiques for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID', type: 'number' })
+  @ApiQuery({
+    name: 'apiqueNumber',
+    required: false,
+    description: 'Filter by apique number',
+  })
+  @ApiQuery({
+    name: 'startDepth',
+    required: false,
+    description: 'Filter by minimum depth',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'endDepth',
+    required: false,
+    description: 'Filter by maximum depth',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Filter by start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'Filter by end date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'location',
+    required: false,
+    description: 'Filter by location',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Results limit per page',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'Field to sort by (e.g. apiqueNumber, depth, date)',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Sort order (ASC or DESC)',
+    enum: ['ASC', 'DESC'],
+  })
   @ApiResponse({
     status: 200,
     description: 'Apiques found',
@@ -67,9 +124,45 @@ export class ApiquesController {
   @ApiResponse({ status: 404, description: 'Project not found' })
   async findByProject(
     @Param('projectId', ParseIntPipe) projectId: number,
-  ): Promise<ApiqueResponseDto[]> {
-    const apiques = await this.apiquesService.findAllByProject(projectId);
-    return apiques.map(apique => this.transformToResponseDto(apique));
+    @Query('apiqueNumber') apiqueNumber?: string,
+    @Query('startDepth') startDepth?: number,
+    @Query('endDepth') endDepth?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('location') location?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ): Promise<{ data: ApiqueResponseDto[]; total: number; page: number; limit: number }> {
+    const filters = {
+      apiqueNumber: apiqueNumber ? parseInt(apiqueNumber, 10) : undefined,
+      startDepth,
+      endDepth,
+      startDate,
+      endDate,
+      location,
+    };
+
+    const pagination = {
+      page: page ? page : 1,
+      limit: limit ? limit : 10,
+      sortBy: sortBy ? sortBy : 'apiqueNumber',
+      sortOrder: sortOrder ? sortOrder : 'ASC',
+    };
+
+    const result = await this.apiquesService.findAllByProjectWithFilters(
+      projectId,
+      filters,
+      pagination,
+    );
+
+    return {
+      data: result.data.map(apique => this.transformToResponseDto(apique)),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    };
   }
 
   @Get(':projectId/:apiqueId')

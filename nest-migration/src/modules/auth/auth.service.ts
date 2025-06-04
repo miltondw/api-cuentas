@@ -3,7 +3,6 @@ import {
   UnauthorizedException,
   ConflictException,
   ForbiddenException,
-  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,22 +17,25 @@ export class AuthService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private jwtService: JwtService,
-  ) {}
-  // Add validateUser method that's required by the JWT strategy
+  ) {}  // Add validateUser method that's required by the JWT strategy
   async validateUser(email: string): Promise<any> {
-    console.log(`Validating user with email: ${email}`);
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user) {
-      console.error(`User with email ${email} not found`);
-      throw new NotFoundException(`User not found`);
-    }
+    try {
+      const user = await this.userRepository.findOne({ where: { email } });
+      if (!user) {
+        console.error(`User with email ${email} not found in database`);
+        return null;
+      }
 
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    };
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      };
+    } catch (error) {
+      console.error(`Database error validating user ${email}:`, error.message);
+      return null;
+    }
   }
 
   async login(loginDto: LoginDto) {

@@ -9,6 +9,23 @@ import { Apique } from './entities/apique.entity';
 import { Layer } from './entities/layer.entity';
 import { CreateApiqueDto, UpdateApiqueDto } from './dto/apique.dto';
 
+// Definir interfaces para filtros y paginación
+interface ApiqueFilters {
+  apiqueNumber?: number;
+  startDepth?: number;
+  endDepth?: number;
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+}
+
+interface PaginationParams {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'ASC' | 'DESC';
+}
+
 @Injectable()
 export class ApiquesService {
   constructor(
@@ -238,6 +255,88 @@ export class ApiquesService {
       averageDepth: Math.round(averageDepth * 100) / 100,
       cbrTests,
       apiquesWithDate: apiques.filter(a => a.date).length,
+    };
+  }
+
+  async findAllByProjectWithFilters(
+    projectId: number,
+    filters: ApiqueFilters,
+    pagination: PaginationParams,
+  ): Promise<{ data: Apique[]; total: number; page: number; limit: number }> {
+    const { page, limit, sortBy, sortOrder } = pagination;
+    const skip = (page - 1) * limit;
+
+    // Crear el query builder para más flexibilidad
+    let queryBuilder = this.apiqueRepository
+      .createQueryBuilder('apique')
+      .leftJoinAndSelect('apique.project', 'project')
+      .leftJoinAndSelect('apique.layers', 'layers')
+      .where('apique.proyectoId = :projectId', { projectId });
+
+    // Aplicar filtros
+    if (filters.apiqueNumber !== undefined) {
+      queryBuilder = queryBuilder.andWhere('apique.apique = :apiqueNumber', {
+        apiqueNumber: filters.apiqueNumber,
+      });
+    }
+
+    if (filters.startDepth && filters.endDepth) {
+      queryBuilder = queryBuilder.andWhere('apique.depth BETWEEN :startDepth AND :endDepth', {
+        startDepth: filters.startDepth,
+        endDepth: filters.endDepth,
+      });
+    } else if (filters.startDepth) {
+      queryBuilder = queryBuilder.andWhere('apique.depth >= :startDepth', {
+        startDepth: filters.startDepth,
+      });
+    } else if (filters.endDepth) {
+      queryBuilder = queryBuilder.andWhere('apique.depth <= :endDepth', {
+        endDepth: filters.endDepth,
+      });
+    }
+
+    if (filters.startDate && filters.endDate) {
+      queryBuilder = queryBuilder.andWhere(
+        'apique.date BETWEEN :startDate AND :endDate',
+        {
+          startDate: new Date(filters.startDate),
+          endDate: new Date(filters.endDate),
+        },
+      );
+    }
+
+    if (filters.location) {
+      queryBuilder = queryBuilder.andWhere('apique.location LIKE :location', {
+        location: `%${filters.location}%`,
+      });
+    }
+
+    // Aplicar ordenamiento
+    if (sortBy === 'apique' || sortBy === 'apiqueNumber') {
+      queryBuilder = queryBuilder.orderBy('apique.apique', sortOrder);
+    } else if (sortBy === 'depth') {
+      queryBuilder = queryBuilder.orderBy('apique.depth', sortOrder);
+    } else if (sortBy === 'date') {
+      queryBuilder = queryBuilder.orderBy('apique.date', sortOrder);
+    } else if (sortBy === 'location') {
+      queryBuilder = queryBuilder.orderBy('apique.location', sortOrder);
+    } else {
+      queryBuilder = queryBuilder.orderBy('apique.created_at', sortOrder as any);
+    }
+
+    // Aplicar paginación
+    queryBuilder = queryBuilder
+      .skip(skip)
+      .take(limit);
+
+    // Ejecutar consulta
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
     };
   }
 }

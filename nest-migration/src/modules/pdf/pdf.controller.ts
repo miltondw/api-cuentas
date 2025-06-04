@@ -31,8 +31,8 @@ import { Public } from '../auth/decorators/public.decorator';
 export class PDFController {
   constructor(private readonly pdfService: PDFService) {}
   @Get('service-request/:id')
-  @Public() // Hacer este endpoint público para permitir descarga de PDFs sin autenticación
-  @ApiOperation({ summary: 'Generate PDF for service request (Public access)' })
+  @Public()
+  @ApiOperation({ summary: 'Generate PDF for service request' })
   @ApiParam({ name: 'id', description: 'Service Request ID', type: 'number' })
   @ApiQuery({
     name: 'buffer',
@@ -48,7 +48,7 @@ export class PDFController {
   })
   @ApiResponse({
     status: 200,
-    description: 'PDF generado exitosamente y disponible públicamente',
+    description: 'PDF generado exitosamente (Solo admin)',
     content: {
       'application/pdf': {
         schema: {

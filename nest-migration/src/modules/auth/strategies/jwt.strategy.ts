@@ -20,20 +20,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
     });
-  }
-  async validate(payload: any) {
+  }  async validate(payload: any) {
     try {
-      // For debugging
-      /*    console.log('JWT payload:', JSON.stringify(payload));
+      console.log('JWT validation - email:', payload.email);
       
       if (!payload.email) {
         console.error('JWT payload missing email field');
         return null;
-      } */
+      }
 
-      // Use email from payload instead of sub for user lookup
       const user = await this.authService.validateUser(payload.email);
-
+      
+      if (!user) {
+        console.error('User validation returned null');
+        return null;
+      }
+      
+      console.log('JWT validation successful for user:', user.email);
+      
       return {
         id: user.id,
         email: user.email,
@@ -42,7 +46,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       };
     } catch (error) {
       console.error('JWT validation error:', error.message);
-      return null; // This will trigger unauthorized response
+      return null;
     }
   }
 }

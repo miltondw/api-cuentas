@@ -33,7 +33,7 @@ import {
 } from '../service-requests/entities/service-request.entity';
 
 @ApiTags('Client Service Requests')
-@Controller('client/service-requests')
+@Controller('service-requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class ClientServiceRequestsController {
@@ -55,7 +55,8 @@ export class ClientServiceRequestsController {
     @Body() createServiceRequestDto: CreateServiceRequestDto,
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.create(createServiceRequestDto);
-  }  @Get()
+  }
+  @Get()
   @Roles('admin', 'client', 'lab')
   @ApiOperation({ summary: 'Obtener todas las solicitudes de servicio' })
   @ApiQuery({
@@ -63,7 +64,8 @@ export class ClientServiceRequestsController {
     required: false,
     enum: ServiceRequestStatus,
     description: 'Filtrar por estado de la solicitud',
-  })  async findAll(@Query('status') status?: string): Promise<ServiceRequest[]> {
+  })
+  async findAll(@Query('status') status?: string): Promise<ServiceRequest[]> {
     console.log('Accessing client/service-requests findAll endpoint');
     if (status) {
       return this.serviceRequestsService.findByStatus(status);
