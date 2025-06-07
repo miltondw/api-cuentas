@@ -6,8 +6,9 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Project } from '../../projects/entities/project.entity';
+
 import { Layer } from './layer.entity';
+import { Project } from '@/modules/projects/entities/project.entity';
 
 @Entity('apiques')
 export class Apique {
@@ -29,10 +30,21 @@ export class Apique {
   @Column({ type: 'date', nullable: true })
   date: Date;
 
-  @Column({ name: 'cbr_unaltered', type: 'tinyint', default: 0, nullable: true })
+  @Column({
+    name: 'cbr_unaltered',
+    type: 'tinyint',
+    default: 0,
+    nullable: true,
+  })
   cbrUnaltered: boolean;
 
-  @Column({ name: 'depth_tomo', type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @Column({
+    name: 'depth_tomo',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
   depthTomo: number;
 
   @Column({ type: 'int', nullable: true })

@@ -26,9 +26,9 @@ import {
   UpdateApiqueDto,
   ApiqueResponseDto,
 } from './dto/apique.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 @ApiTags('Apiques - Lab')
 @ApiBearerAuth()
@@ -134,7 +134,12 @@ export class ApiquesController {
     @Query('limit') limit?: number,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
-  ): Promise<{ data: ApiqueResponseDto[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: ApiqueResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const filters = {
       apiqueNumber: apiqueNumber ? parseInt(apiqueNumber, 10) : undefined,
       startDepth,

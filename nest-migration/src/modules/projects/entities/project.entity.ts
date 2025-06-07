@@ -5,9 +5,10 @@ import {
   OneToMany,
   CreateDateColumn,
 } from 'typeorm';
-import { Apique } from '../../apiques/entities/apique.entity';
-import { Profile } from '../../profiles/entities/profile.entity';
+
 import { ProjectExpense } from './project-expense.entity';
+import { Apique } from '@/modules/lab/apiques/entities/apique.entity';
+import { Profile } from '@/modules/lab/profiles/entities/profile.entity';
 
 export enum ProjectStatus {
   ACTIVO = 'activo',

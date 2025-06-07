@@ -25,9 +25,9 @@ import {
   UpdateFinancialSummaryDto,
   YearQueryDto,
 } from './dto/financial.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 @ApiTags('Gastos Empresa')
 @ApiBearerAuth('JWT-auth')
@@ -139,11 +139,21 @@ export class FinancialController {
     };
 
     // Si solo se proporciona el año, usar el método existente
-    if (year && !month && !minAmount && !maxAmount && !hasCategory && !categoryName) {
+    if (
+      year &&
+      !month &&
+      !minAmount &&
+      !maxAmount &&
+      !hasCategory &&
+      !categoryName
+    ) {
       return this.financialService.findCompanyExpensesByYear(year);
     }
 
-    return this.financialService.findCompanyExpensesWithFilters(filters, pagination);
+    return this.financialService.findCompanyExpensesWithFilters(
+      filters,
+      pagination,
+    );
   }
 
   @Get('expenses/month/:mes')
@@ -392,12 +402,23 @@ export class FinancialController {
       limit: limit ? limit : 10,
       sortBy: sortBy ? sortBy : 'fecha',
       sortOrder: sortOrder ? sortOrder : 'DESC',
-    };    // Si solo se proporciona el año, usar el método existente
-    if (year && !month && !minIncome && !maxIncome && !minExpense && !maxExpense && !profitRange) {
+    }; // Si solo se proporciona el año, usar el método existente
+    if (
+      year &&
+      !month &&
+      !minIncome &&
+      !maxIncome &&
+      !minExpense &&
+      !maxExpense &&
+      !profitRange
+    ) {
       return this.financialService.findFinancialSummariesByYear(year);
     }
 
-    return this.financialService.findFinancialSummaryWithFilters(filters, pagination);
+    return this.financialService.findFinancialSummaryWithFilters(
+      filters,
+      pagination,
+    );
   }
 
   @Get('analytics/monthly-comparison')

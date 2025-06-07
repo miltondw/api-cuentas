@@ -8,8 +8,8 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Project } from '../../projects/entities/project.entity';
 import { Blow } from './blow.entity';
+import { Project } from '@/modules/projects/entities/project.entity';
 
 @Entity('profiles')
 export class Profile {
