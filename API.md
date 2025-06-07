@@ -1,48 +1,478 @@
-# 📖 API de Gestión de Proyectos y Servicios INGEOCIMYC
+# 📖 API de Gestión de Proyectos y Servicios INGEOCIMYC - NestJS
 
 ## 📑 Tabla de Contenidos
 
 1. [🌟 Descripción General](#-descripción-general)
-2. [🔐 Autenticación](#-autenticación)
-   - [🔑 Registro de Usuario](#-registro-de-usuario)
-   - [🚪 Inicio de Sesión](#-inicio-de-sesión)
-   - [🔄 Renovación de Token](#-renovación-de-token)
-   - [🛡️ Protección CSRF](#️-protección-csrf)
-3. [📋 Gestión de Proyectos](#-gestión-de-proyectos)
-4. [🧪 Solicitudes de Servicio](#-solicitudes-de-servicio)
-5. [💼 Gestión Financiera](#-gestión-financiera)
-6. [🏗️ Gestión de Perfiles y Apiques](#️-gestión-de-perfiles-y-apiques)
-7. [🚀 Mejores Prácticas para Frontend](#-mejores-prácticas-para-frontend)
-8. [⚡ Optimizaciones de Rendimiento](#-optimizaciones-de-rendimiento)
-9. [🔒 Consideraciones de Seguridad](#-consideraciones-de-seguridad)
-10. [📊 Códigos de Estado HTTP](#-códigos-de-estado-http)
-11. [🎯 Rate Limiting](#-rate-limiting)
-12. [🔧 Variables de Entorno](#-variables-de-entorno)
-13. [🆘 Manejo de Errores](#-manejo-de-errores)
-14. [📞 Soporte y Contacto](#-soporte-y-contacto)
+2. [🏗️ Arquitectura NestJS](#️-arquitectura-nestjs)
+3. [🔐 Autenticación y Autorización](#-autenticación-y-autorización)
+4. [🚀 Endpoints por Módulos](#-endpoints-por-módulos)
+5. [💻 Integración Frontend con TypeScript](#-integración-frontend-con-typescript)
+6. [🛡️ Seguridad y Mejores Prácticas](#️-seguridad-y-mejores-prácticas)
+7. [📊 Códigos de Estado y Errores](#-códigos-de-estado-y-errores)
+8. [🔧 Configuración y Variables de Entorno](#-configuración-y-variables-de-entorno)
+9. [📞 Soporte y Documentación](#-soporte-y-documentación)
 
 ---
 
 ## 🌟 Descripción General
 
-Esta API está diseñada para la gestión integral de proyectos geotécnicos, solicitudes de servicios de laboratorio, autenticación de usuarios y generación de reportes. La API está construida con **Express.js** y utiliza **MySQL** como base de datos, implementando las mejores prácticas de seguridad y escalabilidad.
+Esta API está construida con **NestJS** y **TypeORM**, diseñada para la gestión integral de proyectos geotécnicos, solicitudes de servicios de laboratorio, autenticación basada en roles y generación de reportes. La arquitectura moderna de NestJS proporciona escalabilidad, mantenibilidad y excelente desarrollo de experiencia.
 
 ### 🚀 Características Principales
 
-- **Autenticación JWT** con tokens de acceso y refresco
-- **Sistema de roles** (admin, usuario)
-- **Protección CSRF** para operaciones sensibles
-- **Rate Limiting** para prevenir abuso
-- **Generación de PDFs** para solicitudes de servicio
-- **Gestión completa de proyectos** y perfiles geotécnicos
-- **Sistema de apiques** y muestras de laboratorio
-- **Reportes financieros** y gastos empresariales
+- **Arquitectura NestJS** con decoradores, guards y middlewares
+- **TypeORM** para manejo robusto de base de datos MySQL
+- **Sistema de roles** (admin, lab, client) con guards personalizados
+- **Autenticación JWT** con estrategias de Passport
+- **Documentación Swagger** automática con decoradores
+- **Validación de DTOs** con class-validator
+- **Rate Limiting** con @nestjs/throttler
+- **Generación de PDFs** con Puppeteer
+- **Arquitectura modular** organizada por roles y funcionalidades
 
 ### 🔗 URLs Base
 
 - **Producción**: `https://api-cuentas-zlut.onrender.com`
-- **Desarrollo**: `http://localhost:5050`
+- **Desarrollo**: `http://localhost:5051`
 - **Documentación Swagger**: `/api-docs`
+- **Prefijo API**: `/api`
+
+---
+
+## 🏗️ Arquitectura NestJS
+
+### Estructura Modular por Roles
+
+```
+src/modules/
+├── admin/              # Módulos solo para administradores
+│   ├── auth.module.ts
+│   └── pdf.module.ts
+├── lab/                # Módulos de laboratorio
+│   ├── apiques/
+│   └── profiles/
+├── projects/           # Gestión de proyectos
+│   ├── projects.module.ts
+│   ├── financial/
+│   └── resumen/
+├── client/             # Módulos para clientes
+│   └── service-requests/
+├── services/           # Catálogo de servicios (público)
+└── auth/               # Autenticación base
+```
+
+### Tecnologías Core
+
+- **Framework**: NestJS v10+
+- **ORM**: TypeORM v0.3+
+- **Base de Datos**: MySQL 8+
+- **Autenticación**: Passport JWT
+- **Validación**: class-validator
+- **Documentación**: Swagger/OpenAPI
+- **PDF**: Puppeteer
+
+---
+
+## 🔐 Autenticación y Autorización
+
+### Sistema de Roles
+
+| Rol      | Descripción                             | Acceso                                           |
+| -------- | --------------------------------------- | ------------------------------------------------ |
+| `admin`  | Administrador del sistema               | Acceso completo a todos los módulos             |
+| `lab`    | Personal de laboratorio                 | Gestión de apiques, perfiles y solicitudes      |
+| `client` | Cliente/Solicitante de servicios       | Creación de solicitudes y visualización         |
+
+### 🔑 Registro de Usuario
+
+**Endpoint**: `POST /api/auth/register`
+
+#### DTO Interface
+
+```typescript
+interface RegisterDto {
+  name?: string;          // Nombre completo (opcional)
+  firstName?: string;     // Primer nombre (opcional)
+  lastName?: string;      // Apellido (opcional)
+  email: string;          // Email válido y único
+  password: string;       // Mínimo 6 caracteres
+  role?: 'admin' | 'lab' | 'client';  // Por defecto: 'client'
+  jwt2?: string;          // Requerido solo para crear admin
+}
+```
+
+#### Ejemplo en React con TypeScript
+
+```tsx
+import React, { useState } from 'react';
+import { z } from 'zod';
+
+// Esquema de validación
+const registerSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  role: z.enum(['admin', 'lab', 'client']).optional(),
+  jwt2: z.string().optional(),
+});
+
+type RegisterData = z.infer<typeof registerSchema>;
+
+interface AuthResponse {
+  accessToken: string;
+  user: {
+    email: string;
+    name: string;
+    role: string;
+  };
+}
+
+const RegisterForm: React.FC = () => {
+  const [formData, setFormData] = useState<RegisterData>({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    role: 'client',
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+
+    try {
+      // Validar datos
+      const validData = registerSchema.parse(formData);
+
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(validData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error en registro');
+      }
+
+      const authData: AuthResponse = await response.json();
+      
+      // Guardar token
+      localStorage.setItem('accessToken', authData.accessToken);
+      
+      // Redirigir según rol
+      const redirectPath = authData.user.role === 'admin' 
+        ? '/admin/dashboard' 
+        : authData.user.role === 'lab'
+        ? '/lab/dashboard'
+        : '/client/dashboard';
+        
+      window.location.href = redirectPath;
+
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach(err => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0].toString()] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      } else {
+        setErrors({ general: error instanceof Error ? error.message : 'Error desconocido' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="register-form">
+      <h2>Registro de Usuario</h2>
+      
+      <div className="form-group">
+        <input
+          type="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={(e) => setFormData(prev => ({...prev, email: e.target.value}))}
+          required
+        />
+        {errors.email && <span className="error">{errors.email}</span>}
+      </div>
+
+      <div className="form-group">
+        <input
+          type="password"
+          placeholder="Contraseña"
+          value={formData.password}
+          onChange={(e) => setFormData(prev => ({...prev, password: e.target.value}))}
+          required
+        />
+        {errors.password && <span className="error">{errors.password}</span>}
+      </div>
+
+      <div className="form-row">
+        <input
+          type="text"
+          placeholder="Primer nombre"
+          value={formData.firstName}
+          onChange={(e) => setFormData(prev => ({...prev, firstName: e.target.value}))}
+        />
+        <input
+          type="text"
+          placeholder="Apellido"
+          value={formData.lastName}
+          onChange={(e) => setFormData(prev => ({...prev, lastName: e.target.value}))}
+        />
+      </div>
+
+      <div className="form-group">
+        <select
+          value={formData.role}
+          onChange={(e) => setFormData(prev => ({...prev, role: e.target.value as any}))}
+        >
+          <option value="client">Cliente</option>
+          <option value="lab">Laboratorio</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+
+      {formData.role === 'admin' && (
+        <div className="form-group">
+          <input
+            type="password"
+            placeholder="Código de autorización admin"
+            value={formData.jwt2}
+            onChange={(e) => setFormData(prev => ({...prev, jwt2: e.target.value}))}
+            required
+          />
+          {errors.jwt2 && <span className="error">{errors.jwt2}</span>}
+        </div>
+      )}
+
+      {errors.general && <div className="error">{errors.general}</div>}
+
+      <button type="submit" disabled={loading}>
+        {loading ? 'Registrando...' : 'Registrar'}
+      </button>
+    </form>
+  );
+};
+
+export default RegisterForm;
+```
+
+### 🚪 Inicio de Sesión
+
+**Endpoint**: `POST /api/auth/login`
+
+#### DTO Interface
+
+```typescript
+interface LoginDto {
+  email: string;     // Email del usuario
+  password: string;  // Contraseña
+}
+```
+
+#### Hook Personalizado para Autenticación
+
+```tsx
+import { useState, useContext, createContext, useEffect, ReactNode } from 'react';
+
+interface User {
+  email: string;
+  name: string;
+  role: 'admin' | 'lab' | 'client';
+}
+
+interface AuthContextType {
+  user: User | null;
+  accessToken: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  loading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth debe usarse dentro de AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(
+    localStorage.getItem('accessToken')
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      if (accessToken) {
+        try {
+          const response = await fetch('/api/auth/verify', {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData.user);
+          } else {
+            // Token inválido
+            localStorage.removeItem('accessToken');
+            setAccessToken(null);
+          }
+        } catch (error) {
+          console.error('Error verificando token:', error);
+          localStorage.removeItem('accessToken');
+          setAccessToken(null);
+        }
+      }
+      setLoading(false);
+    };
+
+    verifyToken();
+  }, [accessToken]);
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Credenciales inválidas');
+      }
+
+      const authData: AuthResponse = await response.json();
+      
+      setAccessToken(authData.accessToken);
+      setUser(authData.user);
+      localStorage.setItem('accessToken', authData.accessToken);
+
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setAccessToken(null);
+    localStorage.removeItem('accessToken');
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, accessToken, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+```
+
+### 🛡️ Guards y Decoradores
+
+#### Uso de Guards Personalizados
+
+```tsx
+// Hook para peticiones autenticadas
+const useAuthenticatedFetch = () => {
+  const { accessToken, logout } = useAuth();
+
+  const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    // Manejar token expirado
+    if (response.status === 401) {
+      logout();
+      throw new Error('Sesión expirada');
+    }
+
+    return response;
+  };
+
+  return authenticatedFetch;
+};
+
+// Componente de ruta protegida
+interface ProtectedRouteProps {
+  children: ReactNode;
+  requiredRole?: 'admin' | 'lab' | 'client';
+  allowedRoles?: Array<'admin' | 'lab' | 'client'>;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requiredRole, 
+  allowedRoles 
+}) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="loading">Verificando permisos...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Verificar rol específico
+  if (requiredRole && user.role !== requiredRole) {
+    return (
+      <div className="access-denied">
+        <h2>Acceso Denegado</h2>
+        <p>No tienes permisos para acceder a esta sección.</p>
+        <p>Rol requerido: {requiredRole}</p>
+        <p>Tu rol: {user.role}</p>
+      </div>
+    );
+  }
+
+  // Verificar roles permitidos
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return (
+      <div className="access-denied">
+        <h2>Acceso Denegado</h2>
+        <p>No tienes permisos para acceder a esta sección.</p>
+        <p>Roles permitidos: {allowedRoles.join(', ')}</p>
+        <p>Tu rol: {user.role}</p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
+```
 
 ---
 
@@ -519,6 +949,1379 @@ const CreateProjectForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    try {
+      const response = await authenticatedPost("/api/projects", project);
+      
+      if (response.ok) {
+        const newProject: Project = await response.json();
+        toast.success("Proyecto creado exitosamente");
+        router.push(`/projects/${newProject.id}`);
+      } else {
+        toast.error("Error al crear el proyecto");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error de conexión");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="project-form">
+      <div className="form-group">
+        <label htmlFor="nombre">Nombre del Proyecto*</label>
+        <input
+          type="text"
+          id="nombre"
+          value={project.nombre}
+          onChange={(e) => setProject({ ...project, nombre: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="cliente">Cliente*</label>
+        <input
+          type="text"
+          id="cliente"
+          value={project.cliente}
+          onChange={(e) => setProject({ ...project, cliente: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="presupuesto">Presupuesto*</label>
+        <input
+          type="number"
+          id="presupuesto"
+          min="0"
+          step="0.01"
+          value={project.presupuesto}
+          onChange={(e) => setProject({ ...project, presupuesto: parseFloat(e.target.value) })}
+          required
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="fechaInicio">Fecha de Inicio*</label>
+        <input
+          type="date"
+          id="fechaInicio"
+          value={project.fechaInicio}
+          onChange={(e) => setProject({ ...project, fechaInicio: e.target.value })}
+          required
+        />
+      </div>
+
+      <button type="submit" className="btn-primary">
+        Crear Proyecto
+      </button>
+    </form>
+  );
+};
+```
+
+---
+
+## 🔬 Módulo de Laboratorio
+
+### Gestión de Apiques
+
+#### 📊 Listar Apiques por Proyecto
+
+**Endpoint**: `GET /api/lab/apiques/project/:projectId`
+
+**Roles requeridos**: `admin`, `lab`
+
+##### Query Parameters
+
+```typescript
+interface ApiqueFilters {
+  apiqueNumber?: number;
+  startDepth?: number;
+  endDepth?: number;
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+  location?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;    // 'apiqueNumber' | 'depth' | 'date'
+  sortOrder?: 'ASC' | 'DESC';
+}
+```
+
+##### Response DTO
+
+```typescript
+interface ApiqueResponseDto {
+  id: number;
+  numero: number;
+  profundidad: number;
+  ubicacion: string;
+  fecha: string;
+  projectId: number;
+  capas: Layer[];
+  created_at: string;
+  updated_at: string;
+}
+
+interface ApiqueListResponse {
+  data: ApiqueResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+}
+```
+
+##### Ejemplo en React
+
+```tsx
+const ApiquesView = ({ projectId }: { projectId: number }) => {
+  const [apiques, setApiques] = useState<ApiqueResponseDto[]>([]);
+  const [filters, setFilters] = useState<ApiqueFilters>({
+    page: 1,
+    limit: 10,
+    sortBy: 'apiqueNumber',
+    sortOrder: 'ASC'
+  });
+  const [loading, setLoading] = useState(true);
+  const authenticatedFetch = createAuthenticatedFetch();
+
+  const fetchApiques = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+
+      const response = await authenticatedFetch(
+        `/api/lab/apiques/project/${projectId}?${queryParams}`
+      );
+
+      if (response.ok) {
+        const data: ApiqueListResponse = await response.json();
+        setApiques(data.data);
+      }
+    } catch (error) {
+      console.error("Error cargando apiques:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApiques();
+  }, [projectId, filters]);
+
+  const handleFilterChange = (key: keyof ApiqueFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  if (loading) return <div>Cargando apiques...</div>;
+
+  return (
+    <div className="apiques-container">
+      <div className="filters-section">
+        <div className="filter-group">
+          <label>Número de Apique:</label>
+          <input
+            type="number"
+            value={filters.apiqueNumber || ''}
+            onChange={(e) => handleFilterChange('apiqueNumber', e.target.value ? parseInt(e.target.value) : undefined)}
+            placeholder="Buscar por número"
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Profundidad (m):</label>
+          <input
+            type="number"
+            step="0.1"
+            value={filters.startDepth || ''}
+            onChange={(e) => handleFilterChange('startDepth', e.target.value ? parseFloat(e.target.value) : undefined)}
+            placeholder="Mín"
+          />
+          <input
+            type="number"
+            step="0.1"
+            value={filters.endDepth || ''}
+            onChange={(e) => handleFilterChange('endDepth', e.target.value ? parseFloat(e.target.value) : undefined)}
+            placeholder="Máx"
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Fecha:</label>
+          <input
+            type="date"
+            value={filters.startDate || ''}
+            onChange={(e) => handleFilterChange('startDate', e.target.value)}
+          />
+          <input
+            type="date"
+            value={filters.endDate || ''}
+            onChange={(e) => handleFilterChange('endDate', e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="apiques-grid">
+        {apiques.map((apique) => (
+          <div key={apique.id} className="apique-card">
+            <h3>Apique #{apique.numero}</h3>
+            <p><strong>Profundidad:</strong> {apique.profundidad}m</p>
+            <p><strong>Ubicación:</strong> {apique.ubicacion}</p>
+            <p><strong>Fecha:</strong> {new Date(apique.fecha).toLocaleDateString()}</p>
+            <p><strong>Capas:</strong> {apique.capas.length}</p>
+            
+            <div className="apique-actions">
+              <button 
+                onClick={() => router.push(`/lab/apiques/${apique.id}`)}
+                className="btn-secondary"
+              >
+                Ver Detalles
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Pagination 
+        currentPage={filters.page || 1}
+        onPageChange={(page) => handleFilterChange('page', page)}
+        hasMore={apiques.length === (filters.limit || 10)}
+      />
+    </div>
+  );
+};
+```
+
+#### ➕ Crear Apique
+
+**Endpoint**: `POST /api/lab/apiques`
+
+**Roles requeridos**: `admin`, `lab`
+
+##### Request DTO
+
+```typescript
+interface CreateApiqueDto {
+  numero: number;
+  profundidad: number;
+  ubicacion: string;
+  fecha: string; // ISO date string
+  projectId: number;
+  capas?: CreateLayerDto[];
+}
+
+interface CreateLayerDto {
+  numero: number;
+  profundidad_inicial: number;
+  profundidad_final: number;
+  descripcion: string;
+  clasificacion_sucs?: string;
+  humedad?: number;
+  densidad?: number;
+  observaciones?: string;
+}
+```
+
+#### 📝 Obtener Apique Específico
+
+**Endpoint**: `GET /api/lab/apiques/:projectId/:apiqueId`
+
+**Roles requeridos**: `admin`, `lab`
+
+#### ✏️ Actualizar Apique
+
+**Endpoint**: `PUT /api/lab/apiques/:projectId/:apiqueId`
+
+**Roles requeridos**: `admin`, `lab`
+
+#### 🗑️ Eliminar Apique
+
+**Endpoint**: `DELETE /api/lab/apiques/:projectId/:apiqueId`
+
+**Roles requeridos**: `admin`, `lab`
+
+#### 📈 Estadísticas de Apiques
+
+**Endpoint**: `GET /api/lab/apiques/project/:projectId/statistics`
+
+**Roles requeridos**: `admin`, `lab`
+
+##### Response
+
+```typescript
+interface ApiqueStatistics {
+  totalApiques: number;
+  profundidadPromedio: number;
+  profundidadMaxima: number;
+  profundidadMinima: number;
+  totalCapas: number;
+  clasificacionesMasFrecuentes: {
+    clasificacion: string;
+    cantidad: number;
+  }[];
+}
+```
+
+### Gestión de Perfiles
+
+#### 📊 Listar Perfiles por Proyecto
+
+**Endpoint**: `GET /api/lab/profiles/project/:projectId`
+
+**Roles requeridos**: `admin`, `lab`
+
+##### Query Parameters
+
+```typescript
+interface ProfileFilters {
+  soundingNumber?: number;
+  startDepth?: number;
+  endDepth?: number;
+  startDate?: string;
+  endDate?: string;
+  hasSPT?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
+```
+
+##### Response DTO
+
+```typescript
+interface ProfileResponseDto {
+  id: number;
+  numero_sondeo: number;
+  profundidad_perforada: number;
+  nivel_freatico?: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  ubicacion: string;
+  projectId: number;
+  golpes: BlowDto[];
+  created_at: string;
+  updated_at: string;
+}
+
+interface BlowDto {
+  id: number;
+  profundidad: number;
+  golpes_30cm: number;
+  n_spt: number;
+  recuperacion: number;
+  descripcion: string;
+  clasificacion_sucs?: string;
+}
+```
+
+#### ➕ Crear Perfil
+
+**Endpoint**: `POST /api/lab/profiles`
+
+**Roles requeridos**: `admin`, `lab`
+
+##### Request DTO
+
+```typescript
+interface CreateProfileDto {
+  numero_sondeo: number;
+  profundidad_perforada: number;
+  nivel_freatico?: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  ubicacion: string;
+  projectId: number;
+  golpes?: CreateBlowDto[];
+}
+
+interface CreateBlowDto {
+  profundidad: number;
+  golpes_30cm: number;
+  n_spt: number;
+  recuperacion: number;
+  descripcion: string;
+  clasificacion_sucs?: string;
+}
+```
+
+##### Ejemplo en React
+
+```tsx
+const CreateProfileForm = ({ projectId }: { projectId: number }) => {
+  const [profile, setProfile] = useState<CreateProfileDto>({
+    numero_sondeo: 1,
+    profundidad_perforada: 0,
+    fecha_inicio: '',
+    fecha_fin: '',
+    ubicacion: '',
+    projectId,
+    golpes: []
+  });
+  const { authenticatedPost } = useCSRF();
+
+  const addBlow = () => {
+    const newBlow: CreateBlowDto = {
+      profundidad: profile.golpes.length + 1,
+      golpes_30cm: 0,
+      n_spt: 0,
+      recuperacion: 0,
+      descripcion: '',
+    };
+    
+    setProfile(prev => ({
+      ...prev,
+      golpes: [...prev.golpes, newBlow]
+    }));
+  };
+
+  const updateBlow = (index: number, blow: CreateBlowDto) => {
+    setProfile(prev => ({
+      ...prev,
+      golpes: prev.golpes.map((g, i) => i === index ? blow : g)
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await authenticatedPost("/api/lab/profiles", profile);
+      
+      if (response.ok) {
+        const newProfile: ProfileResponseDto = await response.json();
+        toast.success("Perfil creado exitosamente");
+        router.push(`/lab/profiles/${newProfile.id}`);
+      } else {
+        toast.error("Error al crear el perfil");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error de conexión");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="profile-form">
+      <div className="form-section">
+        <h3>Información General</h3>
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label>Número de Sondeo*</label>
+            <input
+              type="number"
+              value={profile.numero_sondeo}
+              onChange={(e) => setProfile({ ...profile, numero_sondeo: parseInt(e.target.value) })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Profundidad Perforada (m)*</label>
+            <input
+              type="number"
+              step="0.1"
+              value={profile.profundidad_perforada}
+              onChange={(e) => setProfile({ ...profile, profundidad_perforada: parseFloat(e.target.value) })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Nivel Freático (m)</label>
+            <input
+              type="number"
+              step="0.1"
+              value={profile.nivel_freatico || ''}
+              onChange={(e) => setProfile({ 
+                ...profile, 
+                nivel_freatico: e.target.value ? parseFloat(e.target.value) : undefined 
+              })}
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Fecha Inicio*</label>
+            <input
+              type="date"
+              value={profile.fecha_inicio}
+              onChange={(e) => setProfile({ ...profile, fecha_inicio: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Fecha Fin*</label>
+            <input
+              type="date"
+              value={profile.fecha_fin}
+              onChange={(e) => setProfile({ ...profile, fecha_fin: e.target.value })}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Ubicación*</label>
+          <input
+            type="text"
+            value={profile.ubicacion}
+            onChange={(e) => setProfile({ ...profile, ubicacion: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="form-section">
+        <div className="section-header">
+          <h3>Golpes SPT</h3>
+          <button type="button" onClick={addBlow} className="btn-secondary">
+            Agregar Golpe
+          </button>
+        </div>
+
+        <div className="blows-table">
+          <div className="table-header">
+            <span>Prof. (m)</span>
+            <span>Golpes 30cm</span>
+            <span>N-SPT</span>
+            <span>Recup. (%)</span>
+            <span>Descripción</span>
+            <span>SUCS</span>
+            <span>Acciones</span>
+          </div>
+
+          {profile.golpes.map((blow, index) => (
+            <div key={index} className="table-row">
+              <input
+                type="number"
+                step="0.1"
+                value={blow.profundidad}
+                onChange={(e) => updateBlow(index, { 
+                  ...blow, 
+                  profundidad: parseFloat(e.target.value) 
+                })}
+              />
+              <input
+                type="number"
+                value={blow.golpes_30cm}
+                onChange={(e) => updateBlow(index, { 
+                  ...blow, 
+                  golpes_30cm: parseInt(e.target.value) 
+                })}
+              />
+              <input
+                type="number"
+                value={blow.n_spt}
+                onChange={(e) => updateBlow(index, { 
+                  ...blow, 
+                  n_spt: parseInt(e.target.value) 
+                })}
+              />
+              <input
+                type="number"
+                step="0.1"
+                value={blow.recuperacion}
+                onChange={(e) => updateBlow(index, { 
+                  ...blow, 
+                  recuperacion: parseFloat(e.target.value) 
+                })}
+              />
+              <input
+                type="text"
+                value={blow.descripcion}
+                onChange={(e) => updateBlow(index, { 
+                  ...blow, 
+                  descripcion: e.target.value 
+                })}
+              />
+              <input
+                type="text"
+                value={blow.clasificacion_sucs || ''}
+                onChange={(e) => updateBlow(index, { 
+                  ...blow, 
+                  clasificacion_sucs: e.target.value 
+                })}
+              />
+              <button
+                type="button"
+                onClick={() => setProfile(prev => ({
+                  ...prev,
+                  golpes: prev.golpes.filter((_, i) => i !== index)
+                }))}
+                className="btn-danger-small"
+              >
+                Eliminar
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button type="submit" className="btn-primary">
+        Crear Perfil
+      </button>
+    </form>
+  );
+};
+```
+
+---
+
+## 💰 Módulo Financiero
+
+### Gestión de Gastos Empresariales
+
+#### 📊 Listar Gastos Empresariales
+
+**Endpoint**: `GET /api/gastos-mes/expenses`
+
+**Roles requeridos**: `admin`
+
+##### Query Parameters
+
+```typescript
+interface FinancialFilters {
+  year?: string;    // YYYY
+  month?: string;   // MM
+  minAmount?: number;
+  maxAmount?: number;
+  hasCategory?: boolean;
+  categoryName?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
+```
+
+##### Response DTO
+
+```typescript
+interface CompanyExpenseDto {
+  id: number;
+  mes: string;           // YYYY-MM
+  alquiler: number;
+  servicios: number;
+  combustible: number;
+  alimentacion: number;
+  papeleria: number;
+  comunicaciones: number;
+  publicidad: number;
+  transporte: number;
+  hospedaje: number;
+  otros_gastos: number;
+  total: number;
+  observaciones?: string;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+#### ➕ Crear Gastos Empresariales
+
+**Endpoint**: `POST /api/gastos-mes/expenses`
+
+**Roles requeridos**: `admin`
+
+##### Request DTO
+
+```typescript
+interface CreateCompanyExpenseDto {
+  mes: string;           // YYYY-MM
+  alquiler: number;
+  servicios: number;
+  combustible: number;
+  alimentacion: number;
+  papeleria: number;
+  comunicaciones: number;
+  publicidad: number;
+  transporte: number;
+  hospedaje: number;
+  otros_gastos: number;
+  observaciones?: string;
+}
+```
+
+##### Ejemplo en React
+
+```tsx
+const CompanyExpenseForm = () => {
+  const [expense, setExpense] = useState<CreateCompanyExpenseDto>({
+    mes: new Date().toISOString().slice(0, 7), // YYYY-MM
+    alquiler: 0,
+    servicios: 0,
+    combustible: 0,
+    alimentacion: 0,
+    papeleria: 0,
+    comunicaciones: 0,
+    publicidad: 0,
+    transporte: 0,
+    hospedaje: 0,
+    otros_gastos: 0,
+  });
+  const { authenticatedPost } = useCSRF();
+
+  const calculateTotal = () => {
+    return Object.entries(expense)
+      .filter(([key]) => key !== 'mes' && key !== 'observaciones')
+      .reduce((total, [_, value]) => total + (typeof value === 'number' ? value : 0), 0);
+  };
+
+  const handleExpenseChange = (field: keyof CreateCompanyExpenseDto, value: number | string) => {
+    setExpense(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await authenticatedPost("/api/gastos-mes/expenses", expense);
+      
+      if (response.ok) {
+        const newExpense: CompanyExpenseDto = await response.json();
+        toast.success("Gastos registrados exitosamente");
+        router.push("/financial/expenses");
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Error al registrar gastos");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error de conexión");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="expense-form">
+      <div className="form-header">
+        <h2>Registrar Gastos Empresariales</h2>
+        <div className="total-display">
+          <strong>Total: ${calculateTotal().toLocaleString()}</strong>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>Mes*</label>
+        <input
+          type="month"
+          value={expense.mes}
+          onChange={(e) => handleExpenseChange('mes', e.target.value)}
+          required
+        />
+      </div>
+
+      <div className="expense-categories">
+        <div className="category-group">
+          <h3>Gastos Fijos</h3>
+          
+          <div className="form-group">
+            <label>Alquiler</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.alquiler}
+              onChange={(e) => handleExpenseChange('alquiler', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Servicios (Luz, Agua, Internet)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.servicios}
+              onChange={(e) => handleExpenseChange('servicios', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Comunicaciones (Teléfono, Celular)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.comunicaciones}
+              onChange={(e) => handleExpenseChange('comunicaciones', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+        </div>
+
+        <div className="category-group">
+          <h3>Gastos Operativos</h3>
+          
+          <div className="form-group">
+            <label>Combustible</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.combustible}
+              onChange={(e) => handleExpenseChange('combustible', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Transporte</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.transporte}
+              onChange={(e) => handleExpenseChange('transporte', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Alimentación</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.alimentacion}
+              onChange={(e) => handleExpenseChange('alimentacion', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Hospedaje</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.hospedaje}
+              onChange={(e) => handleExpenseChange('hospedaje', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+        </div>
+
+        <div className="category-group">
+          <h3>Otros Gastos</h3>
+          
+          <div className="form-group">
+            <label>Papelería</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.papeleria}
+              onChange={(e) => handleExpenseChange('papeleria', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Publicidad</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.publicidad}
+              onChange={(e) => handleExpenseChange('publicidad', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Otros Gastos</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={expense.otros_gastos}
+              onChange={(e) => handleExpenseChange('otros_gastos', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>Observaciones</label>
+        <textarea
+          value={expense.observaciones || ''}
+          onChange={(e) => handleExpenseChange('observaciones', e.target.value)}
+          rows={3}
+          placeholder="Observaciones adicionales sobre los gastos del mes..."
+        />
+      </div>
+
+      <button type="submit" className="btn-primary">
+        Registrar Gastos
+      </button>
+    </form>
+  );
+};
+```
+
+### Resúmenes Financieros
+
+#### 📊 Listar Resúmenes Financieros
+
+**Endpoint**: `GET /api/gastos-mes/summaries`
+
+**Roles requeridos**: `admin`
+
+##### Query Parameters
+
+```typescript
+interface FinancialSummaryFilters {
+  year?: number;    // YYYY
+}
+```
+
+##### Response DTO
+
+```typescript
+interface FinancialSummaryDto {
+  id: number;
+  mes: string;                    // YYYY-MM
+  total_ingresos: number;
+  total_gastos_empresa: number;
+  total_gastos_proyectos: number;
+  utilidad_bruta: number;
+  utilidad_neta: number;
+  margen_utilidad: number;        // Porcentaje
+  observaciones?: string;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+#### ➕ Crear Resumen Financiero
+
+**Endpoint**: `POST /api/gastos-mes/summaries`
+
+**Roles requeridos**: `admin`
+
+##### Request DTO
+
+```typescript
+interface CreateFinancialSummaryDto {
+  mes: string;                    // YYYY-MM
+  total_ingresos: number;
+  total_gastos_empresa: number;
+  total_gastos_proyectos: number;
+  observaciones?: string;
+}
+```
+
+#### 📝 Obtener Resumen por Mes
+
+**Endpoint**: `GET /api/gastos-mes/summaries/:mes`
+
+**Roles requeridos**: `admin`
+
+---
+
+## 📄 Módulo de Generación de PDFs
+
+### Generar Reportes
+
+#### 📄 Generar PDF General
+
+**Endpoint**: `POST /api/pdf/generate`
+
+**Roles requeridos**: `admin`
+
+##### Request DTO
+
+```typescript
+interface PDFGenerateRequest {
+  template: 'project-report' | 'financial-summary' | 'lab-report' | 'service-request';
+  data: any;          // Datos específicos según el template
+  options?: {
+    format?: 'A4' | 'Letter';
+    orientation?: 'portrait' | 'landscape';
+    margin?: {
+      top?: number;
+      bottom?: number;
+      left?: number;
+      right?: number;
+    };
+  };
+}
+```
+
+##### Ejemplo en React
+
+```tsx
+const PDFGenerator = ({ projectId }: { projectId: number }) => {
+  const [loading, setLoading] = useState(false);
+  const { authenticatedPost } = useCSRF();
+
+  const generateProjectReport = async () => {
+    setLoading(true);
+    
+    try {
+      const response = await authenticatedPost("/api/pdf/generate", {
+        template: "project-report",
+        data: {
+          projectId,
+          includeApiques: true,
+          includeProfiles: true,
+          includeFinancial: true
+        },
+        options: {
+          format: "A4",
+          orientation: "portrait"
+        }
+      });
+
+      if (response.ok) {
+        // El servidor devuelve el PDF como blob
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `proyecto-${projectId}-reporte.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success("Reporte generado exitosamente");
+      } else {
+        toast.error("Error al generar el reporte");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error de conexión");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="pdf-generator">
+      <h3>Generar Reportes</h3>
+      
+      <div className="pdf-options">
+        <button
+          onClick={generateProjectReport}
+          disabled={loading}
+          className="btn-primary"
+        >
+          {loading ? "Generando..." : "Generar Reporte de Proyecto"}
+        </button>
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+## 🔧 Servicios Públicos
+
+### Catálogo de Servicios
+
+#### 📊 Listar Servicios
+
+**Endpoint**: `GET /api/services`
+
+**Roles requeridos**: Todos los usuarios autenticados
+
+##### Response DTO
+
+```typescript
+interface ServiceDto {
+  id: number;
+  name: string;
+  description: string;
+  category: ServiceCategoryDto;
+  base_price: number;
+  unit: string;              // 'm', 'unidad', 'muestra', etc.
+  duration_days: number;
+  is_active: boolean;
+  additional_fields: ServiceAdditionalFieldDto[];
+  created_at: string;
+  updated_at: string;
+}
+
+interface ServiceCategoryDto {
+  id: number;
+  name: string;
+  description: string;
+  color: string;             // Color hex para UI
+}
+
+interface ServiceAdditionalFieldDto {
+  id: number;
+  field_name: string;
+  field_type: 'text' | 'number' | 'select' | 'boolean';
+  is_required: boolean;
+  options?: string[];        // Para campos tipo 'select'
+  placeholder?: string;
+}
+```
+
+#### 📝 Obtener Servicio Específico
+
+**Endpoint**: `GET /api/services/:id`
+
+**Roles requeridos**: Todos los usuarios autenticados
+
+#### 📊 Listar Categorías de Servicios
+
+**Endpoint**: `GET /api/services/categories`
+
+**Roles requeridos**: Todos los usuarios autenticados
+
+---
+
+## 🛡️ Seguridad y Autenticación en NestJS
+
+### Guards y Decoradores
+
+#### JwtAuthGuard
+
+```typescript
+// Usado automáticamente en controladores protegidos
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('projects')
+export class ProjectsController {
+  // Todos los endpoints requieren autenticación JWT válida
+}
+```
+
+#### RolesGuard
+
+```typescript
+// Control de acceso basado en roles
+@Roles('admin', 'lab')  // Solo admin y lab pueden acceder
+@Get('apiques')
+async getApiques() {
+  // Implementación
+}
+```
+
+#### Decorador @Public()
+
+```typescript
+// Para endpoints que no requieren autenticación
+@Public()
+@Get('services')
+async getPublicServices() {
+  // Accessible sin autenticación
+}
+```
+
+### Validación de DTOs
+
+```typescript
+// Todos los DTOs incluyen validación automática
+class CreateProjectDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(3, 100)
+  nombre: string;
+
+  @IsNumber()
+  @Min(0)
+  presupuesto: number;
+
+  @IsDateString()
+  fechaInicio: string;
+
+  @IsEnum(ProjectStatus)
+  estado: ProjectStatus;
+}
+```
+
+### Rate Limiting
+
+El API incluye limitación de velocidad configurada:
+
+- **Ventana**: 15 minutos
+- **Límite**: 100 requests por IP
+- **Detección inteligente de IP**: Soporte para proxies y CDNs
+
+---
+
+## 📈 Mejores Prácticas
+
+### 1. **Manejo de Errores**
+
+```typescript
+// El API devuelve errores consistentes
+interface APIError {
+  statusCode: number;
+  message: string | string[];
+  error: string;
+  timestamp: string;
+  path: string;
+}
+```
+
+### 2. **Paginación Estándar**
+
+```typescript
+// Respuesta paginada estándar
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+```
+
+### 3. **Filtros y Búsqueda**
+
+Todos los endpoints de listado incluyen:
+- Filtros específicos por entidad
+- Paginación (`page`, `limit`)
+- Ordenamiento (`sortBy`, `sortOrder`)
+- Búsqueda por texto cuando aplica
+
+### 4. **Swagger Documentation**
+
+- Documentación automática en `/api-docs`
+- Todos los endpoints documentados con ejemplos
+- DTOs y responses tipados
+- Pruebas integradas en la interfaz
+
+### 5. **TypeScript en Frontend**
+
+```typescript
+// Tipos consistentes entre frontend y backend
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  login: (credentials: LoginDto) => Promise<void>;
+  logout: () => void;
+  hasRole: (role: UserRole) => boolean;
+}
+
+const useAuth = (): AuthContextType => {
+  // Implementación del contexto
+};
+```
+
+### 6. **Gestión de Estado**
+
+```typescript
+// Hook personalizado para manejo de estado de API
+const useApiState = <T>(initialData: T) => {
+  const [data, setData] = useState<T>(initialData);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const execute = async (apiCall: () => Promise<T>) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const result = await apiCall();
+      setData(result);
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { data, loading, error, execute, setData };
+};
+```
+
+---
+
+## 🚀 Deployment y Configuración
+
+### Variables de Entorno
+
+```bash
+# Base de datos
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=tu_usuario
+DB_PASSWORD=tu_password
+DB_DATABASE=ingeocimyc_db
+
+# JWT
+JWT_SECRET=tu_jwt_secret_muy_seguro
+JWT_EXPIRES_IN=24h
+JWT_SECRET_2=tu_segundo_secret_para_admin
+
+# Servidor
+PORT=5050
+NODE_ENV=production
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+TRUST_PROXY=true
+
+# CORS
+CORS_ORIGIN=https://tu-frontend.com
+```
+
+### Scripts de Inicio
+
+```bash
+# Desarrollo
+npm run start:dev
+
+# Producción
+npm run build
+npm run start:prod
+
+# Tests
+npm run test
+npm run test:e2e
+```
+
+### Estructura de Módulos NestJS
+
+```
+src/
+├── modules/
+│   ├── auth/              # Autenticación JWT
+│   ├── admin/             # Módulos de administrador
+│   ├── lab/               # Módulos de laboratorio
+│   │   ├── apiques/       # Gestión de apiques
+│   │   └── profiles/      # Gestión de perfiles
+│   ├── projects/          # Gestión de proyectos
+│   │   ├── financial/     # Gestión financiera
+│   │   └── project-management/
+│   ├── client/            # Módulos de cliente
+│   │   └── service-requests/
+│   ├── services/          # Catálogo de servicios
+│   └── pdf/               # Generación de PDFs
+├── common/                # Utilidades compartidas
+│   ├── decorators/
+│   ├── filters/
+│   ├── guards/
+│   └── pipes/
+└── main.ts               # Punto de entrada
+```
+
+Esta API en NestJS proporciona una arquitectura moderna, escalable y mantenible con características como:
+
+- ✅ **Autenticación JWT robusta**
+- ✅ **Control de acceso basado en roles**
+- ✅ **Validación automática de datos**
+- ✅ **Documentación Swagger integrada**
+- ✅ **Rate limiting inteligente**
+- ✅ **Manejo global de errores**
+- ✅ **Estructura modular por dominio**
+- ✅ **TypeORM para gestión de base de datos**
+- ✅ **Testing integrado**
+
+La migración de Express.js a NestJS está **completa** y lista para producción. 🎉
 
     try {
       const response = await authenticatedPost("/api/projects", project);
