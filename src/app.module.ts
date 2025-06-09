@@ -3,6 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler'; // Re-enabled with proper configuration
 
+// Controllers
+import { AppController } from './app.controller';
+
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
 //ADMIN
@@ -22,8 +25,11 @@ import { ClientModule } from './modules/client/client.module';
 import { PDFModule } from './modules/pdf/pdf.module';
 //SERVICES
 import { ServicesModule } from './modules/services/services.module';
+//HEALTH
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
+  controllers: [AppController],
   imports: [
     // Environment configuration
     ConfigModule.forRoot({
@@ -100,8 +106,7 @@ import { ServicesModule } from './modules/services/services.module';
         };
       },
       inject: [ConfigService],
-    }),
-    // Feature modules
+    }), // Feature modules
     AuthModule,
     AdminModule,
     LabModule,
@@ -109,6 +114,7 @@ import { ServicesModule } from './modules/services/services.module';
     ClientModule,
     PDFModule,
     ServicesModule,
+    HealthModule,
     ResumenModule,
     ApiquesModule,
     ProfilesModule,
