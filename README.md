@@ -1,136 +1,213 @@
-# API-Cuentas - Sistema de Gestión de Proyectos
+# Migración de API Express.js a Nest.js - Ingeocimyc
 
-API para la gestión financiera y administrativa de proyectos de Ingeocimyc.
+Esta es la migración completa de la API de cuentas de Express.js a Nest.js, manteniendo toda la funcionalidad existente pero con una arquitectura más robusta y escalable.
 
-## Descripción
+## 🚀 Características Principales
 
-Este proyecto es una API RESTful desarrollada con Node.js y Express para la gestión de proyectos, perfiles, gastos y resúmenes financieros. Implementa un sistema completo de autenticación mediante JWT (JSON Web Tokens) con tokens de acceso y refresco.
+- **Arquitectura Modular**: Organizada en módulos por dominio de negocio
+- **TypeORM**: ORM robusto para manejo de base de datos MySQL
+- **Validación Automática**: DTOs con class-validator para validación de datos
+- **Autenticación JWT**: Sistema de autenticación seguro
+- **Documentación Swagger**: API completamente documentada
+- **Manejo de Errores**: Sistema centralizado de manejo de errores
+- **TypeScript**: Tipado estático para mayor robustez
 
-## Características Principales
-
-- **Gestión de Proyectos**: Creación, consulta, actualización y eliminación de proyectos.
-- **Gestión de Gastos**: Control de gastos asociados a proyectos y gastos mensuales de la empresa.
-- **Perfiles de Usuario**: Administración de perfiles de usuario con diferentes roles.
-- **Autenticación Segura**: Sistema completo con JWT, incluyendo tokens de acceso y refresco.
-- **Documentación API**: Interfaz Swagger UI para pruebas y documentación.
-- **Seguridad**: Implementación de mejores prácticas de seguridad (Helmet, rate limiting, CORS).
-
-## Tecnologías Utilizadas
-
-- **Backend**: Node.js, Express.js
-- **Base de Datos**: MySQL
-- **Autenticación**: JWT (jsonwebtoken)
-- **Seguridad**: bcryptjs, helmet, express-rate-limit, cors
-- **Documentación**: Swagger UI, swagger-jsdoc
-- **Otros**: morgan, compression, dotenv, express-validator
-
-## Estructura del Proyecto
+## 📁 Estructura del Proyecto
 
 ```
 src/
-├── config/         # Configuración de base de datos y servicios
-├── controllers/    # Controladores de la aplicación
-├── middleware/     # Middlewares personalizados
-├── models/         # Modelos de datos
-├── routes/         # Definición de rutas de la API
-└── index.js        # Punto de entrada de la aplicación
+├── main.ts                 # Punto de entrada de la aplicación
+├── app.module.ts           # Módulo principal
+├── common/                 # Utilities compartidas
+│   └── filters/           # Filtros de excepción
+├── modules/               # Módulos de funcionalidad
+│   ├── auth/             # Autenticación y autorización
+│   ├── service-requests/ # Gestión de solicitudes de servicio
+│   ├── services/         # Gestión de servicios y categorías
+│   ├── projects/         # Gestión de proyectos
+│   ├── profiles/         # Gestión de perfiles
+│   └── financial/        # Módulo financiero
+└── scripts/              # Scripts de migración y utilidades
 ```
 
-## Instalación
+## 🛠️ Instalación y Configuración
 
-1. Clona el repositorio:
-   ```
-   git clone https://github.com/tu-usuario/api-cuentas.git
-   cd api-cuentas
-   ```
+### 1. Instalar dependencias
 
-2. Instala las dependencias:
-   ```
-   npm install
-   ```
-
-3. Configura las variables de entorno:
-   - Crea un archivo `.env` en la raíz del proyecto con la siguiente estructura:
-   ```
-   PORT=5000
-   NODE_ENV=development
-   JWT_SECRET=tu_clave_secreta_jwt
-   JWT_REFRESH_SECRET=tu_clave_secreta_refresh
-   JWT_SECRET_2=tu_clave_secreta_registro
-   DB_HOST=localhost
-   DB_USER=usuario_db
-   DB_PASSWORD=contraseña_db
-   DB_NAME=nombre_db
-   CORS_ORIGINS=https://tu-frontend.com,https://otro-dominio.com
-   ```
-
-4. Inicia el servidor:
-   ```
-   npm start
-   ```
-
-## Endpoints principales
-
-### Autenticación
-
-- **POST /api/auth/registro**: Registrar un nuevo usuario
-- **POST /api/auth/login**: Iniciar sesión
-- **POST /api/auth/refresh**: Refrescar token de acceso
-- **GET /api/auth/verify**: Verificar autenticación
-- **POST /api/auth/logout**: Cerrar sesión
-
-### Proyectos
-
-- **GET /api/projects**: Obtener lista de proyectos
-- **GET /api/projects/:id**: Obtener un proyecto específico
-- **POST /api/projects**: Crear un nuevo proyecto
-- **PUT /api/projects/:id**: Actualizar un proyecto
-- **DELETE /api/projects/:id**: Eliminar un proyecto
-- **POST /api/projects/:id/abono**: Registrar abono a un proyecto
-
-### Perfiles
-
-- **GET /api/projects/profiles**: Obtener perfiles
-- **POST /api/projects/profiles**: Crear nuevo perfil
-- **GET /api/projects/profiles/:id**: Obtener un perfil específico
-- **PUT /api/projects/profiles/:id**: Actualizar un perfil
-- **DELETE /api/projects/profiles/:id**: Eliminar un perfil
-
-### Gastos de la Empresa
-
-- **GET /api/gastos-mes**: Obtener gastos mensuales
-- **POST /api/gastos-mes**: Registrar nuevo gasto mensual
-- **PUT /api/gastos-mes/:id**: Actualizar un gasto mensual
-- **DELETE /api/gastos-mes/:id**: Eliminar un gasto mensual
-
-### Resumen Financiero
-
-- **GET /api/resumen/anual**: Obtener resumen financiero anual
-- **GET /api/resumen/mensual**: Obtener resumen financiero mensual
-
-## Documentación
-
-La documentación completa de la API está disponible en `/api-docs` cuando el servidor está en ejecución. Esta documentación está generada automáticamente utilizando Swagger UI.
-
-## Seguridad
-
-Esta API implementa varias capas de seguridad:
-
-- **Autenticación JWT**: Tokens de acceso y refresco con tiempos de expiración configurables.
-- **Helmet**: Protección mediante cabeceras HTTP seguras.
-- **Rate Limiting**: Limitación de peticiones para prevenir ataques de fuerza bruta.
-- **CORS**: Control de acceso desde dominios específicos.
-- **Validación de Entradas**: Validación de datos mediante express-validator.
-- **Encriptación de Contraseñas**: Uso de bcrypt para almacenar contraseñas de forma segura.
-
-## Entorno de Desarrollo
-
-Para ejecutar el servidor en modo desarrollo con recarga automática:
-
-```
-npm start
+```bash
+cd nest-migration
+npm install
 ```
 
-## Licencia
+### 2. Configurar variables de entorno
 
-Este proyecto está bajo la Licencia ISC. 
+Copia el archivo `.env.example` a `.env` y configura tus variables:
+
+```bash
+cp .env.example .env
+```
+
+Edita el archivo `.env` con tus configuraciones:
+
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=tu_usuario_db
+DB_PASSWORD=tu_password_db
+DB_NAME=tu_base_de_datos
+
+# JWT Configuration
+JWT_SECRET=tu_clave_secreta_jwt_muy_segura
+JWT_EXPIRES_IN=24h
+
+# Application Configuration
+PORT=5050
+NODE_ENV=development
+```
+
+### 3. Preparar la base de datos
+
+Ejecuta el script de migración de datos:
+
+```bash
+npm run build
+npm run migrate:data
+```
+
+### 4. Ejecutar la aplicación
+
+```bash
+# Desarrollo
+npm run start:dev
+
+# Producción
+npm run build
+npm run start:prod
+```
+
+## 📋 Plan de Migración Gradual
+
+### Fase 1: ✅ Completada
+
+- [x] Configuración inicial de Nest.js
+- [x] Configuración de TypeORM y base de datos
+- [x] Módulo de autenticación (JWT)
+- [x] Módulo de solicitudes de servicio
+- [x] Módulo de servicios y categorías
+- [x] Sistema de validación con DTOs
+- [x] Documentación Swagger
+- [x] Manejo global de errores
+
+### Fase 2: 🚧 Pendiente
+
+- [ ] Migración del módulo de proyectos
+- [ ] Migración del módulo de perfiles
+- [ ] Migración del módulo financiero
+- [ ] Migración del módulo de apiques
+- [ ] Sistema de generación de PDFs
+- [ ] Migración de middleware personalizado
+
+### Fase 3: 🚧 Pendiente
+
+- [ ] Testing unitario y de integración
+- [ ] Optimización de consultas a base de datos
+- [ ] Implementación de caché (Redis)
+- [ ] Logging avanzado
+- [ ] Monitoreo y métricas
+
+## 🔄 Comparación Express vs Nest.js
+
+### Express.js (Actual)
+
+```javascript
+// router.get('/service-requests', async (req, res) => {
+app.get('/service-requests', async (req, res) => {
+  try {
+    const requests = await getServiceRequests();
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+### Nest.js (Nuevo)
+
+```typescript
+@Controller('service-requests')
+export class ServiceRequestsController {
+  constructor(
+    private readonly serviceRequestsService: ServiceRequestsService,
+  ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Obtener todas las solicitudes de servicio' })
+  @ApiResponse({ status: 200, type: [ServiceRequest] })
+  async findAll(@Query('status') status?: string): Promise<ServiceRequest[]> {
+    if (status) {
+      return this.serviceRequestsService.findByStatus(status);
+    }
+    return this.serviceRequestsService.findAll();
+  }
+}
+```
+
+## 🎯 Beneficios de la Migración
+
+1. **Tipado Estático**: TypeScript elimina errores en tiempo de compilación
+2. **Inyección de Dependencias**: Facilita testing y mantenimiento
+3. **Decoradores**: Código más limpio y expresivo
+4. **Validación Automática**: DTOs validan automáticamente las entradas
+5. **Documentación Automática**: Swagger se genera automáticamente
+6. **Estructura Modular**: Código más organizado y reutilizable
+7. **Manejo de Errores**: Sistema centralizado y consistente
+
+## 🧪 Testing
+
+```bash
+# Tests unitarios
+npm run test
+
+# Tests con cobertura
+npm run test:cov
+
+# Tests e2e
+npm run test:e2e
+```
+
+## 📖 Documentación API
+
+Una vez que la aplicación esté corriendo, puedes acceder a la documentación Swagger en:
+
+```
+http://localhost:5050/api-docs
+```
+
+## 🔧 Scripts Disponibles
+
+```bash
+npm run start:dev      # Modo desarrollo con hot-reload
+npm run start:debug    # Modo debug
+npm run build          # Compilar TypeScript
+npm run start:prod     # Modo producción
+npm run migrate:data   # Migrar datos desde Express
+npm run lint           # Linter
+npm run test           # Tests
+```
+
+## 🚦 Estado de Migración
+
+| Módulo           | Express | Nest.js | Estado    |
+| ---------------- | ------- | ------- | --------- |
+| Autenticación    | ✅      | ✅      | Migrado   |
+| Service Requests | ✅      | ✅      | Migrado   |
+| Services         | ✅      | ✅      | Migrado   |
+| Proyectos        | ✅      | 🚧      | Pendiente |
+| Perfiles         | ✅      | 🚧      | Pendiente |
+| Finanzas         | ✅      | 🚧      | Pendiente |
+| PDFs             | ✅      | 🚧      | Pendiente |
+
+## 📞 Soporte
+
+Para cualquier duda sobre la migración, revisa la documentación de Nest.js o contacta al equipo de desarrollo.

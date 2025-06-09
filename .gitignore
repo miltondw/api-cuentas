@@ -1,45 +1,241 @@
-# Node.js
-/node_modules/
+# =====================================================
+# NEST.JS & NODE.JS GITIGNORE - SEGURIDAD CRÍTICA
+# =====================================================
 
-/nest-migration/node_modules/
-# Puppeteer cache (Chrome binaries)
-.cache/
-
-# Archivos de entorno
+# ⚠️ ARCHIVOS SENSIBLES - NUNCA COMMITEAR ⚠️
+# ===========================================
 .env
-.todo
-# Logs
-*.log
-logs/
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+.env.*.local
 
-# Archivos de configuración de IDEs y editores
-.idea/
-.vscode/
+# Archivos de configuración sensibles
+config/database.json
+config/production.json
+config/secrets.json
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+*.pfx
 
-# Archivos de sistema
-.DS_Store
-Thumbs.db
+# Certificados SSL
+ssl/
+certificates/
 
-# Dependencias de producción (si usas alguna carpeta específica para build)
-dist/
-build/
-# Archivos de pdfs
-uploads/
-# Archivos de test de cobertura
-coverage/
-
-# Docker
-docker-compose.override.yml
-.docker/
-
-# Archivos generados por algunos IDEs (ej. JetBrains)
-*.iml
-
-# Archivos de configuración de NPM
+# =====================================================
+# NODE.JS DEPENDENCIES
+# =====================================================
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# Base de datos local (si creas una base de datos localmente para pruebas)
-*.sql
+# Package manager locks (mantener package-lock.json pero no yarn.lock)
+yarn.lock
+.pnp
+.pnp.js
+
+# =====================================================
+# NEST.JS BUILD & DISTRIBUTION
+# =====================================================
+dist/
+build/
+.next/
+out/
+
+# =====================================================
+# TYPESCRIPT
+# =====================================================
+*.tsbuildinfo
+
+# =====================================================
+# TESTING
+# =====================================================
+coverage/
+*.lcov
+.nyc_output
+.coverage
+test-results/
+playwright-report/
+test-results/
+
+# =====================================================
+# LOGS & DEBUGGING
+# =====================================================
+logs/
+*.log
+pids
+*.pid
+*.seed
+*.pid.lock
+startup.log
+error.log
+access.log
+
+# =====================================================
+# RUNTIME & CACHE
+# =====================================================
+.npm
+.cache/
+.parcel-cache
+.swc/
+
+# =====================================================
+# UPLOADS & TEMPORARY FILES
+# =====================================================
+uploads/
+temp/
+tmp/
+public/uploads/
+storage/
+files/
+
+# PDFs generados
+*.pdf
+reports/
+
+# =====================================================
+# DATABASE
+# =====================================================
+# Archivos de base de datos locales
+*.db
 *.sqlite
+*.sqlite3
+database.db
+
+# Dumps de base de datos
+*.sql.gz
+*.dump
+backup/
+dumps/
+
+# =====================================================
+# DEVELOPMENT TOOLS
+# =====================================================
+# IDEs y Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Herramientas de desarrollo
+.eslintcache
+.stylelintcache
+
+# =====================================================
+# SISTEMA OPERATIVO
+# =====================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# =====================================================
+# DOCKER
+# =====================================================
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# =====================================================
+# SERVICIOS EN LA NUBE
+# =====================================================
+# AWS
+.aws/
+aws-config.json
+
+# Azure
+.azure/
+
+# Google Cloud
+.gcloud/
+service-account.json
+
+# Heroku
+.heroku/
+
+# =====================================================
+# MONITOREO Y ANÁLISIS
+# =====================================================
+# New Relic
+newrelic_agent.log
+
+# Sentry
+.sentryclirc
+
+# =====================================================
+# DEPENDENCIAS DE HERRAMIENTAS
+# =====================================================
+# Puppeteer
+.cache/
+.local-chromium
+
+# Playwright
+/test-results/
+/playwright/.cache/
+
+# =====================================================
+# ARCHIVOS DE CONFIGURACIÓN LOCALES
+# =====================================================
+.local
+.env.local
+local.settings.json
+appsettings.Development.json
+
+# =====================================================
+# BACKUPS Y ARCHIVOS TEMPORALES
+# =====================================================
+*.backup
+*.bak
+*.tmp
+*.temp
+*.old
+*.orig
+
+# =====================================================
+# SEGURIDAD ADICIONAL
+# =====================================================
+# Tokens y claves API
+*-key.json
+*-credentials.json
+*.credentials
+.secrets/
+secrets/
+
+# Archivos de sesión
+sessions/
+.session
+
+# =====================================================
+# NOTAS IMPORTANTES
+# =====================================================
+# ⚠️  RECORDATORIO DE SEGURIDAD:
+# - NUNCA commitear archivos .env o credenciales
+# - Usar .env.example para plantillas
+# - Revisar este archivo regularmente
+# - Mantener secretos en variables de entorno del servidor
+# =====================================================
