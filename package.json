@@ -8,10 +8,9 @@
     "build:tsc": "npx tsc",
     "build:fallback": "npx tsc && cp -r src/**/*.json dist/ 2>/dev/null || true",
     "build:verify": "npx nest build && ls -la dist/",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node dist/main",    "start:dev": "npx nest start --watch",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",    "start": "node start.js",    "start:dev": "npx nest start --watch",
     "start:debug": "npx nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node start.js",
     "migrate:data": "ts-node src/scripts/migrate-data.ts",
     "test:pdf": "ts-node src/scripts/test-pdf-generation.ts",
     "test:db": "ts-node src/scripts/test-db-connection.ts",
@@ -47,9 +46,9 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pdfkit": "^0.15.0",
-    "puppeteer": "^22.15.0",
-    "reflect-metadata": "^0.2.2",
+    "puppeteer": "^22.15.0",    "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "tsconfig-paths": "^4.2.0",
     "typeorm": "^0.3.20"
   },
   "devDependencies": {
@@ -73,11 +72,9 @@
     "jest": "^29.7.0",
     "prettier": "^3.3.3",
     "source-map-support": "^0.5.21",
-    "supertest": "^6.3.4",
-    "ts-jest": "^29.2.5",
+    "supertest": "^6.3.4",    "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.6.3"
   },
   "jest": {
