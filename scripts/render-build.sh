@@ -8,16 +8,16 @@ echo "NPM version: $(npm --version)"
 echo "📦 Installing dependencies..."
 npm ci
 
-# Try NestJS CLI first, fallback to TypeScript compiler
+# Try NestJS CLI first, fallback to TypeScript compiler with path resolution
 echo "🔨 Building application..."
-if npx nest build; then
-    echo "✅ Build successful with NestJS CLI"
-elif npx tsc -p tsconfig.build.json; then
-    echo "✅ Build successful with TypeScript compiler"
-elif npx tsc; then
-    echo "✅ Build successful with default TypeScript config"
+if npm run build; then
+    echo "✅ Build successful with npm run build"
+elif npx --yes @nestjs/cli build; then
+    echo "✅ Build successful with @nestjs/cli"
+elif npm install -g @nestjs/cli && nest build; then
+    echo "✅ Build successful after installing @nestjs/cli globally"
 else
-    echo "❌ Build failed with all methods"
+    echo "❌ All build methods failed"
     exit 1
 fi
 
