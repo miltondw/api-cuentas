@@ -3,7 +3,7 @@
 # 🧪 Script de Testing Completo para Todos los Endpoints
 # ======================================================
 
-BASE_URL="http://localhost:5050/api"
+BASE_URL="http://localhost:5051/api"
 ADMIN_TOKEN=""
 LAB_TOKEN=""
 CLIENT_TOKEN=""

@@ -11,7 +11,8 @@
 .env.staging
 .env.test
 .env.*.local
-
+test/*
+/tests/*
 # Archivos de configuración sensibles
 config/database.json
 config/production.json

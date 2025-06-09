@@ -36,7 +36,8 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 export class FinancialController {
   constructor(private readonly financialService: FinancialService) {}
 
-  // Company Expenses Endpoints  @Post('expenses')
+  // Company Expenses Endpoints
+  @Post('expenses')
   @Roles('admin')
   @ApiOperation({ summary: 'Create company expenses for a month' })
   @ApiResponse({

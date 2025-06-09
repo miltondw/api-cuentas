@@ -352,33 +352,21 @@ export class FinancialService {
       queryBuilder = queryBuilder.andWhere('MONTH(expense.mes) = :month', {
         month: parseInt(filters.month),
       });
-    }
-
-    // Calcular el total de la suma de todas las propiedades numéricas excepto id
+    }    // Calcular el total de la suma de todas las propiedades numéricas excepto id
     const totalExpenseSQL = `
-      (IFNULL(expense.sueldos, 0) +
-       IFNULL(expense.seguridadSocial, 0) +
-       IFNULL(expense.aguinaldo, 0) +
-       IFNULL(expense.mantenimientoVehiculos, 0) +
-       IFNULL(expense.combustible, 0) +
-       IFNULL(expense.internet, 0) +
-       IFNULL(expense.telefonia, 0) +
-       IFNULL(expense.agua, 0) +
+      (IFNULL(expense.salarios, 0) +
        IFNULL(expense.luz, 0) +
-       IFNULL(expense.renta, 0) +
-       IFNULL(expense.insumos, 0) +
-       IFNULL(expense.alarma, 0) +
-       IFNULL(expense.cuentasVarias, 0) +
-       IFNULL(expense.otros, 0))
-    `;
-
-    if (filters.minAmount !== undefined) {
+       IFNULL(expense.agua, 0) +
+       IFNULL(expense.arriendo, 0) +
+       IFNULL(expense.internet, 0) +
+       IFNULL(expense.salud, 0))
+    `;    if (filters.minAmount !== undefined && filters.minAmount !== null && !isNaN(filters.minAmount)) {
       queryBuilder = queryBuilder.andWhere(`${totalExpenseSQL} >= :minAmount`, {
         minAmount: filters.minAmount,
       });
     }
 
-    if (filters.maxAmount !== undefined) {
+    if (filters.maxAmount !== undefined && filters.maxAmount !== null && !isNaN(filters.maxAmount)) {
       queryBuilder = queryBuilder.andWhere(`${totalExpenseSQL} <= :maxAmount`, {
         maxAmount: filters.maxAmount,
       });
@@ -457,27 +445,25 @@ export class FinancialService {
       queryBuilder = queryBuilder.andWhere('MONTH(summary.fecha) = :month', {
         month: parseInt(filters.month),
       });
-    }
-
-    if (filters.minIncome !== undefined) {
+    }    if (filters.minIncome !== undefined && filters.minIncome !== null && !isNaN(filters.minIncome)) {
       queryBuilder = queryBuilder.andWhere('summary.ingresos >= :minIncome', {
         minIncome: filters.minIncome,
       });
     }
 
-    if (filters.maxIncome !== undefined) {
+    if (filters.maxIncome !== undefined && filters.maxIncome !== null && !isNaN(filters.maxIncome)) {
       queryBuilder = queryBuilder.andWhere('summary.ingresos <= :maxIncome', {
         maxIncome: filters.maxIncome,
       });
     }
 
-    if (filters.minExpense !== undefined) {
+    if (filters.minExpense !== undefined && filters.minExpense !== null && !isNaN(filters.minExpense)) {
       queryBuilder = queryBuilder.andWhere('summary.gastos >= :minExpense', {
         minExpense: filters.minExpense,
       });
     }
 
-    if (filters.maxExpense !== undefined) {
+    if (filters.maxExpense !== undefined && filters.maxExpense !== null && !isNaN(filters.maxExpense)) {
       queryBuilder = queryBuilder.andWhere('summary.gastos <= :maxExpense', {
         maxExpense: filters.maxExpense,
       });

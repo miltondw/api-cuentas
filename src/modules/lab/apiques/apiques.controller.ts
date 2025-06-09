@@ -37,6 +37,34 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 export class ApiquesController {
   constructor(private readonly apiquesService: ApiquesService) {}
 
+  @Get()
+  @Roles('admin', 'lab')
+  @ApiOperation({ summary: 'List all apiques (general endpoint)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Information about apiques endpoints',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async findAll(): Promise<{
+    message: string;
+    availableEndpoints: string[];
+    totalApiques?: number;
+  }> {
+    // En lugar de devolver todos los apiques (que puede ser mucho),
+    // devolvemos información útil sobre los endpoints disponibles
+    return {
+      message: 'Use specific endpoints to get apiques by project',
+      availableEndpoints: [
+        'GET /lab/apiques/project/:projectId - Get apiques for specific project',
+        'GET /lab/apiques/:projectId/:apiqueId - Get specific apique',
+        'POST /lab/apiques - Create new apique',
+        'PUT /lab/apiques/:projectId/:apiqueId - Update apique',
+        'DELETE /lab/apiques/:projectId/:apiqueId - Delete apique',
+      ],
+    };
+  }
+
   @Post()
   @Roles('admin', 'lab')
   @ApiOperation({ summary: 'Create a new apique' })

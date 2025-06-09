@@ -1,16 +1,30 @@
 # 📖 API de Gestión de Proyectos y Servicios INGEOCIMYC - NestJS
 
+> **⚠️ IMPORTANTE PARA FRONTEND DEVELOPERS**: Esta API ha sido migrada de Express.js a NestJS. Algunos endpoints han cambiado de estructura. Ver sección [🚨 Cambios Críticos](#-cambios-críticos) para detalles.
+
+## 🚨 Cambios Críticos - Migración Express → NestJS
+
+| Módulo | Ruta Anterior (Express) | Ruta Actual (NestJS) | Estado |
+|--------|------------------------|---------------------|---------|
+| **Apiques** | `/api/projects/:id/apiques/*` | `/api/lab/apiques/*` | ⚠️ **CAMBIO CRÍTICO** |
+| **Profiles** | `/api/projects/:id/profiles/*` | `/api/lab/profiles/*` | ⚠️ **CAMBIO CRÍTICO** |
+| **Service Requests** | `/api/service-requests/*` | `/api/service-requests/*` | ✅ **COMPATIBLE** |
+| **Projects** | `/api/projects/*` | `/api/projects/*` | ✅ **COMPATIBLE** |
+| **Authentication** | `/api/auth/*` | `/api/auth/*` | ✅ **COMPATIBLE** |
+| **Services** | `/api/services/*` | `/api/services/*` | ✅ **COMPATIBLE** |
+
 ## 📑 Tabla de Contenidos
 
 1. [🌟 Descripción General](#-descripción-general)
 2. [🏗️ Arquitectura NestJS](#️-arquitectura-nestjs)
 3. [🔐 Autenticación y Autorización](#-autenticación-y-autorización)
 4. [🚀 Endpoints por Módulos](#-endpoints-por-módulos)
-5. [💻 Integración Frontend con TypeScript](#-integración-frontend-con-typescript)
-6. [🛡️ Seguridad y Mejores Prácticas](#️-seguridad-y-mejores-prácticas)
-7. [📊 Códigos de Estado y Errores](#-códigos-de-estado-y-errores)
-8. [🔧 Configuración y Variables de Entorno](#-configuración-y-variables-de-entorno)
-9. [📞 Soporte y Documentación](#-soporte-y-documentación)
+5. [🔍 Filtros y Paginación](#-filtros-y-paginación)
+6. [💻 Integración Frontend con TypeScript](#-integración-frontend-con-typescript)
+7. [🛡️ Seguridad y Mejores Prácticas](#️-seguridad-y-mejores-prácticas)
+8. [📊 Códigos de Estado y Errores](#-códigos-de-estado-y-errores)
+9. [🔧 Configuración y Variables de Entorno](#-configuración-y-variables-de-entorno)
+10. [📞 Soporte y Documentación](#-soporte-y-documentación)
 
 ---
 
@@ -1024,2747 +1038,1669 @@ const CreateProjectForm = () => {
 
 ---
 
-## 🔬 Módulo de Laboratorio
+## 🔍 Filtros y Paginación
 
-### Gestión de Apiques
+La API implementa un sistema consistente de filtros y paginación a través de todos los módulos. Todos los endpoints de listado soportan los siguientes parámetros base:
 
-#### 📊 Listar Apiques por Proyecto
-
-**Endpoint**: `GET /api/lab/apiques/project/:projectId`
-
-**Roles requeridos**: `admin`, `lab`
-
-##### Query Parameters
+### Parámetros de Paginación Globales
 
 ```typescript
-interface ApiqueFilters {
-  apiqueNumber?: number;
-  startDepth?: number;
-  endDepth?: number;
-  startDate?: string; // YYYY-MM-DD
-  endDate?: string;   // YYYY-MM-DD
-  location?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: string;    // 'apiqueNumber' | 'depth' | 'date'
-  sortOrder?: 'ASC' | 'DESC';
+interface PaginationParams {
+  page?: number;        // Página actual (default: 1)
+  limit?: number;       // Elementos por página (default: 10, max: 100)
+  sortBy?: string;      // Campo para ordenar
+  sortOrder?: 'ASC' | 'DESC'; // Dirección del orden (default: 'DESC')
 }
 ```
 
-##### Response DTO
+### 📋 Service Requests - Filtros Disponibles
 
 ```typescript
-interface ApiqueResponseDto {
+interface ServiceRequestFilters extends PaginationParams {
+  // Filtros de estado
+  status?: 'pendiente' | 'en_progreso' | 'completado' | 'cancelado';
+  
+  // Filtros de búsqueda
+  name?: string;              // Búsqueda en nombre del solicitante
+  email?: string;             // Email exacto o parcial
+  serviceType?: string;       // Tipo de servicio específico
+  
+  // Filtros de fecha
+  startDate?: string;         // ISO date (YYYY-MM-DD)
+  endDate?: string;           // ISO date (YYYY-MM-DD)
+  
+  // Filtros de ubicación
+  location?: string;          // Búsqueda en ubicación del proyecto
+  
+  // Campos de ordenamiento disponibles
+  sortBy?: 'created_at' | 'updated_at' | 'nombre' | 'status' | 'fechaSolicitud';
+}
+```
+
+**Ejemplo de uso:**
+```typescript
+// Buscar solicitudes pendientes de los últimos 30 días
+GET /api/service-requests?status=pendiente&startDate=2024-01-01&endDate=2024-01-31&page=1&limit=20&sortBy=created_at&sortOrder=DESC
+
+// Buscar por tipo de servicio específico
+GET /api/service-requests?serviceType=análisis_granulométrico&page=1&limit=10
+```
+
+### 🏗️ Projects - Filtros Disponibles
+
+```typescript
+interface ProjectFilters extends PaginationParams {
+  // Filtros de estado
+  status?: 'activo' | 'completado' | 'suspendido' | 'cancelado';
+  
+  // Filtros de búsqueda
+  solicitante?: string;       // Nombre del solicitante
+  nombreProyecto?: string;    // Nombre del proyecto
+  obrero?: string;           // Nombre del obrero asignado
+  
+  // Filtros de fecha
+  startDate?: string;         // Fecha de inicio del proyecto
+  endDate?: string;          // Fecha de finalización
+  
+  // Filtros financieros
+  metodoDePago?: 'efectivo' | 'transferencia' | 'cheque' | 'credito';
+  
+  // Campos de ordenamiento disponibles
+  sortBy?: 'created_at' | 'updated_at' | 'nombreProyecto' | 'fechaInicio' | 'status';
+}
+```
+
+**Ejemplo de uso:**
+```typescript
+// Proyectos activos ordenados por fecha
+GET /api/projects?status=activo&sortBy=fechaInicio&sortOrder=ASC&page=1&limit=15
+
+// Buscar proyectos por solicitante
+GET /api/projects?solicitante=CONSTRUCTORA%20ABC&page=1&limit=10
+```
+
+### 💰 Financial - Filtros Avanzados
+
+```typescript
+interface FinancialFilters extends PaginationParams {
+  // Filtros de empresa
+  empresa?: string;           // Nombre de la empresa
+  
+  // Filtros de fecha (muy importantes para reportes financieros)
+  startDate?: string;         // ISO date
+  endDate?: string;          // ISO date
+  month?: number;            // Mes específico (1-12)
+  year?: number;             // Año específico
+  
+  // Filtros de tipo
+  tipoGasto?: string;        // Tipo de gasto/ingreso
+  categoria?: string;        // Categoría contable
+  
+  // Filtros de monto
+  minAmount?: number;        // Monto mínimo
+  maxAmount?: number;        // Monto máximo
+  
+  // Campos de ordenamiento específicos
+  sortBy?: 'fecha' | 'monto' | 'empresa' | 'tipoGasto' | 'created_at';
+}
+```
+
+**Ejemplo de uso:**
+```typescript
+// Gastos del último trimestre ordenados por monto
+GET /api/projects/financial?startDate=2024-01-01&endDate=2024-03-31&sortBy=monto&sortOrder=DESC
+
+// Filtrar por empresa y tipo
+GET /api/projects/financial?empresa=INGEOCIMYC&tipoGasto=materiales&page=1&limit=50
+```
+
+### 🔬 Lab Apiques - Filtros Específicos
+
+```typescript
+interface ApiquesFilters extends PaginationParams {
+  // Filtro principal (requerido)
+  projectId: number;          // ID del proyecto asociado
+  
+  // Filtros de muestra
+  sampleNumber?: string;      // Número de muestra
+  depth?: number;            // Profundidad específica
+  minDepth?: number;         // Profundidad mínima
+  maxDepth?: number;         // Profundidad máxima
+  
+  // Filtros de ubicación
+  location?: string;         // Ubicación de la muestra
+  coordinates?: string;      // Coordenadas GPS
+  
+  // Filtros de fecha
+  collectionDate?: string;   // Fecha de recolección (ISO)
+  analysisDate?: string;     // Fecha de análisis (ISO)
+  
+  // Filtros de estado
+  status?: 'collected' | 'analyzing' | 'completed' | 'reported';
+  
+  // Campos de ordenamiento
+  sortBy?: 'depth' | 'collectionDate' | 'analysisDate' | 'sampleNumber' | 'created_at';
+}
+```
+
+**Ejemplo de uso:**
+```typescript
+// Muestras de un proyecto específico por profundidad
+GET /api/lab/apiques?projectId=123&minDepth=0&maxDepth=10&sortBy=depth&sortOrder=ASC
+
+// Muestras completadas de los últimos 7 días
+GET /api/lab/apiques?projectId=123&status=completed&analysisDate=2024-01-15&page=1&limit=25
+```
+
+### 📊 Lab Profiles - Filtros Específicos
+
+```typescript
+interface ProfilesFilters extends PaginationParams {
+  // Filtro principal (requerido)
+  projectId: number;          // ID del proyecto asociado
+  
+  // Filtros de perfil
+  profileNumber?: string;     // Número del perfil
+  profileType?: string;      // Tipo de perfil estratigráfico
+  
+  // Filtros de profundidad
+  totalDepth?: number;       // Profundidad total específica
+  minDepth?: number;         // Profundidad mínima
+  maxDepth?: number;         // Profundidad máxima
+  
+  // Filtros de estratigrafía
+  soilType?: string;         // Tipo de suelo encontrado
+  layerCount?: number;       // Número de estratos
+  
+  // Filtros de fecha
+  drillingDate?: string;     // Fecha de perforación (ISO)
+  completionDate?: string;   // Fecha de completación (ISO)
+  
+  // Filtros de estado
+  status?: 'drilling' | 'sampling' | 'analyzing' | 'completed' | 'reported';
+  
+  // Campos de ordenamiento
+  sortBy?: 'profileNumber' | 'totalDepth' | 'drillingDate' | 'completionDate' | 'created_at';
+}
+```
+
+**Ejemplo de uso:**
+```typescript
+// Perfiles por profundidad total
+GET /api/lab/profiles?projectId=456&minDepth=15&maxDepth=30&sortBy=totalDepth&sortOrder=ASC
+
+// Perfiles completados por fecha
+GET /api/lab/profiles?projectId=456&status=completed&completionDate=2024-01-20&page=1&limit=10
+```
+
+### 🎯 Mejores Prácticas para Filtros
+
+#### 1. **Combinación de Filtros**
+```typescript
+// ✅ Buena práctica: Combinar múltiples filtros
+GET /api/service-requests?status=pendiente&serviceType=análisis_suelo&startDate=2024-01-01&page=1&limit=20&sortBy=created_at&sortOrder=DESC
+
+// ❌ Evitar: Demasiados filtros complejos en una sola consulta
+```
+
+#### 2. **Paginación Eficiente**
+```typescript
+// ✅ Usar límites razonables
+const defaultParams = {
+  page: 1,
+  limit: 20,          // Óptimo para UI
+  sortBy: 'created_at',
+  sortOrder: 'DESC'
+};
+
+// ❌ Evitar límites muy altos
+// limit: 1000  // Puede causar problemas de performance
+```
+
+#### 3. **Filtros de Fecha**
+```typescript
+// ✅ Formato ISO correcto
+startDate: '2024-01-01'
+endDate: '2024-12-31'
+
+// ✅ Para consultas de mes específico
+month: 1,
+year: 2024
+
+// ❌ Formatos incorrectos
+// startDate: '01/01/2024'
+// startDate: '2024-1-1'
+```
+
+#### 4. **Manejo de Búsqueda de Texto**
+```typescript
+// ✅ La API maneja búsquedas parciales automáticamente
+name: 'Juan'        // Encuentra: Juan Pérez, Juan Carlos, etc.
+email: 'gmail'      // Encuentra: usuario@gmail.com, test@gmail.com
+
+// ✅ URL encoding para caracteres especiales
+solicitante: encodeURIComponent('CONSTRUCTORA ABC & ASOCIADOS')
+```
+
+### 📊 Estructura de Respuesta Paginada
+
+Todos los endpoints paginados devuelven la siguiente estructura:
+
+```typescript
+interface PaginatedResponse<T> {
+  data: T[];                    // Array de elementos
+  pagination: {
+    currentPage: number;        // Página actual
+    totalPages: number;         // Total de páginas
+    totalItems: number;         // Total de elementos
+    itemsPerPage: number;       // Elementos por página
+    hasNextPage: boolean;       // Hay página siguiente
+    hasPreviousPage: boolean;   // Hay página anterior
+  };
+  filters?: {                   // Filtros aplicados
+    [key: string]: any;
+  };
+  sort?: {                      // Ordenamiento aplicado
+    field: string;
+    direction: 'ASC' | 'DESC';
+  };
+}
+```
+
+**Ejemplo de respuesta:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "nombre": "Juan Pérez",
+      "email": "juan@example.com",
+      "status": "pendiente"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 5,
+    "totalItems": 95,
+    "itemsPerPage": 20,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  },
+  "filters": {
+    "status": "pendiente",
+    "startDate": "2024-01-01"
+  },
+  "sort": {
+    "field": "created_at",
+    "direction": "DESC"
+  }
+}
+```
+
+---
+
+## 💻 Integración Frontend con TypeScript
+
+### Configuración Base del Cliente HTTP
+
+```typescript
+// api-client.ts
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+
+interface ApiConfig {
+  baseURL: string;
+  timeout?: number;
+  headers?: Record<string, string>;
+}
+
+class ApiClient {
+  private client: AxiosInstance;
+  private token: string | null = null;
+
+  constructor(config: ApiConfig) {
+    this.client = axios.create({
+      baseURL: config.baseURL,
+      timeout: config.timeout || 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        ...config.headers,
+      },
+    });
+
+    this.setupInterceptors();
+  }
+
+  private setupInterceptors() {
+    // Request interceptor para añadir token
+    this.client.interceptors.request.use(
+      (config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Response interceptor para manejar errores globales
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          this.clearToken();
+          // Redirect to login
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  setToken(token: string) {
+    this.token = token;
+    localStorage.setItem('auth_token', token);
+  }
+
+  clearToken() {
+    this.token = null;
+    localStorage.removeItem('auth_token');
+  }
+
+  async request<T>(config: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.request<T>(config);
+    return response.data;
+  }
+}
+
+// Configuración para diferentes entornos
+const apiConfig: ApiConfig = {
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5051/api',
+  timeout: 15000,
+};
+
+export const apiClient = new ApiClient(apiConfig);
+```
+
+### Servicios Específicos por Módulo
+
+#### 1. **Service Requests Service**
+
+```typescript
+// services/service-requests.service.ts
+import { apiClient } from '../api-client';
+import { PaginatedResponse } from '../types/pagination';
+
+interface ServiceRequest {
   id: number;
-  numero: number;
-  profundidad: number;
-  ubicacion: string;
-  fecha: string;
-  projectId: number;
-  capas: Layer[];
+  nombre: string;
+  email: string;
+  telefono: string;
+  empresa: string;
+  tipoServicio: string;
+  descripcion: string;
+  ubicacionProyecto: string;
+  fechaSolicitud: string;
+  status: 'pendiente' | 'en_progreso' | 'completado' | 'cancelado';
   created_at: string;
   updated_at: string;
 }
 
-interface ApiqueListResponse {
-  data: ApiqueResponseDto[];
-  total: number;
-  page: number;
-  limit: number;
-}
-```
-
-##### Ejemplo en React
-
-```tsx
-const ApiquesView = ({ projectId }: { projectId: number }) => {
-  const [apiques, setApiques] = useState<ApiqueResponseDto[]>([]);
-  const [filters, setFilters] = useState<ApiqueFilters>({
-    page: 1,
-    limit: 10,
-    sortBy: 'apiqueNumber',
-    sortOrder: 'ASC'
-  });
-  const [loading, setLoading] = useState(true);
-  const authenticatedFetch = createAuthenticatedFetch();
-
-  const fetchApiques = async () => {
-    try {
-      const queryParams = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          queryParams.append(key, value.toString());
-        }
-      });
-
-      const response = await authenticatedFetch(
-        `/api/lab/apiques/project/${projectId}?${queryParams}`
-      );
-
-      if (response.ok) {
-        const data: ApiqueListResponse = await response.json();
-        setApiques(data.data);
-      }
-    } catch (error) {
-      console.error("Error cargando apiques:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchApiques();
-  }, [projectId, filters]);
-
-  const handleFilterChange = (key: keyof ApiqueFilters, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
-  };
-
-  if (loading) return <div>Cargando apiques...</div>;
-
-  return (
-    <div className="apiques-container">
-      <div className="filters-section">
-        <div className="filter-group">
-          <label>Número de Apique:</label>
-          <input
-            type="number"
-            value={filters.apiqueNumber || ''}
-            onChange={(e) => handleFilterChange('apiqueNumber', e.target.value ? parseInt(e.target.value) : undefined)}
-            placeholder="Buscar por número"
-          />
-        </div>
-
-        <div className="filter-group">
-          <label>Profundidad (m):</label>
-          <input
-            type="number"
-            step="0.1"
-            value={filters.startDepth || ''}
-            onChange={(e) => handleFilterChange('startDepth', e.target.value ? parseFloat(e.target.value) : undefined)}
-            placeholder="Mín"
-          />
-          <input
-            type="number"
-            step="0.1"
-            value={filters.endDepth || ''}
-            onChange={(e) => handleFilterChange('endDepth', e.target.value ? parseFloat(e.target.value) : undefined)}
-            placeholder="Máx"
-          />
-        </div>
-
-        <div className="filter-group">
-          <label>Fecha:</label>
-          <input
-            type="date"
-            value={filters.startDate || ''}
-            onChange={(e) => handleFilterChange('startDate', e.target.value)}
-          />
-          <input
-            type="date"
-            value={filters.endDate || ''}
-            onChange={(e) => handleFilterChange('endDate', e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="apiques-grid">
-        {apiques.map((apique) => (
-          <div key={apique.id} className="apique-card">
-            <h3>Apique #{apique.numero}</h3>
-            <p><strong>Profundidad:</strong> {apique.profundidad}m</p>
-            <p><strong>Ubicación:</strong> {apique.ubicacion}</p>
-            <p><strong>Fecha:</strong> {new Date(apique.fecha).toLocaleDateString()}</p>
-            <p><strong>Capas:</strong> {apique.capas.length}</p>
-            
-            <div className="apique-actions">
-              <button 
-                onClick={() => router.push(`/lab/apiques/${apique.id}`)}
-                className="btn-secondary"
-              >
-                Ver Detalles
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <Pagination 
-        currentPage={filters.page || 1}
-        onPageChange={(page) => handleFilterChange('page', page)}
-        hasMore={apiques.length === (filters.limit || 10)}
-      />
-    </div>
-  );
-};
-```
-
-#### ➕ Crear Apique
-
-**Endpoint**: `POST /api/lab/apiques`
-
-**Roles requeridos**: `admin`, `lab`
-
-##### Request DTO
-
-```typescript
-interface CreateApiqueDto {
-  numero: number;
-  profundidad: number;
-  ubicacion: string;
-  fecha: string; // ISO date string
-  projectId: number;
-  capas?: CreateLayerDto[];
-}
-
-interface CreateLayerDto {
-  numero: number;
-  profundidad_inicial: number;
-  profundidad_final: number;
-  descripcion: string;
-  clasificacion_sucs?: string;
-  humedad?: number;
-  densidad?: number;
-  observaciones?: string;
-}
-```
-
-#### 📝 Obtener Apique Específico
-
-**Endpoint**: `GET /api/lab/apiques/:projectId/:apiqueId`
-
-**Roles requeridos**: `admin`, `lab`
-
-#### ✏️ Actualizar Apique
-
-**Endpoint**: `PUT /api/lab/apiques/:projectId/:apiqueId`
-
-**Roles requeridos**: `admin`, `lab`
-
-#### 🗑️ Eliminar Apique
-
-**Endpoint**: `DELETE /api/lab/apiques/:projectId/:apiqueId`
-
-**Roles requeridos**: `admin`, `lab`
-
-#### 📈 Estadísticas de Apiques
-
-**Endpoint**: `GET /api/lab/apiques/project/:projectId/statistics`
-
-**Roles requeridos**: `admin`, `lab`
-
-##### Response
-
-```typescript
-interface ApiqueStatistics {
-  totalApiques: number;
-  profundidadPromedio: number;
-  profundidadMaxima: number;
-  profundidadMinima: number;
-  totalCapas: number;
-  clasificacionesMasFrecuentes: {
-    clasificacion: string;
-    cantidad: number;
-  }[];
-}
-```
-
-### Gestión de Perfiles
-
-#### 📊 Listar Perfiles por Proyecto
-
-**Endpoint**: `GET /api/lab/profiles/project/:projectId`
-
-**Roles requeridos**: `admin`, `lab`
-
-##### Query Parameters
-
-```typescript
-interface ProfileFilters {
-  soundingNumber?: number;
-  startDepth?: number;
-  endDepth?: number;
+interface ServiceRequestFilters {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  status?: string;
+  name?: string;
+  email?: string;
+  serviceType?: string;
   startDate?: string;
   endDate?: string;
-  hasSPT?: boolean;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-}
-```
-
-##### Response DTO
-
-```typescript
-interface ProfileResponseDto {
-  id: number;
-  numero_sondeo: number;
-  profundidad_perforada: number;
-  nivel_freatico?: number;
-  fecha_inicio: string;
-  fecha_fin: string;
-  ubicacion: string;
-  projectId: number;
-  golpes: BlowDto[];
-  created_at: string;
-  updated_at: string;
+  location?: string;
 }
 
-interface BlowDto {
-  id: number;
-  profundidad: number;
-  golpes_30cm: number;
-  n_spt: number;
-  recuperacion: number;
+interface CreateServiceRequestDto {
+  nombre: string;
+  email: string;
+  telefono: string;
+  empresa: string;
+  tipoServicio: string;
   descripcion: string;
-  clasificacion_sucs?: string;
-}
-```
-
-#### ➕ Crear Perfil
-
-**Endpoint**: `POST /api/lab/profiles`
-
-**Roles requeridos**: `admin`, `lab`
-
-##### Request DTO
-
-```typescript
-interface CreateProfileDto {
-  numero_sondeo: number;
-  profundidad_perforada: number;
-  nivel_freatico?: number;
-  fecha_inicio: string;
-  fecha_fin: string;
-  ubicacion: string;
-  projectId: number;
-  golpes?: CreateBlowDto[];
+  ubicacionProyecto: string;
 }
 
-interface CreateBlowDto {
-  profundidad: number;
-  golpes_30cm: number;
-  n_spt: number;
-  recuperacion: number;
-  descripcion: string;
-  clasificacion_sucs?: string;
-}
-```
+class ServiceRequestsService {
+  private basePath = '/service-requests';
 
-##### Ejemplo en React
-
-```tsx
-const CreateProfileForm = ({ projectId }: { projectId: number }) => {
-  const [profile, setProfile] = useState<CreateProfileDto>({
-    numero_sondeo: 1,
-    profundidad_perforada: 0,
-    fecha_inicio: '',
-    fecha_fin: '',
-    ubicacion: '',
-    projectId,
-    golpes: []
-  });
-  const { authenticatedPost } = useCSRF();
-
-  const addBlow = () => {
-    const newBlow: CreateBlowDto = {
-      profundidad: profile.golpes.length + 1,
-      golpes_30cm: 0,
-      n_spt: 0,
-      recuperacion: 0,
-      descripcion: '',
-    };
+  async getAll(filters?: ServiceRequestFilters): Promise<PaginatedResponse<ServiceRequest>> {
+    const params = new URLSearchParams();
     
-    setProfile(prev => ({
-      ...prev,
-      golpes: [...prev.golpes, newBlow]
-    }));
-  };
-
-  const updateBlow = (index: number, blow: CreateBlowDto) => {
-    setProfile(prev => ({
-      ...prev,
-      golpes: prev.golpes.map((g, i) => i === index ? blow : g)
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const response = await authenticatedPost("/api/lab/profiles", profile);
-      
-      if (response.ok) {
-        const newProfile: ProfileResponseDto = await response.json();
-        toast.success("Perfil creado exitosamente");
-        router.push(`/lab/profiles/${newProfile.id}`);
-      } else {
-        toast.error("Error al crear el perfil");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Error de conexión");
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="profile-form">
-      <div className="form-section">
-        <h3>Información General</h3>
-        
-        <div className="form-row">
-          <div className="form-group">
-            <label>Número de Sondeo*</label>
-            <input
-              type="number"
-              value={profile.numero_sondeo}
-              onChange={(e) => setProfile({ ...profile, numero_sondeo: parseInt(e.target.value) })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Profundidad Perforada (m)*</label>
-            <input
-              type="number"
-              step="0.1"
-              value={profile.profundidad_perforada}
-              onChange={(e) => setProfile({ ...profile, profundidad_perforada: parseFloat(e.target.value) })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Nivel Freático (m)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={profile.nivel_freatico || ''}
-              onChange={(e) => setProfile({ 
-                ...profile, 
-                nivel_freatico: e.target.value ? parseFloat(e.target.value) : undefined 
-              })}
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Fecha Inicio*</label>
-            <input
-              type="date"
-              value={profile.fecha_inicio}
-              onChange={(e) => setProfile({ ...profile, fecha_inicio: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Fecha Fin*</label>
-            <input
-              type="date"
-              value={profile.fecha_fin}
-              onChange={(e) => setProfile({ ...profile, fecha_fin: e.target.value })}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>Ubicación*</label>
-          <input
-            type="text"
-            value={profile.ubicacion}
-            onChange={(e) => setProfile({ ...profile, ubicacion: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="form-section">
-        <div className="section-header">
-          <h3>Golpes SPT</h3>
-          <button type="button" onClick={addBlow} className="btn-secondary">
-            Agregar Golpe
-          </button>
-        </div>
-
-        <div className="blows-table">
-          <div className="table-header">
-            <span>Prof. (m)</span>
-            <span>Golpes 30cm</span>
-            <span>N-SPT</span>
-            <span>Recup. (%)</span>
-            <span>Descripción</span>
-            <span>SUCS</span>
-            <span>Acciones</span>
-          </div>
-
-          {profile.golpes.map((blow, index) => (
-            <div key={index} className="table-row">
-              <input
-                type="number"
-                step="0.1"
-                value={blow.profundidad}
-                onChange={(e) => updateBlow(index, { 
-                  ...blow, 
-                  profundidad: parseFloat(e.target.value) 
-                })}
-              />
-              <input
-                type="number"
-                value={blow.golpes_30cm}
-                onChange={(e) => updateBlow(index, { 
-                  ...blow, 
-                  golpes_30cm: parseInt(e.target.value) 
-                })}
-              />
-              <input
-                type="number"
-                value={blow.n_spt}
-                onChange={(e) => updateBlow(index, { 
-                  ...blow, 
-                  n_spt: parseInt(e.target.value) 
-                })}
-              />
-              <input
-                type="number"
-                step="0.1"
-                value={blow.recuperacion}
-                onChange={(e) => updateBlow(index, { 
-                  ...blow, 
-                  recuperacion: parseFloat(e.target.value) 
-                })}
-              />
-              <input
-                type="text"
-                value={blow.descripcion}
-                onChange={(e) => updateBlow(index, { 
-                  ...blow, 
-                  descripcion: e.target.value 
-                })}
-              />
-              <input
-                type="text"
-                value={blow.clasificacion_sucs || ''}
-                onChange={(e) => updateBlow(index, { 
-                  ...blow, 
-                  clasificacion_sucs: e.target.value 
-                })}
-              />
-              <button
-                type="button"
-                onClick={() => setProfile(prev => ({
-                  ...prev,
-                  golpes: prev.golpes.filter((_, i) => i !== index)
-                }))}
-                className="btn-danger-small"
-              >
-                Eliminar
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <button type="submit" className="btn-primary">
-        Crear Perfil
-      </button>
-    </form>
-  );
-};
-```
-
----
-
-## 💰 Módulo Financiero
-
-### Gestión de Gastos Empresariales
-
-#### 📊 Listar Gastos Empresariales
-
-**Endpoint**: `GET /api/gastos-mes/expenses`
-
-**Roles requeridos**: `admin`
-
-##### Query Parameters
-
-```typescript
-interface FinancialFilters {
-  year?: string;    // YYYY
-  month?: string;   // MM
-  minAmount?: number;
-  maxAmount?: number;
-  hasCategory?: boolean;
-  categoryName?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-}
-```
-
-##### Response DTO
-
-```typescript
-interface CompanyExpenseDto {
-  id: number;
-  mes: string;           // YYYY-MM
-  alquiler: number;
-  servicios: number;
-  combustible: number;
-  alimentacion: number;
-  papeleria: number;
-  comunicaciones: number;
-  publicidad: number;
-  transporte: number;
-  hospedaje: number;
-  otros_gastos: number;
-  total: number;
-  observaciones?: string;
-  created_at: string;
-  updated_at: string;
-}
-```
-
-#### ➕ Crear Gastos Empresariales
-
-**Endpoint**: `POST /api/gastos-mes/expenses`
-
-**Roles requeridos**: `admin`
-
-##### Request DTO
-
-```typescript
-interface CreateCompanyExpenseDto {
-  mes: string;           // YYYY-MM
-  alquiler: number;
-  servicios: number;
-  combustible: number;
-  alimentacion: number;
-  papeleria: number;
-  comunicaciones: number;
-  publicidad: number;
-  transporte: number;
-  hospedaje: number;
-  otros_gastos: number;
-  observaciones?: string;
-}
-```
-
-##### Ejemplo en React
-
-```tsx
-const CompanyExpenseForm = () => {
-  const [expense, setExpense] = useState<CreateCompanyExpenseDto>({
-    mes: new Date().toISOString().slice(0, 7), // YYYY-MM
-    alquiler: 0,
-    servicios: 0,
-    combustible: 0,
-    alimentacion: 0,
-    papeleria: 0,
-    comunicaciones: 0,
-    publicidad: 0,
-    transporte: 0,
-    hospedaje: 0,
-    otros_gastos: 0,
-  });
-  const { authenticatedPost } = useCSRF();
-
-  const calculateTotal = () => {
-    return Object.entries(expense)
-      .filter(([key]) => key !== 'mes' && key !== 'observaciones')
-      .reduce((total, [_, value]) => total + (typeof value === 'number' ? value : 0), 0);
-  };
-
-  const handleExpenseChange = (field: keyof CreateCompanyExpenseDto, value: number | string) => {
-    setExpense(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const response = await authenticatedPost("/api/gastos-mes/expenses", expense);
-      
-      if (response.ok) {
-        const newExpense: CompanyExpenseDto = await response.json();
-        toast.success("Gastos registrados exitosamente");
-        router.push("/financial/expenses");
-      } else {
-        const error = await response.json();
-        toast.error(error.message || "Error al registrar gastos");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Error de conexión");
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="expense-form">
-      <div className="form-header">
-        <h2>Registrar Gastos Empresariales</h2>
-        <div className="total-display">
-          <strong>Total: ${calculateTotal().toLocaleString()}</strong>
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label>Mes*</label>
-        <input
-          type="month"
-          value={expense.mes}
-          onChange={(e) => handleExpenseChange('mes', e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="expense-categories">
-        <div className="category-group">
-          <h3>Gastos Fijos</h3>
-          
-          <div className="form-group">
-            <label>Alquiler</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.alquiler}
-              onChange={(e) => handleExpenseChange('alquiler', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Servicios (Luz, Agua, Internet)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.servicios}
-              onChange={(e) => handleExpenseChange('servicios', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Comunicaciones (Teléfono, Celular)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.comunicaciones}
-              onChange={(e) => handleExpenseChange('comunicaciones', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-        </div>
-
-        <div className="category-group">
-          <h3>Gastos Operativos</h3>
-          
-          <div className="form-group">
-            <label>Combustible</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.combustible}
-              onChange={(e) => handleExpenseChange('combustible', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Transporte</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.transporte}
-              onChange={(e) => handleExpenseChange('transporte', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Alimentación</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.alimentacion}
-              onChange={(e) => handleExpenseChange('alimentacion', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Hospedaje</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.hospedaje}
-              onChange={(e) => handleExpenseChange('hospedaje', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-        </div>
-
-        <div className="category-group">
-          <h3>Otros Gastos</h3>
-          
-          <div className="form-group">
-            <label>Papelería</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.papeleria}
-              onChange={(e) => handleExpenseChange('papeleria', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Publicidad</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.publicidad}
-              onChange={(e) => handleExpenseChange('publicidad', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Otros Gastos</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={expense.otros_gastos}
-              onChange={(e) => handleExpenseChange('otros_gastos', parseFloat(e.target.value) || 0)}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label>Observaciones</label>
-        <textarea
-          value={expense.observaciones || ''}
-          onChange={(e) => handleExpenseChange('observaciones', e.target.value)}
-          rows={3}
-          placeholder="Observaciones adicionales sobre los gastos del mes..."
-        />
-      </div>
-
-      <button type="submit" className="btn-primary">
-        Registrar Gastos
-      </button>
-    </form>
-  );
-};
-```
-
-### Resúmenes Financieros
-
-#### 📊 Listar Resúmenes Financieros
-
-**Endpoint**: `GET /api/gastos-mes/summaries`
-
-**Roles requeridos**: `admin`
-
-##### Query Parameters
-
-```typescript
-interface FinancialSummaryFilters {
-  year?: number;    // YYYY
-}
-```
-
-##### Response DTO
-
-```typescript
-interface FinancialSummaryDto {
-  id: number;
-  mes: string;                    // YYYY-MM
-  total_ingresos: number;
-  total_gastos_empresa: number;
-  total_gastos_proyectos: number;
-  utilidad_bruta: number;
-  utilidad_neta: number;
-  margen_utilidad: number;        // Porcentaje
-  observaciones?: string;
-  created_at: string;
-  updated_at: string;
-}
-```
-
-#### ➕ Crear Resumen Financiero
-
-**Endpoint**: `POST /api/gastos-mes/summaries`
-
-**Roles requeridos**: `admin`
-
-##### Request DTO
-
-```typescript
-interface CreateFinancialSummaryDto {
-  mes: string;                    // YYYY-MM
-  total_ingresos: number;
-  total_gastos_empresa: number;
-  total_gastos_proyectos: number;
-  observaciones?: string;
-}
-```
-
-#### 📝 Obtener Resumen por Mes
-
-**Endpoint**: `GET /api/gastos-mes/summaries/:mes`
-
-**Roles requeridos**: `admin`
-
----
-
-## 📄 Módulo de Generación de PDFs
-
-### Generar Reportes
-
-#### 📄 Generar PDF General
-
-**Endpoint**: `POST /api/pdf/generate`
-
-**Roles requeridos**: `admin`
-
-##### Request DTO
-
-```typescript
-interface PDFGenerateRequest {
-  template: 'project-report' | 'financial-summary' | 'lab-report' | 'service-request';
-  data: any;          // Datos específicos según el template
-  options?: {
-    format?: 'A4' | 'Letter';
-    orientation?: 'portrait' | 'landscape';
-    margin?: {
-      top?: number;
-      bottom?: number;
-      left?: number;
-      right?: number;
-    };
-  };
-}
-```
-
-##### Ejemplo en React
-
-```tsx
-const PDFGenerator = ({ projectId }: { projectId: number }) => {
-  const [loading, setLoading] = useState(false);
-  const { authenticatedPost } = useCSRF();
-
-  const generateProjectReport = async () => {
-    setLoading(true);
-    
-    try {
-      const response = await authenticatedPost("/api/pdf/generate", {
-        template: "project-report",
-        data: {
-          projectId,
-          includeApiques: true,
-          includeProfiles: true,
-          includeFinancial: true
-        },
-        options: {
-          format: "A4",
-          orientation: "portrait"
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, value.toString());
         }
       });
-
-      if (response.ok) {
-        // El servidor devuelve el PDF como blob
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `proyecto-${projectId}-reporte.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        toast.success("Reporte generado exitosamente");
-      } else {
-        toast.error("Error al generar el reporte");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Error de conexión");
-    } finally {
-      setLoading(false);
     }
-  };
 
-  return (
-    <div className="pdf-generator">
-      <h3>Generar Reportes</h3>
-      
-      <div className="pdf-options">
-        <button
-          onClick={generateProjectReport}
-          disabled={loading}
-          className="btn-primary"
-        >
-          {loading ? "Generando..." : "Generar Reporte de Proyecto"}
-        </button>
-      </div>
-    </div>
-  );
-};
+    return apiClient.request<PaginatedResponse<ServiceRequest>>({
+      method: 'GET',
+      url: `${this.basePath}?${params.toString()}`,
+    });
+  }
+
+  async getById(id: number): Promise<ServiceRequest> {
+    return apiClient.request<ServiceRequest>({
+      method: 'GET',
+      url: `${this.basePath}/${id}`,
+    });
+  }
+
+  async create(data: CreateServiceRequestDto): Promise<ServiceRequest> {
+    return apiClient.request<ServiceRequest>({
+      method: 'POST',
+      url: this.basePath,
+      data,
+    });
+  }
+
+  async update(id: number, data: Partial<CreateServiceRequestDto>): Promise<ServiceRequest> {
+    return apiClient.request<ServiceRequest>({
+      method: 'PATCH',
+      url: `${this.basePath}/${id}`,
+      data,
+    });
+  }
+
+  async updateStatus(id: number, status: ServiceRequest['status']): Promise<ServiceRequest> {
+    return apiClient.request<ServiceRequest>({
+      method: 'PATCH',
+      url: `${this.basePath}/${id}/status`,
+      data: { status },
+    });
+  }
+
+  async delete(id: number): Promise<void> {
+    return apiClient.request<void>({
+      method: 'DELETE',
+      url: `${this.basePath}/${id}`,
+    });
+  }
+
+  // Métodos de conveniencia para filtros comunes
+  async getPending(page = 1, limit = 20): Promise<PaginatedResponse<ServiceRequest>> {
+    return this.getAll({ status: 'pendiente', page, limit, sortBy: 'created_at', sortOrder: 'DESC' });
+  }
+
+  async getByDateRange(startDate: string, endDate: string): Promise<PaginatedResponse<ServiceRequest>> {
+    return this.getAll({ startDate, endDate, sortBy: 'fechaSolicitud', sortOrder: 'DESC' });
+  }
+
+  async searchByName(name: string, page = 1): Promise<PaginatedResponse<ServiceRequest>> {
+    return this.getAll({ name, page, limit: 10 });
+  }
+}
+
+export const serviceRequestsService = new ServiceRequestsService();
 ```
 
----
-
-## 🔧 Servicios Públicos
-
-### Catálogo de Servicios
-
-#### 📊 Listar Servicios
-
-**Endpoint**: `GET /api/services`
-
-**Roles requeridos**: Todos los usuarios autenticados
-
-##### Response DTO
+#### 2. **Projects Service**
 
 ```typescript
-interface ServiceDto {
+// services/projects.service.ts
+import { apiClient } from '../api-client';
+import { PaginatedResponse } from '../types/pagination';
+
+interface Project {
   id: number;
-  name: string;
-  description: string;
-  category: ServiceCategoryDto;
-  base_price: number;
-  unit: string;              // 'm', 'unidad', 'muestra', etc.
-  duration_days: number;
-  is_active: boolean;
-  additional_fields: ServiceAdditionalFieldDto[];
+  nombreProyecto: string;
+  descripcion: string;
+  solicitante: string;
+  fechaInicio: string;
+  fechaFinalizacion?: string;
+  ubicacion: string;
+  status: 'activo' | 'completado' | 'suspendido' | 'cancelado';
+  obrero: string;
+  metodoDePago: 'efectivo' | 'transferencia' | 'cheque' | 'credito';
   created_at: string;
   updated_at: string;
 }
 
-interface ServiceCategoryDto {
+interface ProjectFilters {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  status?: string;
+  solicitante?: string;
+  nombreProyecto?: string;
+  obrero?: string;
+  startDate?: string;
+  endDate?: string;
+  metodoDePago?: string;
+}
+
+class ProjectsService {
+  private basePath = '/projects';
+
+  async getAll(filters?: ProjectFilters): Promise<PaginatedResponse<Project>> {
+    const params = new URLSearchParams();
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+
+    return apiClient.request<PaginatedResponse<Project>>({
+      method: 'GET',
+      url: `${this.basePath}?${params.toString()}`,
+    });
+  }
+
+  async getById(id: number): Promise<Project> {
+    return apiClient.request<Project>({
+      method: 'GET',
+      url: `${this.basePath}/${id}`,
+    });
+  }
+
+  // Métodos específicos con filtros predefinidos
+  async getActiveProjects(): Promise<PaginatedResponse<Project>> {
+    return this.getAll({ 
+      status: 'activo', 
+      sortBy: 'fechaInicio', 
+      sortOrder: 'DESC' 
+    });
+  }
+
+  async getProjectsByWorker(obrero: string): Promise<PaginatedResponse<Project>> {
+    return this.getAll({ 
+      obrero, 
+      status: 'activo',
+      sortBy: 'fechaInicio' 
+    });
+  }
+
+  async getProjectsByDateRange(startDate: string, endDate: string): Promise<PaginatedResponse<Project>> {
+    return this.getAll({ 
+      startDate, 
+      endDate, 
+      sortBy: 'fechaInicio', 
+      sortOrder: 'ASC' 
+    });
+  }
+}
+
+export const projectsService = new ProjectsService();
+```
+
+#### 3. **Lab Services (Apiques & Profiles)**
+
+```typescript
+// services/lab.service.ts
+import { apiClient } from '../api-client';
+import { PaginatedResponse } from '../types/pagination';
+
+interface Apique {
   id: number;
-  name: string;
-  description: string;
-  color: string;             // Color hex para UI
+  projectId: number;
+  sampleNumber: string;
+  depth: number;
+  location: string;
+  coordinates?: string;
+  collectionDate: string;
+  analysisDate?: string;
+  status: 'collected' | 'analyzing' | 'completed' | 'reported';
+  results?: any;
+  created_at: string;
+  updated_at: string;
 }
 
-interface ServiceAdditionalFieldDto {
+interface Profile {
   id: number;
-  field_name: string;
-  field_type: 'text' | 'number' | 'select' | 'boolean';
-  is_required: boolean;
-  options?: string[];        // Para campos tipo 'select'
-  placeholder?: string;
+  projectId: number;
+  profileNumber: string;
+  profileType: string;
+  totalDepth: number;
+  soilType: string;
+  layerCount: number;
+  drillingDate: string;
+  completionDate?: string;
+  status: 'drilling' | 'sampling' | 'analyzing' | 'completed' | 'reported';
+  stratigraphicData?: any;
+  created_at: string;
+  updated_at: string;
 }
+
+class LabService {
+  private apiquesPath = '/lab/apiques';
+  private profilesPath = '/lab/profiles';
+
+  // Apiques methods
+  async getApiques(projectId: number, filters?: any): Promise<PaginatedResponse<Apique>> {
+    const params = new URLSearchParams({ projectId: projectId.toString() });
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+
+    return apiClient.request<PaginatedResponse<Apique>>({
+      method: 'GET',
+      url: `${this.apiquesPath}?${params.toString()}`,
+    });
+  }
+
+  async getApiqueById(id: number): Promise<Apique> {
+    return apiClient.request<Apique>({
+      method: 'GET',
+      url: `${this.apiquesPath}/${id}`,
+    });
+  }
+
+  // Profiles methods
+  async getProfiles(projectId: number, filters?: any): Promise<PaginatedResponse<Profile>> {
+    const params = new URLSearchParams({ projectId: projectId.toString() });
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+
+    return apiClient.request<PaginatedResponse<Profile>>({
+      method: 'GET',
+      url: `${this.profilesPath}?${params.toString()}`,
+    });
+  }
+
+  async getProfileById(id: number): Promise<Profile> {
+    return apiClient.request<Profile>({
+      method: 'GET',
+      url: `${this.profilesPath}/${id}`,
+    });
+  }
+
+  // Métodos de conveniencia
+  async getApiquesByDepth(projectId: number, minDepth: number, maxDepth: number): Promise<PaginatedResponse<Apique>> {
+    return this.getApiques(projectId, { 
+      minDepth, 
+      maxDepth, 
+      sortBy: 'depth', 
+      sortOrder: 'ASC' 
+    });
+  }
+
+  async getCompletedAnalyses(projectId: number): Promise<PaginatedResponse<Apique>> {
+    return this.getApiques(projectId, { 
+      status: 'completed',
+      sortBy: 'analysisDate',
+      sortOrder: 'DESC'
+    });
+  }
+}
+
+export const labService = new LabService();
 ```
 
-#### 📝 Obtener Servicio Específico
-
-**Endpoint**: `GET /api/services/:id`
-
-**Roles requeridos**: Todos los usuarios autenticados
-
-#### 📊 Listar Categorías de Servicios
-
-**Endpoint**: `GET /api/services/categories`
-
-**Roles requeridos**: Todos los usuarios autenticados
-
----
-
-## 🛡️ Seguridad y Autenticación en NestJS
-
-### Guards y Decoradores
-
-#### JwtAuthGuard
+### Hook Personalizado para React
 
 ```typescript
-// Usado automáticamente en controladores protegidos
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('projects')
-export class ProjectsController {
-  // Todos los endpoints requieren autenticación JWT válida
+// hooks/useApiData.ts
+import { useState, useEffect, useCallback } from 'react';
+import { PaginatedResponse } from '../types/pagination';
+
+interface UseApiDataOptions<T> {
+  service: (...args: any[]) => Promise<PaginatedResponse<T>>;
+  dependencies?: any[];
+  initialFilters?: any;
+  autoFetch?: boolean;
 }
-```
 
-#### RolesGuard
-
-```typescript
-// Control de acceso basado en roles
-@Roles('admin', 'lab')  // Solo admin y lab pueden acceder
-@Get('apiques')
-async getApiques() {
-  // Implementación
-}
-```
-
-#### Decorador @Public()
-
-```typescript
-// Para endpoints que no requieren autenticación
-@Public()
-@Get('services')
-async getPublicServices() {
-  // Accessible sin autenticación
-}
-```
-
-### Validación de DTOs
-
-```typescript
-// Todos los DTOs incluyen validación automática
-class CreateProjectDto {
-  @IsString()
-  @IsNotEmpty()
-  @Length(3, 100)
-  nombre: string;
-
-  @IsNumber()
-  @Min(0)
-  presupuesto: number;
-
-  @IsDateString()
-  fechaInicio: string;
-
-  @IsEnum(ProjectStatus)
-  estado: ProjectStatus;
-}
-```
-
-### Rate Limiting
-
-El API incluye limitación de velocidad configurada:
-
-- **Ventana**: 15 minutos
-- **Límite**: 100 requests por IP
-- **Detección inteligente de IP**: Soporte para proxies y CDNs
-
----
-
-## 📈 Mejores Prácticas
-
-### 1. **Manejo de Errores**
-
-```typescript
-// El API devuelve errores consistentes
-interface APIError {
-  statusCode: number;
-  message: string | string[];
-  error: string;
-  timestamp: string;
-  path: string;
-}
-```
-
-### 2. **Paginación Estándar**
-
-```typescript
-// Respuesta paginada estándar
-interface PaginatedResponse<T> {
+interface UseApiDataResult<T> {
   data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-```
-
-### 3. **Filtros y Búsqueda**
-
-Todos los endpoints de listado incluyen:
-- Filtros específicos por entidad
-- Paginación (`page`, `limit`)
-- Ordenamiento (`sortBy`, `sortOrder`)
-- Búsqueda por texto cuando aplica
-
-### 4. **Swagger Documentation**
-
-- Documentación automática en `/api-docs`
-- Todos los endpoints documentados con ejemplos
-- DTOs y responses tipados
-- Pruebas integradas en la interfaz
-
-### 5. **TypeScript en Frontend**
-
-```typescript
-// Tipos consistentes entre frontend y backend
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  login: (credentials: LoginDto) => Promise<void>;
-  logout: () => void;
-  hasRole: (role: UserRole) => boolean;
+  pagination: PaginatedResponse<T>['pagination'] | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  updateFilters: (newFilters: any) => void;
+  filters: any;
 }
 
-const useAuth = (): AuthContextType => {
-  // Implementación del contexto
-};
-```
-
-### 6. **Gestión de Estado**
-
-```typescript
-// Hook personalizado para manejo de estado de API
-const useApiState = <T>(initialData: T) => {
-  const [data, setData] = useState<T>(initialData);
+export function useApiData<T>({
+  service,
+  dependencies = [],
+  initialFilters = {},
+  autoFetch = true,
+}: UseApiDataOptions<T>): UseApiDataResult<T> {
+  const [data, setData] = useState<T[]>([]);
+  const [pagination, setPagination] = useState<PaginatedResponse<T>['pagination'] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState(initialFilters);
 
-  const execute = async (apiCall: () => Promise<T>) => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const result = await apiCall();
-      setData(result);
-      return result;
+      const response = await service(filters);
+      setData(response.data);
+      setPagination(response.pagination);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(errorMessage);
-      throw err;
+      setError(err instanceof Error ? err.message : 'Error fetching data');
+      setData([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
+  }, [service, filters, ...dependencies]);
+
+  const updateFilters = useCallback((newFilters: any) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  useEffect(() => {
+    if (autoFetch) {
+      fetchData();
+    }
+  }, [fetchData, autoFetch]);
+
+  return {
+    data,
+    pagination,
+    loading,
+    error,
+    refetch: fetchData,
+    updateFilters,
+    filters,
+  };
+}
+
+// Ejemplo de uso en componente React
+/*
+function ServiceRequestsList() {
+  const {
+    data: requests,
+    pagination,
+    loading,
+    error,
+    updateFilters,
+    filters
+  } = useApiData({
+    service: (filters) => serviceRequestsService.getAll(filters),
+    initialFilters: { page: 1, limit: 20, status: 'pendiente' }
+  });
+
+  const handleStatusFilter = (status: string) => {
+    updateFilters({ status, page: 1 });
   };
 
-  return { data, loading, error, execute, setData };
-};
+  const handlePageChange = (page: number) => {
+    updateFilters({ page });
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      <StatusFilter onStatusChange={handleStatusFilter} />
+      <RequestsList requests={requests} />
+      <Pagination 
+        current={pagination?.currentPage || 1}
+        total={pagination?.totalPages || 1}
+        onChange={handlePageChange}
+      />
+    </div>
+  );
+}
+*/
 ```
 
 ---
 
-## 🚀 Deployment y Configuración
+## 🛡️ Seguridad y Mejores Prácticas
 
-### Variables de Entorno
-
-```bash
-# Base de datos
-DB_HOST=localhost
-DB_PORT=3306
-DB_USERNAME=tu_usuario
-DB_PASSWORD=tu_password
-DB_DATABASE=ingeocimyc_db
-
-# JWT
-JWT_SECRET=tu_jwt_secret_muy_seguro
-JWT_EXPIRES_IN=24h
-JWT_SECRET_2=tu_segundo_secret_para_admin
-
-# Servidor
-PORT=5050
-NODE_ENV=production
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-TRUST_PROXY=true
-
-# CORS
-CORS_ORIGIN=https://tu-frontend.com
-```
-
-### Scripts de Inicio
-
-```bash
-# Desarrollo
-npm run start:dev
-
-# Producción
-npm run build
-npm run start:prod
-
-# Tests
-npm run test
-npm run test:e2e
-```
-
-### Estructura de Módulos NestJS
-
-```
-src/
-├── modules/
-│   ├── auth/              # Autenticación JWT
-│   ├── admin/             # Módulos de administrador
-│   ├── lab/               # Módulos de laboratorio
-│   │   ├── apiques/       # Gestión de apiques
-│   │   └── profiles/      # Gestión de perfiles
-│   ├── projects/          # Gestión de proyectos
-│   │   ├── financial/     # Gestión financiera
-│   │   └── project-management/
-│   ├── client/            # Módulos de cliente
-│   │   └── service-requests/
-│   ├── services/          # Catálogo de servicios
-│   └── pdf/               # Generación de PDFs
-├── common/                # Utilidades compartidas
-│   ├── decorators/
-│   ├── filters/
-│   ├── guards/
-│   └── pipes/
-└── main.ts               # Punto de entrada
-```
-
-Esta API en NestJS proporciona una arquitectura moderna, escalable y mantenible con características como:
-
-- ✅ **Autenticación JWT robusta**
-- ✅ **Control de acceso basado en roles**
-- ✅ **Validación automática de datos**
-- ✅ **Documentación Swagger integrada**
-- ✅ **Rate limiting inteligente**
-- ✅ **Manejo global de errores**
-- ✅ **Estructura modular por dominio**
-- ✅ **TypeORM para gestión de base de datos**
-- ✅ **Testing integrado**
-
-La migración de Express.js a NestJS está **completa** y lista para producción. 🎉
-
-    try {
-      const response = await authenticatedPost("/api/projects", project);
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log("Proyecto creado:", data);
-        // Limpiar formulario o redirigir
-        setProject({
-          nombre: "",
-          cliente: "",
-          presupuesto: 0,
-          fechaInicio: "",
-          estado: "activo",
-        });
-      } else {
-        console.error("Error:", data.error);
-      }
-    } catch (error) {
-      console.error("Error creando proyecto:", error);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="project-form">
-      <h2>Crear Nuevo Proyecto</h2>
-
-      <div className="form-group">
-        <label>Nombre del Proyecto *</label>
-        <input
-          type="text"
-          value={project.nombre}
-          onChange={(e) => setProject({ ...project, nombre: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Cliente *</label>
-        <input
-          type="text"
-          value={project.cliente}
-          onChange={(e) => setProject({ ...project, cliente: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Presupuesto *</label>
-        <input
-          type="number"
-          step="0.01"
-          value={project.presupuesto}
-          onChange={(e) =>
-            setProject({ ...project, presupuesto: parseFloat(e.target.value) })
-          }
-          required
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Fecha de Inicio *</label>
-        <input
-          type="date"
-          value={project.fechaInicio}
-          onChange={(e) =>
-            setProject({ ...project, fechaInicio: e.target.value })
-          }
-          required
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Descripción</label>
-        <textarea
-          value={project.descripcion || ""}
-          onChange={(e) =>
-            setProject({ ...project, descripcion: e.target.value })
-          }
-          rows={4}
-        />
-      </div>
-
-      <button type="submit" className="submit-btn">
-        Crear Proyecto
-      </button>
-    </form>
-  );
-};
-```
-
-### 💰 Abonar a Proyecto
-
-**Endpoint**: `PATCH /api/projects/{id}/abonar`
-
-#### Ejemplo en React
-
-```tsx
-const ProjectPayment = ({ projectId }: { projectId: number }) => {
-  const [amount, setAmount] = useState("");
-  const { authenticatedPost } = useCSRF();
-
-  const handlePayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const response = await authenticatedPost(
-        `/api/projects/${projectId}/abonar`,
-        {
-          monto: parseFloat(amount),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log("Abono registrado:", data);
-        setAmount("");
-        // Actualizar el estado del proyecto
-      } else {
-        console.error("Error:", data.error);
-      }
-    } catch (error) {
-      console.error("Error registrando abono:", error);
-    }
-  };
-
-  return (
-    <form onSubmit={handlePayment} className="payment-form">
-      <h3>Registrar Abono</h3>
-      <div className="form-group">
-        <label>Monto del Abono</label>
-        <input
-          type="number"
-          step="0.01"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0.00"
-          required
-        />
-      </div>
-      <button type="submit">Registrar Abono</button>
-    </form>
-  );
-};
-```
-
----
-
-## 🧪 Solicitudes de Servicio
-
-### 📄 Crear Solicitud de Servicio
-
-**Endpoint**: `POST /api/service-requests`
-
-#### Payload
+### 🔐 Gestión de Tokens JWT
 
 ```typescript
-interface ServiceRequestData {
-  formData: {
-    name: string;
-    name_project: string;
-    location: string;
-    identification: string;
-    phone: string;
-    email: string;
-    description: string;
-    status?: "pending" | "approved" | "rejected" | "completed";
-  };
-  selectedServices: Array<{
-    item: {
-      code: string;
-      name: string;
-    };
-    quantity: number;
-    additionalInfo?: Record<string, any>;
-  }>;
+// auth/token-manager.ts
+class TokenManager {
+  private static readonly TOKEN_KEY = 'auth_token';
+  private static readonly REFRESH_TOKEN_KEY = 'refresh_token';
+  private static readonly TOKEN_EXPIRY_KEY = 'token_expiry';
+
+  static setTokens(accessToken: string, refreshToken: string, expiresIn: number) {
+    const expiryTime = Date.now() + (expiresIn * 1000);
+    
+    localStorage.setItem(this.TOKEN_KEY, accessToken);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(this.TOKEN_EXPIRY_KEY, expiryTime.toString());
+  }
+
+  static getAccessToken(): string | null {
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    const expiry = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
+    
+    if (!token || !expiry) return null;
+    
+    if (Date.now() > parseInt(expiry)) {
+      this.clearTokens();
+      return null;
+    }
+    
+    return token;
+  }
+
+  static isTokenExpired(): boolean {
+    const expiry = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
+    if (!expiry) return true;
+    
+    return Date.now() > parseInt(expiry);
+  }
+
+  static clearTokens() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    localStorage.removeItem(this.TOKEN_EXPIRY_KEY);
+  }
+
+  static async refreshAccessToken(): Promise<string | null> {
+    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    if (!refreshToken) return null;
+
+    try {
+      const response = await apiClient.request({
+        method: 'POST',
+        url: '/auth/refresh',
+        data: { refreshToken }
+      });
+
+      this.setTokens(
+        response.accessToken, 
+        response.refreshToken, 
+        response.expiresIn
+      );
+
+      return response.accessToken;
+    } catch (error) {
+      this.clearTokens();
+      return null;
+    }
+  }
 }
 ```
 
-#### Ejemplo en React
+### 🚫 Rate Limiting y Manejo de Errores
 
-```tsx
-const ServiceRequestForm = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    name_project: "",
-    location: "",
-    identification: "",
-    phone: "",
-    email: "",
-    description: "",
-  });
+```typescript
+// utils/error-handler.ts
+export interface ApiError {
+  status: number;
+  message: string;
+  code?: string;
+  details?: any;
+}
 
-  const [selectedServices, setSelectedServices] = useState<any[]>([]);
-  const [availableServices, setAvailableServices] = useState<any[]>([]);
+export class ApiErrorHandler {
+  static handle(error: any): ApiError {
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      switch (status) {
+        case 400:
+          return {
+            status,
+            message: data.message || 'Solicitud inválida',
+            code: 'BAD_REQUEST',
+            details: data.details
+          };
+        
+        case 401:
+          TokenManager.clearTokens();
+          return {
+            status,
+            message: 'Sesión expirada. Por favor, inicia sesión nuevamente.',
+            code: 'UNAUTHORIZED'
+          };
+        
+        case 403:
+          return {
+            status,
+            message: 'No tienes permisos para realizar esta acción',
+            code: 'FORBIDDEN'
+          };
+        
+        case 404:
+          return {
+            status,
+            message: 'Recurso no encontrado',
+            code: 'NOT_FOUND'
+          };
+        
+        case 429:
+          return {
+            status,
+            message: 'Demasiadas solicitudes. Intenta de nuevo en unos minutos.',
+            code: 'RATE_LIMITED'
+          };
+        
+        case 500:
+          return {
+            status,
+            message: 'Error interno del servidor. Contacta al administrador.',
+            code: 'INTERNAL_ERROR'
+          };
+        
+        default:
+          return {
+            status,
+            message: data.message || 'Error desconocido',
+            code: 'UNKNOWN'
+          };
+      }
+    }
+    
+    if (error.request) {
+      return {
+        status: 0,
+        message: 'Error de conexión. Verifica tu conexión a internet.',
+        code: 'NETWORK_ERROR'
+      };
+    }
+    
+    return {
+      status: 0,
+      message: error.message || 'Error desconocido',
+      code: 'UNKNOWN'
+    };
+  }
+}
 
-  // Cargar servicios disponibles
-  useEffect(() => {
-    const fetchServices = async () => {
+// utils/retry-logic.ts
+export class RetryLogic {
+  static async withRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries = 3,
+    delayMs = 1000
+  ): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const response = await fetch("/api/service-requests/services");
-        if (response.ok) {
-          const data = await response.json();
-          setAvailableServices(data);
-        }
+        return await operation();
       } catch (error) {
-        console.error("Error cargando servicios:", error);
-      }
-    };
-
-    fetchServices();
-  }, []);
-
-  const addService = (service: any) => {
-    setSelectedServices([
-      ...selectedServices,
-      {
-        item: {
-          code: service.code,
-          name: service.name,
-        },
-        quantity: 1,
-        additionalInfo: {},
-      },
-    ]);
-  };
-
-  const updateServiceQuantity = (index: number, quantity: number) => {
-    const updated = [...selectedServices];
-    updated[index].quantity = quantity;
-    setSelectedServices(updated);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const requestData: ServiceRequestData = {
-      formData,
-      selectedServices,
-    };
-
-    try {
-      const response = await fetch("/api/service-requests", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log("Solicitud creada:", data);
-        // La API automáticamente genera un PDF
-        if (data.pdf?.generated) {
-          console.log("PDF generado en:", data.pdf.path);
+        lastError = error;
+        
+        // No reintentar en errores 4xx (excepto 429)
+        if (error.response?.status >= 400 && error.response?.status < 500 && error.response?.status !== 429) {
+          throw error;
         }
-      } else {
-        console.error("Error:", data.message);
+        
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // Backoff exponencial
+        const delay = delayMs * Math.pow(2, attempt - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-    } catch (error) {
-      console.error("Error creando solicitud:", error);
     }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="service-request-form">
-      <h2>Nueva Solicitud de Servicio</h2>
-
-      {/* Datos del solicitante */}
-      <div className="form-section">
-        <h3>Datos del Solicitante</h3>
-
-        <input
-          type="text"
-          placeholder="Nombre completo"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="Nombre del proyecto"
-          value={formData.name_project}
-          onChange={(e) =>
-            setFormData({ ...formData, name_project: e.target.value })
-          }
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="Ubicación"
-          value={formData.location}
-          onChange={(e) =>
-            setFormData({ ...formData, location: e.target.value })
-          }
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="Identificación"
-          value={formData.identification}
-          onChange={(e) =>
-            setFormData({ ...formData, identification: e.target.value })
-          }
-          required
-        />
-
-        <input
-          type="tel"
-          placeholder="Teléfono"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          required
-        />
-
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          required
-        />
-
-        <textarea
-          placeholder="Descripción del proyecto"
-          value={formData.description}
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
-          rows={4}
-          required
-        />
-      </div>
-
-      {/* Selección de servicios */}
-      <div className="form-section">
-        <h3>Servicios Solicitados</h3>
-
-        <div className="service-selector">
-          <select
-            onChange={(e) => {
-              const service = availableServices.find(
-                (s) => s.code === e.target.value
-              );
-              if (service) addService(service);
-            }}
-          >
-            <option value="">Seleccionar servicio...</option>
-            {availableServices.map((service) => (
-              <option key={service.code} value={service.code}>
-                {service.code} - {service.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="selected-services">
-          {selectedServices.map((service, index) => (
-            <div key={index} className="service-item">
-              <span>
-                {service.item.code} - {service.item.name}
-              </span>
-              <input
-                type="number"
-                min="1"
-                value={service.quantity}
-                onChange={(e) =>
-                  updateServiceQuantity(index, parseInt(e.target.value))
-                }
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedServices(
-                    selectedServices.filter((_, i) => i !== index)
-                  )
-                }
-              >
-                Eliminar
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <button type="submit" className="submit-btn">
-        Crear Solicitud
-      </button>
-    </form>
-  );
-};
+    
+    throw lastError;
+  }
+}
 ```
 
-### 📥 Descargar PDF de Solicitud
+### 🔒 Validación de Roles en Frontend
 
-**Endpoint**: `GET /api/service-requests/{id}/pdf`
+```typescript
+// auth/role-guard.ts
+export type UserRole = 'admin' | 'lab' | 'client';
 
-#### Ejemplo en React
-
-```tsx
-const DownloadPDFButton = ({ requestId }: { requestId: number }) => {
-  const [downloading, setDownloading] = useState(false);
-
-  const downloadPDF = async () => {
-    setDownloading(true);
-
-    try {
-      const response = await fetch(`/api/service-requests/${requestId}/pdf`, {
-        method: "GET",
-        // No se requiere autenticación para este endpoint
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `solicitud-${requestId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      } else {
-        console.error("Error descargando PDF");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  return (
-    <button
-      onClick={downloadPDF}
-      disabled={downloading}
-      className="download-btn"
-    >
-      {downloading ? "Descargando..." : "Descargar PDF"}
-    </button>
-  );
-};
-```
-
----
-
-## 💼 Gestión Financiera
-
-### 💰 Gastos de Empresa
-
-**Endpoint**: `GET /api/gastos-mes`
-
-#### Ejemplo en React
-
-```tsx
-interface ExpenseData {
+export interface User {
   id: number;
-  concepto: string;
-  monto: number;
-  fecha: string;
-  descripcion?: string;
-  categoria?: string;
+  email: string;
+  nombre: string;
+  role: UserRole;
+  permissions?: string[];
 }
 
-const ExpenseManager = () => {
-  const [expenses, setExpenses] = useState<ExpenseData[]>([]);
-  const [newExpense, setNewExpense] = useState<Partial<ExpenseData>>({
-    concepto: "",
-    monto: 0,
-    fecha: new Date().toISOString().split("T")[0],
-    descripcion: "",
-    categoria: "",
-  });
-  const authenticatedFetch = createAuthenticatedFetch();
-  const { authenticatedPost } = useCSRF();
+export class RoleGuard {
+  private static currentUser: User | null = null;
 
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const response = await authenticatedFetch("/api/gastos-mes");
-        if (response.ok) {
-          const data = await response.json();
-          setExpenses(data);
-        }
-      } catch (error) {
-        console.error("Error cargando gastos:", error);
-      }
-    };
+  static setCurrentUser(user: User) {
+    this.currentUser = user;
+  }
 
-    fetchExpenses();
-  }, []);
+  static getCurrentUser(): User | null {
+    return this.currentUser;
+  }
 
-  const createExpense = async (e: React.FormEvent) => {
-    e.preventDefault();
+  static hasRole(requiredRole: UserRole | UserRole[]): boolean {
+    if (!this.currentUser) return false;
+    
+    const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    return roles.includes(this.currentUser.role);
+  }
 
-    try {
-      const response = await authenticatedPost("/api/gastos-mes", newExpense);
-      const data = await response.json();
-
-      if (response.ok) {
-        setExpenses([...expenses, data]);
-        setNewExpense({
-          concepto: "",
-          monto: 0,
-          fecha: new Date().toISOString().split("T")[0],
-          descripcion: "",
-          categoria: "",
-        });
-      } else {
-        console.error("Error:", data.error);
-      }
-    } catch (error) {
-      console.error("Error creando gasto:", error);
+  static canAccessModule(module: string): boolean {
+    if (!this.currentUser) return false;
+    
+    const { role } = this.currentUser;
+    
+    switch (module) {
+      case 'admin':
+        return role === 'admin';
+      
+      case 'lab':
+        return ['admin', 'lab'].includes(role);
+      
+      case 'projects':
+        return ['admin', 'lab'].includes(role);
+      
+      case 'service-requests':
+        return true; // Todos los roles autenticados
+      
+      case 'reports':
+        return ['admin', 'lab'].includes(role);
+      
+      default:
+        return false;
     }
-  };
+  }
 
-  const totalExpenses = expenses.reduce(
-    (sum, expense) => sum + expense.monto,
-    0
-  );
-
-  return (
-    <div className="expense-manager">
-      <h2>Gestión de Gastos</h2>
-
-      <div className="expense-summary">
-        <h3>Total de Gastos: ${totalExpenses.toLocaleString()}</h3>
-      </div>
-
-      <form onSubmit={createExpense} className="expense-form">
-        <h3>Registrar Nuevo Gasto</h3>
-
-        <input
-          type="text"
-          placeholder="Concepto del gasto"
-          value={newExpense.concepto}
-          onChange={(e) =>
-            setNewExpense({ ...newExpense, concepto: e.target.value })
-          }
-          required
-        />
-
-        <input
-          type="number"
-          step="0.01"
-          placeholder="Monto"
-          value={newExpense.monto}
-          onChange={(e) =>
-            setNewExpense({ ...newExpense, monto: parseFloat(e.target.value) })
-          }
-          required
-        />
-
-        <input
-          type="date"
-          value={newExpense.fecha}
-          onChange={(e) =>
-            setNewExpense({ ...newExpense, fecha: e.target.value })
-          }
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="Categoría"
-          value={newExpense.categoria}
-          onChange={(e) =>
-            setNewExpense({ ...newExpense, categoria: e.target.value })
-          }
-        />
-
-        <textarea
-          placeholder="Descripción (opcional)"
-          value={newExpense.descripcion}
-          onChange={(e) =>
-            setNewExpense({ ...newExpense, descripcion: e.target.value })
-          }
-          rows={3}
-        />
-
-        <button type="submit">Registrar Gasto</button>
-      </form>
-
-      <div className="expenses-list">
-        <h3>Gastos Registrados</h3>
-        {expenses.map((expense) => (
-          <div key={expense.id} className="expense-item">
-            <div className="expense-header">
-              <h4>{expense.concepto}</h4>
-              <span className="amount">${expense.monto.toLocaleString()}</span>
-            </div>
-            <div className="expense-details">
-              <p>
-                <strong>Fecha:</strong>{" "}
-                {new Date(expense.fecha).toLocaleDateString()}
-              </p>
-              {expense.categoria && (
-                <p>
-                  <strong>Categoría:</strong> {expense.categoria}
-                </p>
-              )}
-              {expense.descripcion && <p>{expense.descripcion}</p>}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-```
-
-### 📊 Resumen Financiero
-
-**Endpoint**: `GET /api/resumen`
-
-#### Ejemplo en React
-
-```tsx
-interface FinancialSummary {
-  fecha: string;
-  ingresos: number;
-  gastos: number;
-  balance: number;
-  proyectosActivos: number;
-  proyectosCompletados: number;
+  static canPerformAction(action: string, resource?: string): boolean {
+    if (!this.currentUser) return false;
+    
+    const { role } = this.currentUser;
+    
+    // Definir permisos por rol
+    const permissions = {
+      admin: ['create', 'read', 'update', 'delete', 'approve', 'report'],
+      lab: ['create', 'read', 'update', 'report'],
+      client: ['create', 'read']
+    };
+    
+    return permissions[role]?.includes(action) || false;
+  }
 }
 
-const FinancialDashboard = () => {
-  const [summary, setSummary] = useState<FinancialSummary[]>([]);
-  const [selectedDate, setSelectedDate] = useState("");
-
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const url = selectedDate
-          ? `/api/resumen/fecha?fecha=${selectedDate}`
-          : "/api/resumen";
-
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          setSummary(Array.isArray(data) ? data : [data]);
-        }
-      } catch (error) {
-        console.error("Error cargando resumen:", error);
-      }
-    };
-
-    fetchSummary();
-  }, [selectedDate]);
-
-  return (
-    <div className="financial-dashboard">
-      <h2>Resumen Financiero</h2>
-
-      <div className="date-filter">
-        <label>Filtrar por fecha:</label>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-        />
-        <button onClick={() => setSelectedDate("")}>Ver Todo</button>
-      </div>
-
-      <div className="summary-cards">
-        {summary.map((item, index) => (
-          <div key={index} className="summary-card">
-            <h3>{new Date(item.fecha).toLocaleDateString()}</h3>
-
-            <div className="financial-metrics">
-              <div className="metric income">
-                <label>Ingresos</label>
-                <span>${item.ingresos.toLocaleString()}</span>
-              </div>
-
-              <div className="metric expense">
-                <label>Gastos</label>
-                <span>${item.gastos.toLocaleString()}</span>
-              </div>
-
-              <div
-                className={`metric balance ${
-                  item.balance >= 0 ? "positive" : "negative"
-                }`}
-              >
-                <label>Balance</label>
-                <span>${item.balance.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div className="project-metrics">
-              <div className="metric">
-                <label>Proyectos Activos</label>
-                <span>{item.proyectosActivos}</span>
-              </div>
-
-              <div className="metric">
-                <label>Proyectos Completados</label>
-                <span>{item.proyectosCompletados}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-```
-
----
-
-## 🏗️ Gestión de Perfiles y Apiques
-
-### 🗂️ Perfiles de Proyecto
-
-**Endpoint**: `GET /api/profiles/{projectId}/profiles`
-
-#### Ejemplo en React
-
-```tsx
-interface ProfileData {
-  projectId: number;
-  profileId: number;
-  datosPerfil: {
-    profundidad: number;
-    resistencia: number;
-    descripcion: string;
-  };
-}
-
-const ProjectProfiles = ({ projectId }: { projectId: number }) => {
-  const [profiles, setProfiles] = useState<ProfileData[]>([]);
-  const [newProfile, setNewProfile] = useState<Partial<ProfileData>>({
-    projectId,
-    datosPerfil: {
-      profundidad: 0,
-      resistencia: 0,
-      descripcion: "",
-    },
-  });
-
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        const response = await fetch(`/api/profiles/${projectId}/profiles`);
-        if (response.ok) {
-          const data = await response.json();
-          setProfiles(data);
-        }
-      } catch (error) {
-        console.error("Error cargando perfiles:", error);
-      }
-    };
-
-    fetchProfiles();
-  }, [projectId]);
-
-  const createProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const response = await fetch(`/api/profiles/${projectId}/profiles`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newProfile),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProfiles([...profiles, data]);
-        setNewProfile({
-          projectId,
-          datosPerfil: {
-            profundidad: 0,
-            resistencia: 0,
-            descripcion: "",
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Error creando perfil:", error);
-    }
-  };
-
-  return (
-    <div className="project-profiles">
-      <h3>Perfiles del Proyecto</h3>
-
-      <form onSubmit={createProfile} className="profile-form">
-        <h4>Nuevo Perfil</h4>
-
-        <input
-          type="number"
-          step="0.01"
-          placeholder="Profundidad (m)"
-          value={newProfile.datosPerfil?.profundidad || 0}
-          onChange={(e) =>
-            setNewProfile({
-              ...newProfile,
-              datosPerfil: {
-                ...newProfile.datosPerfil!,
-                profundidad: parseFloat(e.target.value),
-              },
-            })
-          }
-          required
-        />
-
-        <input
-          type="number"
-          step="0.01"
-          placeholder="Resistencia"
-          value={newProfile.datosPerfil?.resistencia || 0}
-          onChange={(e) =>
-            setNewProfile({
-              ...newProfile,
-              datosPerfil: {
-                ...newProfile.datosPerfil!,
-                resistencia: parseFloat(e.target.value),
-              },
-            })
-          }
-          required
-        />
-
-        <textarea
-          placeholder="Descripción"
-          value={newProfile.datosPerfil?.descripcion || ""}
-          onChange={(e) =>
-            setNewProfile({
-              ...newProfile,
-              datosPerfil: {
-                ...newProfile.datosPerfil!,
-                descripcion: e.target.value,
-              },
-            })
-          }
-          rows={3}
-        />
-
-        <button type="submit">Crear Perfil</button>
-      </form>
-
-      <div className="profiles-list">
-        {profiles.map((profile) => (
-          <div key={profile.profileId} className="profile-item">
-            <h5>Perfil #{profile.profileId}</h5>
-            <p>
-              <strong>Profundidad:</strong> {profile.datosPerfil.profundidad} m
-            </p>
-            <p>
-              <strong>Resistencia:</strong> {profile.datosPerfil.resistencia}
-            </p>
-            <p>
-              <strong>Descripción:</strong> {profile.datosPerfil.descripcion}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-```
-
----
-
-## 🚀 Mejores Prácticas para Frontend
-
-### 🎯 Manejo de Estados
-
-```tsx
-// Context global para autenticación
-const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(
-    localStorage.getItem("accessToken")
-  );
+// Hook para componentes React
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(RoleGuard.getCurrentUser());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const verifyAuth = async () => {
-      if (accessToken) {
-        try {
-          const response = await fetch("/api/auth/verify", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-            credentials: "include",
-          });
-
-          if (response.ok) {
-            const userData = await response.json();
-            setUser(userData.user);
-          } else {
-            // Token inválido, limpiar
-            localStorage.removeItem("accessToken");
-            setAccessToken(null);
-          }
-        } catch (error) {
-          console.error("Error verificando autenticación:", error);
-        }
-      }
-      setLoading(false);
-    };
-
-    verifyAuth();
-  }, [accessToken]);
-
-  const login = (userData: User, token: string) => {
-    setUser(userData);
-    setAccessToken(token);
-    localStorage.setItem("accessToken", token);
-  };
-
-  const logout = async () => {
-    try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        credentials: "include",
-      });
-    } catch (error) {
-      console.error("Error en logout:", error);
-    } finally {
-      setUser(null);
-      setAccessToken(null);
-      localStorage.removeItem("accessToken");
-    }
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, accessToken, login, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-```
-
-### 🛡️ Componente de Ruta Protegida
-
-```tsx
-const ProtectedRoute: React.FC<{
-  children: React.ReactNode;
-  requiredRole?: "admin" | "usuario";
-}> = ({ children, requiredRole }) => {
-  const auth = useContext(AuthContext);
-
-  if (auth?.loading) {
-    return <div>Cargando...</div>;
-  }
-
-  if (!auth?.user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (requiredRole && auth.user.rol !== requiredRole) {
-    return <div>No tienes permisos para acceder a esta página</div>;
-  }
-
-  return <>{children}</>;
-};
-
-// Uso en el enrutador
-<Routes>
-  <Route path="/login" element={<LoginForm />} />
-  <Route path="/register" element={<RegisterForm />} />
-
-  <Route
-    path="/dashboard"
-    element={
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    }
-  />
-
-  <Route
-    path="/admin"
-    element={
-      <ProtectedRoute requiredRole="admin">
-        <AdminPanel />
-      </ProtectedRoute>
-    }
-  />
-</Routes>;
-```
-
-### 🔄 Hook Personalizado para API
-
-```tsx
-const useAPI = () => {
-  const auth = useContext(AuthContext);
-  const [csrfToken, setCsrfToken] = useState<string | null>(null);
-
-  const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-    const headers = {
-      "Content-Type": "application/json",
-      ...options.headers,
-    };
-
-    if (auth?.accessToken) {
-      headers["Authorization"] = `Bearer ${auth.accessToken}`;
-    }
-
-    // Para operaciones que modifican datos, incluir CSRF token
-    if (["POST", "PUT", "DELETE", "PATCH"].includes(options.method || "GET")) {
-      if (!csrfToken) {
-        const tokenResponse = await fetch("/api/auth/csrf", {
-          credentials: "include",
-        });
-        if (tokenResponse.ok) {
-          const tokenData = await tokenResponse.json();
-          setCsrfToken(tokenData.csrfToken);
-          headers["X-CSRF-Token"] = tokenData.csrfToken;
-        }
-      } else {
-        headers["X-CSRF-Token"] = csrfToken;
-      }
-    }
-
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: "include",
-    });
-
-    // Manejar token expirado
-    if (response.status === 401 && auth?.accessToken) {
+    const checkAuth = async () => {
       try {
-        const refreshResponse = await fetch("/api/auth/refresh", {
-          method: "POST",
-          credentials: "include",
-        });
-
-        if (refreshResponse.ok) {
-          const refreshData = await refreshResponse.json();
-          auth.login(auth.user!, refreshData.accessToken);
-
-          // Reintentar la petición original
-          headers["Authorization"] = `Bearer ${refreshData.accessToken}`;
-          return fetch(url, { ...options, headers, credentials: "include" });
-        } else {
-          auth.logout();
-          throw new Error("Sesión expirada");
-        }
-      } catch (error) {
-        auth.logout();
-        throw error;
-      }
-    }
-
-    return response;
-  };
-
-  const get = (url: string) => fetchWithAuth(url);
-  const post = (url: string, data: any) =>
-    fetchWithAuth(url, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  const put = (url: string, data: any) =>
-    fetchWithAuth(url, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  const del = (url: string) => fetchWithAuth(url, { method: "DELETE" });
-
-  return { get, post, put, delete: del, fetchWithAuth };
-};
-```
-
-### 📝 Manejo de Formularios
-
-```tsx
-const useForm = <T,>(initialValues: T, validationSchema?: any) => {
-  const [values, setValues] = useState<T>(initialValues);
-  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleChange =
-    (name: keyof T) =>
-    (
-      e: React.ChangeEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
-    ) => {
-      const value =
-        e.target.type === "number"
-          ? parseFloat(e.target.value)
-          : e.target.value;
-      setValues((prev) => ({ ...prev, [name]: value }));
-
-      // Limpiar error cuando el usuario empiece a escribir
-      if (errors[name]) {
-        setErrors((prev) => ({ ...prev, [name]: undefined }));
-      }
-    };
-
-  const validate = () => {
-    if (!validationSchema) return true;
-
-    const newErrors: Partial<Record<keyof T, string>> = {};
-
-    // Implementar validación personalizada aquí
-    // o usar una librería como Yup
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit =
-    (onSubmit: (values: T) => Promise<void>) => async (e: React.FormEvent) => {
-      e.preventDefault();
-
-      if (!validate()) return;
-
-      setIsSubmitting(true);
-      try {
-        await onSubmit(values);
-        setValues(initialValues); // Reset form
-      } catch (error) {
-        console.error("Error en envío:", error);
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-
-  return {
-    values,
-    errors,
-    isSubmitting,
-    handleChange,
-    handleSubmit,
-    setValues,
-    setErrors,
-  };
-};
-```
-
----
-
-## ⚡ Optimizaciones de Rendimiento
-
-### 🔄 Caché de Datos
-
-```tsx
-const useCache = <T,>(
-  key: string,
-  fetcher: () => Promise<T>,
-  ttl = 5 * 60 * 1000
-) => {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      // Verificar caché local
-      const cached = localStorage.getItem(`cache_${key}`);
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < ttl) {
-          setData(data);
+        const token = TokenManager.getAccessToken();
+        if (!token) {
+          setLoading(false);
           return;
         }
-      }
 
-      setLoading(true);
-      try {
-        const result = await fetcher();
-        setData(result);
+        // Verificar token y obtener usuario
+        const userData = await apiClient.request<User>({
+          method: 'GET',
+          url: '/auth/me'
+        });
 
-        // Guardar en caché
-        localStorage.setItem(
-          `cache_${key}`,
-          JSON.stringify({
-            data: result,
-            timestamp: Date.now(),
-          })
-        );
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        RoleGuard.setCurrentUser(userData);
+        setUser(userData);
+      } catch (error) {
+        TokenManager.clearTokens();
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [key, ttl]);
+    checkAuth();
+  }, []);
 
-  const invalidateCache = () => {
-    localStorage.removeItem(`cache_${key}`);
+  const login = async (email: string, password: string) => {
+    const response = await apiClient.request({
+      method: 'POST',
+      url: '/auth/login',
+      data: { email, password }
+    });
+
+    TokenManager.setTokens(
+      response.accessToken, 
+      response.refreshToken, 
+      response.expiresIn
+    );
+
+    RoleGuard.setCurrentUser(response.user);
+    setUser(response.user);
+    
+    return response.user;
   };
 
-  return { data, loading, error, invalidateCache };
-};
-```
-
-### 🎨 Componentes Optimizados
-
-```tsx
-// Componente memoizado para listas grandes
-const ProjectCard = React.memo(({ project, onUpdate }: {
-  project: Project;
-  onUpdate: (id: number) => void;
-}) => {
-  const handleClick = useCallback(() => {
-    onUpdate(project.id);
-  }, [project.id, onUpdate]);
-
-  return (
-    <div className="project-card" onClick={handleClick}>
-      <h3>{project.nombre}</h3>
-      <p>{project.cliente}</p>
-      <p>${project.presupuesto.toLocaleString()}</p>
-    </div>
-  );
-});
-
-// Hook para paginación eficiente
-const usePagination = <T>(data: T[], itemsPerPage = 10) => {
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = data.slice(startIndex, endIndex);
-
-  const goToPage = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  const logout = () => {
+    TokenManager.clearTokens();
+    RoleGuard.setCurrentUser(null);
+    setUser(null);
   };
 
   return {
-    currentData,
-    currentPage,
-    totalPages,
-    goToPage,
-    nextPage: () => goToPage(currentPage + 1),
-    prevPage: () => goToPage(currentPage - 1)
+    user,
+    loading,
+    login,
+    logout,
+    hasRole: RoleGuard.hasRole,
+    canAccess: RoleGuard.canAccessModule,
+    canPerform: RoleGuard.canPerformAction
   };
-};
+}
 ```
 
 ---
 
-## 🔒 Consideraciones de Seguridad
+## 📊 Códigos de Estado y Errores
 
-### 🛡️ Validación del Cliente
+### Códigos de Estado HTTP
 
-```tsx
-// Validaciones en el frontend (complementarias, no sustitutos del backend)
-const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+| Código | Estado | Descripción | Cuándo Ocurre |
+|--------|--------|-------------|---------------|
+| **200** | `OK` | Solicitud exitosa | GET, PATCH exitosos |
+| **201** | `Created` | Recurso creado exitosamente | POST exitoso |
+| **204** | `No Content` | Operación exitosa sin contenido | DELETE exitoso |
+| **400** | `Bad Request` | Datos de entrada inválidos | Validación de DTOs fallida |
+| **401** | `Unauthorized` | Token ausente o inválido | Sin autenticación |
+| **403** | `Forbidden` | Sin permisos para la acción | Role/permissions insuficientes |
+| **404** | `Not Found` | Recurso no encontrado | ID inexistente |
+| **409** | `Conflict` | Conflicto con estado actual | Email duplicado, etc. |
+| **422** | `Unprocessable Entity` | Datos válidos pero lógicamente incorrectos | Business logic errors |
+| **429** | `Too Many Requests` | Rate limit excedido | Throttling activado |
+| **500** | `Internal Server Error` | Error interno del servidor | Error no manejado |
 
-const validatePassword = (password: string): string[] => {
-  const errors: string[] = [];
+### Estructura de Respuestas de Error
 
-  if (password.length < 8) {
-    errors.push("La contraseña debe tener al menos 8 caracteres");
-  }
+Todos los errores siguen el formato estándar de NestJS:
 
-  if (!/[A-Z]/.test(password)) {
-    errors.push("Debe contener al menos una letra mayúscula");
-  }
-
-  if (!/[a-z]/.test(password)) {
-    errors.push("Debe contener al menos una letra minúscula");
-  }
-
-  if (!/\d/.test(password)) {
-    errors.push("Debe contener al menos un número");
-  }
-
-  return errors;
-};
-
-// Sanitización básica de inputs
-const sanitizeInput = (input: string): string => {
-  return input
-    .trim()
-    .replace(/[<>]/g, "") // Remover caracteres peligrosos básicos
-    .substring(0, 1000); // Limitar longitud
-};
+```typescript
+interface ErrorResponse {
+  statusCode: number;           // Código HTTP
+  message: string | string[];   // Mensaje(s) de error
+  error: string;               // Tipo de error
+  timestamp: string;           // ISO timestamp
+  path: string;               // Endpoint que causó el error
+  details?: any;              // Detalles adicionales (opcional)
+}
 ```
 
-### 🔐 Almacenamiento Seguro
+### Ejemplos de Respuestas de Error
 
-```tsx
-// Evitar almacenar datos sensibles en localStorage
-const useSecureStorage = () => {
-  const setSecureItem = (key: string, value: string) => {
-    // Solo para datos no sensibles
-    if (!["accessToken", "password", "email"].includes(key)) {
-      localStorage.setItem(key, value);
+#### 400 - Validación de Datos
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "email must be an email",
+    "telefono must be a string",
+    "tipoServicio should not be empty"
+  ],
+  "error": "Bad Request",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "path": "/api/service-requests"
+}
+```
+
+#### 401 - No Autenticado
+```json
+{
+  "statusCode": 401,
+  "message": "Token de acceso requerido",
+  "error": "Unauthorized",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "path": "/api/projects"
+}
+```
+
+#### 403 - Sin Permisos
+```json
+{
+  "statusCode": 403,
+  "message": "Acceso denegado. Se requiere rol de administrador",
+  "error": "Forbidden",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "path": "/api/projects/123"
+}
+```
+
+#### 404 - Recurso No Encontrado
+```json
+{
+  "statusCode": 404,
+  "message": "Proyecto con ID 999 no encontrado",
+  "error": "Not Found",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "path": "/api/projects/999"
+}
+```
+
+#### 422 - Error de Lógica de Negocio
+```json
+{
+  "statusCode": 422,
+  "message": "No se puede eliminar un proyecto con solicitudes activas",
+  "error": "Unprocessable Entity",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "path": "/api/projects/123",
+  "details": {
+    "activeRequestsCount": 3,
+    "requiredAction": "Complete or cancel active requests first"
+  }
+}
+```
+
+#### 429 - Rate Limit Excedido
+```json
+{
+  "statusCode": 429,
+  "message": "Demasiadas solicitudes. Intente nuevamente en 60 segundos",
+  "error": "Too Many Requests",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "path": "/api/service-requests",
+  "details": {
+    "retryAfter": 60,
+    "limit": 100,
+    "windowMs": 900000
+  }
+}
+```
+
+### Manejo de Errores en Frontend
+
+```typescript
+// utils/error-utils.ts
+export function getErrorMessage(error: any): string {
+  if (error.response?.data?.message) {
+    const { message } = error.response.data;
+    
+    // Si es un array de mensajes de validación
+    if (Array.isArray(message)) {
+      return message.join(', ');
     }
-  };
-
-  const getSecureItem = (key: string): string | null => {
-    return localStorage.getItem(key);
-  };
-
-  const removeSecureItem = (key: string) => {
-    localStorage.removeItem(key);
-  };
-
-  return { setSecureItem, getSecureItem, removeSecureItem };
-};
-```
-
----
-
-## 📊 Códigos de Estado HTTP
-
-| Código | Significado           | Cuándo se usa                   |
-| ------ | --------------------- | ------------------------------- |
-| 200    | OK                    | Operación exitosa               |
-| 201    | Created               | Recurso creado exitosamente     |
-| 204    | No Content            | Eliminación exitosa             |
-| 400    | Bad Request           | Datos de entrada inválidos      |
-| 401    | Unauthorized          | No autenticado o token inválido |
-| 403    | Forbidden             | No autorizado para la operación |
-| 404    | Not Found             | Recurso no encontrado           |
-| 409    | Conflict              | Recurso ya existe               |
-| 429    | Too Many Requests     | Rate limit excedido             |
-| 500    | Internal Server Error | Error del servidor              |
-
----
-
-## 🎯 Rate Limiting
-
-La API implementa límites de velocidad:
-
-- **General**: 1000 requests por 15 minutos
-- **Login**: 5 intentos por 15 minutos por IP
-- **Registro**: 3 intentos por 15 minutos por IP
-
-```tsx
-// Manejar rate limiting en el frontend
-const handleRateLimitError = (response: Response) => {
-  if (response.status === 429) {
-    const retryAfter = response.headers.get("Retry-After");
-    const waitTime = retryAfter ? parseInt(retryAfter) : 60;
-
-    console.log(`Rate limit excedido. Espera ${waitTime} segundos`);
-
-    // Mostrar mensaje al usuario
-    return Promise.reject({
-      message: `Demasiadas solicitudes. Espera ${waitTime} segundos`,
-      retryAfter: waitTime,
-    });
+    
+    return message;
   }
+  
+  // Errores de red
+  if (error.code === 'NETWORK_ERROR') {
+    return 'Error de conexión. Verifica tu conexión a internet.';
+  }
+  
+  return 'Ha ocurrido un error inesperado. Intenta de nuevo.';
+}
 
-  return response;
-};
+export function isRetryableError(error: any): boolean {
+  const status = error.response?.status;
+  
+  // Reintentar en errores de servidor y rate limiting
+  return status >= 500 || status === 429 || error.code === 'NETWORK_ERROR';
+}
+
+export function getRetryDelay(error: any): number {
+  // Si el servidor especifica retryAfter
+  const retryAfter = error.response?.data?.details?.retryAfter;
+  if (retryAfter) {
+    return retryAfter * 1000; // Convertir a millisegundos
+  }
+  
+  // Delay por defecto basado en el tipo de error
+  const status = error.response?.status;
+  switch (status) {
+    case 429: return 60000; // 1 minuto para rate limiting
+    case 502:
+    case 503:
+    case 504: return 5000;  // 5 segundos para errores de servidor
+    default: return 1000;   // 1 segundo por defecto
+  }
+}
 ```
 
 ---
 
-## 🔧 Variables de Entorno
+## 🔧 Configuración y Variables de Entorno
 
-Para configurar tu aplicación frontend, asegúrate de configurar estas variables:
+### Variables de Entorno Requeridas
 
+#### Servidor (Backend)
 ```env
-# .env
-REACT_APP_API_URL=https://api-cuentas-zlut.onrender.com
-REACT_APP_API_DOCS_URL=https://api-cuentas-zlut.onrender.com/api-docs
-REACT_APP_ENVIRONMENT=production
+# Base de datos
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_USERNAME=root
+DATABASE_PASSWORD=your_password
+DATABASE_NAME=ingeocimyc_db
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_SECRET=your-refresh-secret
+JWT_REFRESH_EXPIRES_IN=30d
+
+# Servidor
+PORT=5051
+NODE_ENV=production
+
+# CORS
+CORS_ORIGIN=http://localhost:3000,https://your-frontend-domain.com
+
+# Rate Limiting
+THROTTLE_TTL=900000    # 15 minutos
+THROTTLE_LIMIT=100     # 100 requests por ventana
+
+# PDF Generation
+PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Logging
+LOG_LEVEL=info
 ```
+
+#### Frontend (Cliente)
+```env
+# API Configuration
+REACT_APP_API_URL=https://api-cuentas-zlut.onrender.com/api
+REACT_APP_API_TIMEOUT=15000
+
+# Environment
+REACT_APP_ENV=production
+
+# Features flags
+REACT_APP_ENABLE_DEVTOOLS=false
+REACT_APP_ENABLE_LOGGING=true
+
+# Rate limiting awareness
+REACT_APP_RETRY_ATTEMPTS=3
+REACT_APP_RETRY_DELAY=1000
+```
+
+### Configuración de CORS
+
+La API está configurada para aceptar requests desde:
+- `http://localhost:3000` (desarrollo)
+- Dominios de producción especificados en `CORS_ORIGIN`
+
+### Rate Limiting
+
+- **Límite**: 100 requests por 15 minutos por IP
+- **Scope**: Global (todos los endpoints)
+- **Headers de respuesta**:
+  - `X-RateLimit-Limit`: Límite total
+  - `X-RateLimit-Remaining`: Requests restantes
+  - `X-RateLimit-Reset`: Timestamp de reset
 
 ---
 
-## 🆘 Manejo de Errores
+## 🚀 Endpoints por Módulos
 
-```tsx
-// Hook para manejo global de errores
-const useErrorHandler = () => {
-  const [error, setError] = useState<string | null>(null);
+### 📝 Service Requests
 
-  const handleError = (error: any) => {
-    console.error("Error capturado:", error);
+**Base URL**: `/api/service-requests`
 
-    if (error.response) {
-      // Error de respuesta HTTP
-      const { status, data } = error.response;
+| Método | Endpoint | Descripción | Roles | Parámetros |
+|--------|----------|-------------|-------|------------|
+| `GET` | `/` | Listar solicitudes | `all` | [Filtros disponibles](#service-requests---filtros-disponibles) |
+| `GET` | `/:id` | Obtener solicitud específica | `all` | `id`: number |
+| `POST` | `/` | Crear nueva solicitud | `all` | [CreateServiceRequestDto](#crear-solicitud) |
+| `PATCH` | `/:id` | Actualizar solicitud | `admin`, `lab` | `id`: number + datos parciales |
+| `PATCH` | `/:id/status` | Cambiar estado | `admin`, `lab` | `id`: number + `{status}` |
+| `DELETE` | `/:id` | Eliminar solicitud | `admin` | `id`: number |
 
-      switch (status) {
-        case 401:
-          setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
-          // Redirigir al login
-          break;
-        case 403:
-          setError("No tienes permisos para realizar esta acción.");
-          break;
-        case 404:
-          setError("El recurso solicitado no fue encontrado.");
-          break;
-        case 429:
-          setError("Demasiadas solicitudes. Por favor, espera un momento.");
-          break;
-        case 500:
-          setError("Error interno del servidor. Intenta nuevamente más tarde.");
-          break;
-        default:
-          setError(data.error || "Error desconocido");
-      }
-    } else if (error.request) {
-      // Error de red
-      setError("Error de conexión. Verifica tu conexión a internet.");
-    } else {
-      // Error en la configuración
-      setError(error.message || "Error inesperado");
-    }
+#### Crear Solicitud
+```typescript
+interface CreateServiceRequestDto {
+  nombre: string;              // Nombre del solicitante
+  email: string;              // Email de contacto
+  telefono: string;           // Teléfono de contacto  
+  empresa: string;            // Empresa solicitante
+  tipoServicio: string;       // Tipo de servicio requerido
+  descripcion: string;        // Descripción detallada
+  ubicacionProyecto: string;  // Ubicación del proyecto
+}
+```
+
+**Ejemplo de uso:**
+```typescript
+// Crear nueva solicitud
+const newRequest = await serviceRequestsService.create({
+  nombre: "Juan Pérez",
+  email: "juan@constructora.com",
+  telefono: "+57 300 123 4567",
+  empresa: "CONSTRUCTORA ABC",
+  tipoServicio: "Análisis granulométrico",
+  descripcion: "Análisis de suelo para cimentación de edificio",
+  ubicacionProyecto: "Calle 123 #45-67, Bogotá"
+});
+
+// Buscar solicitudes pendientes
+const pendingRequests = await serviceRequestsService.getAll({
+  status: 'pendiente',
+  page: 1,
+  limit: 20,
+  sortBy: 'created_at',
+  sortOrder: 'DESC'
+});
+
+// Actualizar estado
+await serviceRequestsService.updateStatus(123, 'en_progreso');
+```
+
+### 🏗️ Projects
+
+**Base URL**: `/api/projects`  
+**Roles requeridos**: `admin`, `lab`
+
+| Método | Endpoint | Descripción | Roles | Parámetros |
+|--------|----------|-------------|-------|------------|
+| `GET` | `/` | Listar proyectos | `admin`, `lab` | [Filtros disponibles](#projects---filtros-disponibles) |
+| `GET` | `/:id` | Obtener proyecto específico | `admin`, `lab` | `id`: number |
+| `POST` | `/` | Crear nuevo proyecto | `admin` | [CreateProjectDto](#crear-proyecto) |
+| `PATCH` | `/:id` | Actualizar proyecto | `admin` | `id`: number + datos parciales |
+| `DELETE` | `/:id` | Eliminar proyecto | `admin` | `id`: number |
+
+#### Crear Proyecto
+```typescript
+interface CreateProjectDto {
+  nombreProyecto: string;      // Nombre del proyecto
+  descripcion: string;         // Descripción detallada
+  solicitante: string;         // Cliente que solicita
+  fechaInicio: string;         // ISO date
+  fechaFinalizacion?: string;  // ISO date (opcional)
+  ubicacion: string;           // Ubicación del proyecto
+  obrero: string;             // Responsable asignado
+  metodoDePago: 'efectivo' | 'transferencia' | 'cheque' | 'credito';
+}
+```
+
+### 💰 Financial
+
+**Base URL**: `/api/projects/financial`  
+**Roles requeridos**: `admin`
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| `GET` | `/` | Consultar gastos/ingresos | `admin` |
+| `GET` | `/summary` | Resumen financiero | `admin` |
+| `POST` | `/` | Registrar movimiento | `admin` |
+
+### 🔬 Lab - Apiques
+
+**Base URL**: `/api/lab/apiques`  
+**Roles requeridos**: `admin`, `lab`
+
+| Método | Endpoint | Descripción | Roles | Parámetros Requeridos |
+|--------|----------|-------------|-------|--------------------|
+| `GET` | `/` | Listar apiques | `admin`, `lab` | `projectId`: number |
+| `GET` | `/:id` | Obtener apique específico | `admin`, `lab` | `id`: number |
+| `POST` | `/` | Crear nuevo apique | `admin`, `lab` | [CreateApiqueDto](#crear-apique) |
+| `PATCH` | `/:id` | Actualizar apique | `admin`, `lab` | `id`: number |
+| `DELETE` | `/:id` | Eliminar apique | `admin` | `id`: number |
+
+### 🏔️ Lab - Profiles
+
+**Base URL**: `/api/lab/profiles`  
+**Roles requeridos**: `admin`, `lab`
+
+| Método | Endpoint | Descripción | Roles | Parámetros Requeridos |
+|--------|----------|-------------|-------|--------------------|
+| `GET` | `/` | Listar perfiles | `admin`, `lab` | `projectId`: number |
+| `GET` | `/:id` | Obtener perfil específico | `admin`, `lab` | `id`: number |
+| `POST` | `/` | Crear nuevo perfil | `admin`, `lab` | [CreateProfileDto](#crear-perfil) |
+| `PATCH` | `/:id` | Actualizar perfil | `admin`, `lab` | `id`: number |
+| `DELETE` | `/:id` | Eliminar perfil | `admin` | `id`: number |
+
+### 🔐 Authentication
+
+**Base URL**: `/api/auth`
+
+| Método | Endpoint | Descripción | Roles | Parámetros |
+|--------|----------|-------------|-------|------------|
+| `POST` | `/register` | Registrar usuario | `admin` | [RegisterDto](#registro) |
+| `POST` | `/login` | Iniciar sesión | `public` | [LoginDto](#login) |
+| `POST` | `/refresh` | Renovar token | `authenticated` | `{refreshToken}` |
+| `GET` | `/me` | Perfil actual | `authenticated` | - |
+| `POST` | `/logout` | Cerrar sesión | `authenticated` | - |
+
+#### Registro
+```typescript
+interface RegisterDto {
+  email: string;
+  password: string;
+  nombre: string;
+  role: 'admin' | 'lab' | 'client';
+}
+```
+
+#### Login
+```typescript
+interface LoginDto {
+  email: string;
+  password: string;
+}
+
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: {
+    id: number;
+    email: string;
+    nombre: string;
+    role: string;
   };
+}
+```
 
-  const clearError = () => setError(null);
+**Ejemplo de flujo de autenticación:**
+```typescript
+// Login
+const loginResponse = await authService.login({
+  email: "admin@ingeocimyc.com",
+  password: "securePassword123"
+});
 
-  return { error, handleError, clearError };
-};
+// Guardar tokens
+TokenManager.setTokens(
+  loginResponse.accessToken,
+  loginResponse.refreshToken,
+  loginResponse.expiresIn
+);
+
+// Usar API autenticada
+const projects = await projectsService.getAll();
+
+// Refresh automático cuando sea necesario
+const refreshedToken = await TokenManager.refreshAccessToken();
 ```
 
 ---
 
-## 📞 Soporte y Contacto
+## 📞 Soporte y Documentación
 
-- **Email de soporte**: mjestradas@ufpso.edu.co
-- **Documentación Swagger**: `/api-docs`
-- **GitHub Issues**: Para reportar problemas o solicitar características
+### 📚 Documentación Adicional
+
+- **Swagger UI**: Disponible en `/api-docs` en el servidor
+- **Configuración de Permisos**: Ver `docs/CONFIGURACION_PERMISOS.md`
+- **Migraciones de DB**: Ver `src/database/migrations/`
+- **Tests**: Ver `src/**/*.spec.ts`
+
+### 🆘 Resolución de Problemas Comunes
+
+#### 1. **Error 401 - Token Inválido**
+```typescript
+// Verificar expiración del token
+if (TokenManager.isTokenExpired()) {
+  const newToken = await TokenManager.refreshAccessToken();
+  if (!newToken) {
+    // Redirect a login
+    window.location.href = '/login';
+  }
+}
+```
+
+#### 2. **Error 429 - Rate Limit**
+```typescript
+// Implementar retry con backoff
+const response = await RetryLogic.withRetry(
+  () => apiClient.request(config),
+  3,  // 3 intentos
+  1000 // 1 segundo inicial
+);
+```
+
+#### 3. **Error 403 - Sin Permisos**
+```typescript
+// Verificar roles antes de hacer requests
+if (!RoleGuard.canAccessModule('admin')) {
+  throw new Error('Acceso denegado');
+}
+```
+
+#### 4. **Performance con Filtros**
+```typescript
+// Usar debounce para búsquedas
+const debouncedSearch = useCallback(
+  debounce((term: string) => {
+    updateFilters({ name: term, page: 1 });
+  }, 300),
+  []
+);
+```
+
+### 📧 Contacto de Soporte
+
+- **Email**: soporte@ingeocimyc.com
+- **Documentación**: Este archivo (API.md)
+- **Issues**: Reportar en el repositorio del proyecto
+- **Slack**: Canal #api-support (interno)
+
+### 🔄 Actualizaciones de la API
+
+Esta documentación corresponde a la **versión NestJS v1.0** de la API. 
+
+**Changelog importantes:**
+- **v1.0**: Migración completa de Express.js a NestJS
+- **v0.9**: Últimas funcionalidades en Express.js
+- **v0.8**: Sistema de roles implementado
+
+Para notificaciones de cambios en la API, suscríbete a las actualizaciones del repositorio.
 
 ---
 
-_Este documento fue generado para facilitar la integración con la API de INGEOCIMYC. Para obtener más información detallada sobre endpoints específicos, consulta la documentación Swagger disponible en `/api-docs`._
+**📝 Última actualización**: Enero 2024  
+**🧑‍💻 Mantenido por**: Equipo de Desarrollo INGEOCIMYC  
+**📖 Versión de documentación**: 2.0.0
