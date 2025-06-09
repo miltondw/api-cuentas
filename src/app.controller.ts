@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Head } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from './modules/auth/decorators/public.decorator';
 
@@ -72,8 +72,18 @@ export class AppController {
         serviceRequests: '/api/service-requests',
         lab: '/api/lab',
         services: '/api/services',
-        health: '/api/health',
-      },
+        health: '/api/health',      },
     };
+  }
+
+  @Head()
+  @ApiOperation({ summary: 'Root endpoint HEAD check for health monitoring' })
+  @ApiResponse({
+    status: 200,
+    description: 'API is running and accessible',
+  })
+  headRoot(): void {
+    // HEAD requests don't return a body, just headers
+    // This method exists to handle HEAD requests from health checkers like Render
   }
 }
