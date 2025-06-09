@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "postbuild": "echo 'Build completed. Checking output...' && ls -la dist/ && echo 'Main file exists:' && ls -la dist/main.js"
+  }
+}
