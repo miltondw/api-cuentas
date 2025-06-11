@@ -79,11 +79,16 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
   // API prefix
   app.setGlobalPrefix('api');
+
+  // Configuración de URLs según el entorno
+  const isProduction = configService.get('NODE_ENV') === 'production';
+  const productionUrl = configService.get('RENDER_EXTERNAL_URL') || 'https://api-cuentas-zlut.onrender.com';
+  const developmentUrl = `http://localhost:${port}`;
+  
   // Swagger configuration
-  const config = new DocumentBuilder()
+  let configBuilder = new DocumentBuilder()
     .setTitle('API Cuentas - Ingeocimyc')
     .setDescription(
       `
@@ -110,8 +115,20 @@ async function bootstrap() {
         description: 'Ingresa tu JWT token aquí',
       },
       'JWT-auth', // Nombre del esquema de seguridad
-    )    .addServer('http://localhost:5051', 'Servidor de desarrollo')
-    .build();
+    );
+
+  // Configurar servidores según el entorno
+  if (isProduction) {
+    configBuilder = configBuilder
+      .addServer(productionUrl, 'Servidor de producción (Render)')
+      .addServer(developmentUrl, 'Servidor de desarrollo (fallback)');
+  } else {
+    configBuilder = configBuilder
+      .addServer(developmentUrl, 'Servidor de desarrollo')
+      .addServer(productionUrl, 'Servidor de producción (Render)');
+  }
+
+  const config = configBuilder.build();
   const document = SwaggerModule.createDocument(app, config);
 
   // Configuración adicional de Swagger UI
@@ -131,14 +148,19 @@ async function bootstrap() {
     `,
   };
   SwaggerModule.setup('api-docs', app, document, swaggerOptions);
-
   const appPort = configService.get('PORT') || 5051;
   await app.listen(appPort);
 
-  console.log(`🚀 Application is running on: http://localhost:${appPort}`);
-  console.log(
-    `📚 Swagger docs available at: http://localhost:${appPort}/api-docs`,
-  );
+  // Mostrar URLs según el entorno
+  if (isProduction) {
+    console.log(`🚀 Application is running on: ${productionUrl}`);
+    console.log(`📚 Swagger docs available at: ${productionUrl}/api-docs`);
+    console.log(`🌐 Environment: PRODUCTION`);
+  } else {
+    console.log(`🚀 Application is running on: http://localhost:${appPort}`);
+    console.log(`📚 Swagger docs available at: http://localhost:${appPort}/api-docs`);
+    console.log(`🌐 Environment: DEVELOPMENT`);
+  }
 }
 
 bootstrap();
