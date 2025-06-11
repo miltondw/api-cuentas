@@ -21,8 +21,7 @@ async function bootstrap() {
   // Security middlewares
   app.use(helmet());
   app.use(compression());
-  app.use(cookieParser());
-  // CORS configuration - more permissive for development
+  app.use(cookieParser());  // CORS configuration - more permissive for development
   const corsOrigins = configService.get('CORS_ORIGINS');
   const allowedOrigins = corsOrigins
     ? corsOrigins.split(',').map(origin => origin.trim())
@@ -36,21 +35,57 @@ async function bootstrap() {
     allowedOrigins.push(currentOrigin);
   }
 
+  // In production, allow the Render URL and Swagger UI
+  const renderUrl = configService.get('RENDER_EXTERNAL_URL');
+  if (renderUrl && !allowedOrigins.includes(renderUrl)) {
+    allowedOrigins.push(renderUrl);
+  }
+
+  // Always allow the same origin for Swagger UI
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  const host = process.env.NODE_ENV === 'production' 
+    ? (renderUrl ? new URL(renderUrl).host : 'api-cuentas-zlut.onrender.com')
+    : `localhost:${port}`;
+  const sameOrigin = `${protocol}://${host}`;
+  
+  if (!allowedOrigins.includes(sameOrigin)) {
+    allowedOrigins.push(sameOrigin);
+  }
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, Postman, etc.)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        console.log('🌐 CORS: Allowing request with no origin');
+        return callback(null, true);
+      }
+      
+      // Log the origin for debugging
+      console.log(`🌐 CORS: Checking origin: ${origin}`);
+      console.log(`🌐 CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
       
       // Allow if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
+        console.log(`✅ CORS: Origin ${origin} is allowed`);
         return callback(null, true);
       }
       
       // In development, be more permissive
       if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ CORS: Allowing ${origin} due to development mode`);
         return callback(null, true);
       }
       
+      // In production, also check for common variations
+      if (process.env.NODE_ENV === 'production') {
+        // Allow if it's the same domain (for Swagger UI)
+        const renderDomain = 'api-cuentas-zlut.onrender.com';
+        if (origin.includes(renderDomain)) {
+          console.log(`✅ CORS: Allowing ${origin} as it matches Render domain`);
+          return callback(null, true);
+        }
+      }
+      
+      console.log(`❌ CORS: Origin ${origin} not allowed`);
       return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
