@@ -8,16 +8,35 @@ echo "NPM version: $(npm --version)"
 echo "📦 Installing dependencies..."
 npm ci
 
-# Try NestJS CLI first, fallback to TypeScript compiler with path resolution
+# Ensure NestJS CLI is installed
+echo "🔨 Installing NestJS CLI..."
+npm install -g @nestjs/cli
+
+# Wait a moment to ensure CLI is available
+sleep 1
+
 echo "🔨 Building application..."
-if npm run build; then
+echo "Path: $PATH"
+echo "Which nest: $(which nest)"
+
+# Attempt build methods in order of preference
+if nest build; then
+    echo "✅ Build successful with global NestJS CLI"
+elif npm run build; then
     echo "✅ Build successful with npm run build"
 elif npx --yes @nestjs/cli build; then
-    echo "✅ Build successful with @nestjs/cli"
-elif npm install -g @nestjs/cli && nest build; then
-    echo "✅ Build successful after installing @nestjs/cli globally"
+    echo "✅ Build successful with npx @nestjs/cli"
 else
     echo "❌ All build methods failed"
+    
+    # Debug information
+    echo "📑 Debug information:"
+    echo "package.json scripts:"
+    cat package.json | grep -A 15 '"scripts"'
+    
+    echo "Node modules:"
+    ls -la node_modules/.bin/
+    
     exit 1
 fi
 

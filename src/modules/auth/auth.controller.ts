@@ -43,6 +43,10 @@ import { CleanupService } from '@/common/services/cleanup.service';
 
 interface AuthenticatedRequest extends Request {
   user: User;
+  headers: {
+    authorization?: string;
+    [key: string]: any;
+  };
 }
 
 @ApiTags('Authentication')
