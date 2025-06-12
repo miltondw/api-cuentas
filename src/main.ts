@@ -1,4 +1,4 @@
-import 'tsconfig-paths/register';
+// import 'tsconfig-paths/register'; // Commented out to fix build issues - paths handled in start.js
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -8,6 +8,7 @@ import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,11 +18,14 @@ async function bootstrap() {
   const expressInstance = app.getHttpAdapter().getInstance();
   const trustProxy = configService.get('TRUST_PROXY') === 'true';
   expressInstance.set('trust proxy', trustProxy);
+  // Custom rate limiting middleware for specific paths
+  const rateLimitMiddleware = new RateLimitMiddleware();
+  app.use((req, res, next) => rateLimitMiddleware.use(req, res, next));
 
   // Security middlewares
   app.use(helmet());
   app.use(compression());
-  app.use(cookieParser());  // CORS configuration - more permissive for development
+  app.use(cookieParser()); // CORS configuration - more permissive for development
   const corsOrigins = configService.get('CORS_ORIGINS');
   const allowedOrigins = corsOrigins
     ? corsOrigins.split(',').map(origin => origin.trim())
@@ -30,7 +34,7 @@ async function bootstrap() {
   // In development, also allow the same origin (Swagger UI)
   const port = configService.get('PORT') || 5051;
   const currentOrigin = `http://localhost:${port}`;
-  
+
   if (!allowedOrigins.includes(currentOrigin)) {
     allowedOrigins.push(currentOrigin);
   }
@@ -43,11 +47,14 @@ async function bootstrap() {
 
   // Always allow the same origin for Swagger UI
   const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-  const host = process.env.NODE_ENV === 'production' 
-    ? (renderUrl ? new URL(renderUrl).host : 'api-cuentas-zlut.onrender.com')
-    : `localhost:${port}`;
+  const host =
+    process.env.NODE_ENV === 'production'
+      ? renderUrl
+        ? new URL(renderUrl).host
+        : 'api-cuentas-zlut.onrender.com'
+      : `localhost:${port}`;
   const sameOrigin = `${protocol}://${host}`;
-  
+
   if (!allowedOrigins.includes(sameOrigin)) {
     allowedOrigins.push(sameOrigin);
   }
@@ -58,33 +65,35 @@ async function bootstrap() {
         console.log('🌐 CORS: Allowing request with no origin');
         return callback(null, true);
       }
-      
+
       // Log the origin for debugging
       console.log(`🌐 CORS: Checking origin: ${origin}`);
       console.log(`🌐 CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
-      
+
       // Allow if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
         console.log(`✅ CORS: Origin ${origin} is allowed`);
         return callback(null, true);
       }
-      
+
       // In development, be more permissive
       if (process.env.NODE_ENV === 'development') {
         console.log(`✅ CORS: Allowing ${origin} due to development mode`);
         return callback(null, true);
       }
-      
+
       // In production, also check for common variations
       if (process.env.NODE_ENV === 'production') {
         // Allow if it's the same domain (for Swagger UI)
         const renderDomain = 'api-cuentas-zlut.onrender.com';
         if (origin.includes(renderDomain)) {
-          console.log(`✅ CORS: Allowing ${origin} as it matches Render domain`);
+          console.log(
+            `✅ CORS: Allowing ${origin} as it matches Render domain`,
+          );
           return callback(null, true);
         }
       }
-      
+
       console.log(`❌ CORS: Origin ${origin} not allowed`);
       return callback(new Error('Not allowed by CORS'));
     },
@@ -92,16 +101,16 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Origin',
-      'X-Requested-With', 
-      'Content-Type', 
+      'X-Requested-With',
+      'Content-Type',
       'Accept',
-      'Authorization', 
+      'Authorization',
       'X-CSRF-Token',
-      'Cache-Control'
+      'Cache-Control',
     ],
     exposedHeaders: ['X-Total-Count'],
     preflightContinue: false,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
   });
   // Global exception filter
   app.useGlobalFilters(new AllExceptionsFilter());
@@ -119,9 +128,11 @@ async function bootstrap() {
 
   // Configuración de URLs según el entorno
   const isProduction = configService.get('NODE_ENV') === 'production';
-  const productionUrl = configService.get('RENDER_EXTERNAL_URL') || 'https://api-cuentas-zlut.onrender.com';
+  const productionUrl =
+    configService.get('RENDER_EXTERNAL_URL') ||
+    'https://api-cuentas-zlut.onrender.com';
   const developmentUrl = `http://localhost:${port}`;
-  
+
   // Swagger configuration
   let configBuilder = new DocumentBuilder()
     .setTitle('API Cuentas - Ingeocimyc')
@@ -193,7 +204,9 @@ async function bootstrap() {
     console.log(`🌐 Environment: PRODUCTION`);
   } else {
     console.log(`🚀 Application is running on: http://localhost:${appPort}`);
-    console.log(`📚 Swagger docs available at: http://localhost:${appPort}/api-docs`);
+    console.log(
+      `📚 Swagger docs available at: http://localhost:${appPort}/api-docs`,
+    );
     console.log(`🌐 Environment: DEVELOPMENT`);
   }
 }

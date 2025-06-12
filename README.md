@@ -1,14 +1,33 @@
-# Migración de API Express.js a Nest.js - Ingeocimyc
+# 🏗️ API Cuentas INGEOCIMYC - NestJS
 
-Esta es la migración completa de la API de cuentas de Express.js a Nest.js, manteniendo toda la funcionalidad existente pero con una arquitectura más robusta y escalable.
+API moderna para gestión de proyectos y servicios de ingeniería civil desarrollada con NestJS.
 
-## 🚀 Características Principales
+## 🚀 Inicio Rápido
 
-- **Arquitectura Modular**: Organizada en módulos por dominio de negocio
-- **TypeORM**: ORM robusto para manejo de base de datos MySQL
-- **Validación Automática**: DTOs con class-validator para validación de datos
-- **Autenticación JWT**: Sistema de autenticación seguro
-- **Documentación Swagger**: API completamente documentada
+### Prerrequisitos
+
+- Node.js 18+
+- MySQL 8.0+
+- npm o yarn
+
+### Instalación
+
+```bash
+# Clonar repositorio
+git clone [url-del-repositorio]
+cd api-cuentas
+
+# Instalar dependencias
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus credenciales
+
+# Ejecutar en desarrollo
+npm run start:dev
+```
+
 - **Manejo de Errores**: Sistema centralizado de manejo de errores
 - **TypeScript**: Tipado estático para mayor robustez
 
@@ -207,6 +226,24 @@ npm run test           # Tests
 | Perfiles         | ✅      | 🚧      | Pendiente |
 | Finanzas         | ✅      | 🚧      | Pendiente |
 | PDFs             | ✅      | 🚧      | Pendiente |
+
+## 🔐 Autenticación
+
+### Novedades en el Sistema de Autenticación (Junio 2025)
+
+Hemos actualizado el sistema de autenticación con importantes mejoras:
+
+- **Tablas de Seguridad** - Nombres actualizados a formato plural
+- **Gestión de Sesiones** - Control de múltiples sesiones activas
+- **Logs de Autenticación** - Registro detallado de actividades
+- **Protección Avanzada** - Contra intentos de fuerza bruta
+
+📄 Documentación detallada:
+
+- [AUTH_SYSTEM_UPDATE_2025.md](./docs/api/AUTH_SYSTEM_UPDATE_2025.md) - Descripción del sistema
+- [AUTH_ENDPOINTS_REFERENCE.md](./docs/api/AUTH_ENDPOINTS_REFERENCE.md) - Referencia de endpoints
+- [FRONTEND_AUTH_GUIDE_2025.md](./docs/development/FRONTEND_AUTH_GUIDE_2025.md) - Guía para frontend
+- [TABLES_UPDATE_2025.md](./docs/security/TABLES_UPDATE_2025.md) - Detalles técnicos de cambios
 
 ## 📞 Soporte
 

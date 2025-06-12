@@ -1,0 +1,9 @@
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInVzZXJJZCI6MiwiZW1haWwiOiJtaWx0b25AaW5nZW9jaW15Yy5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDk3NjA5OTcsImV4cCI6MTc0OTc4OTc5N30.MwDGVUHtb38lFlLeURs9VOCKVNc_KC6lVucBTyiSm2I",
+  "user": {
+    "email": "milton@ingeocimyc.com",
+    "name": "milton",
+    "role": "admin"
+  },
+  "timestamp": "2025-06-12T20:43:19.094Z"
+}

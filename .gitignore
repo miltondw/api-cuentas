@@ -11,8 +11,15 @@
 .env.staging
 .env.test
 .env.*.local
-test/*
-/tests/*
+
+# Archivos temporales y builds
+*.tsbuildinfo
+*.temp.json
+.cache/
+dist/
+build/
+temp/
+tmp/
 # Archivos de configuración sensibles
 config/database.json
 config/production.json
@@ -98,9 +105,34 @@ public/uploads/
 storage/
 files/
 
-# PDFs generados
+# PDFs generados y uploads
+uploads/
+pdfs/
 *.pdf
-reports/
+
+# Archivos de desarrollo y debugging  
+debug-*.js
+test-*.js
+quick-test.*
+ESTADO_ACTUAL.md
+*.temp.*
+*.backup
+*.bak
+
+# Scripts de desarrollo temporal
+scripts/test-*
+scripts/debug-*
+scripts/quick-*
+
+# Archivos de configuración sensibles adicionales
+*.env.backup
+.env.bak
+config/*.local.json
+
+# Build artifacts específicos
+tsconfig.tsbuildinfo
+.tsbuildinfo
+build-*.log
 
 # =====================================================
 # DATABASE
