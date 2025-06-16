@@ -48,20 +48,19 @@ export class ProjectsService {
     const project = this.projectRepository.create(createProjectDto);
     return this.projectRepository.save(project);
   }
-
   async findAll(): Promise<Project[]> {
     return this.projectRepository.find({
+      relations: ['expenses'],
       order: { created_at: 'DESC' },
     });
   }
-
   async findByStatus(status: ProjectStatus): Promise<Project[]> {
     return this.projectRepository.find({
       where: { estado: status },
+      relations: ['expenses'],
       order: { created_at: 'DESC' },
     });
   }
-
   async findByDateRange(
     startDate: string,
     endDate: string,
@@ -70,13 +69,14 @@ export class ProjectsService {
       where: {
         fecha: Between(new Date(startDate), new Date(endDate)),
       },
+      relations: ['expenses'],
       order: { fecha: 'DESC' },
     });
   }
-
   async findOne(id: number): Promise<Project> {
     const project = await this.projectRepository.findOne({
       where: { id },
+      relations: ['expenses'],
     });
 
     if (!project) {
@@ -213,11 +213,10 @@ export class ProjectsService {
 
     // Construir objeto de ordenamiento
     const order: FindOptionsOrder<Project> = {};
-    order[sortBy] = sortOrder;
-
-    // Obtener datos y total
+    order[sortBy] = sortOrder; // Obtener datos y total
     const [data, total] = await this.projectRepository.findAndCount({
       where: whereConditions,
+      relations: ['expenses'],
       order,
       skip,
       take: limit,
