@@ -128,26 +128,35 @@ export class ProjectsService {
     Object.assign(project, updateProjectDto);
     return this.projectRepository.save(project);
   }
-
   async addPayment(id: number, paymentDto: PaymentDto): Promise<Project> {
     const project = await this.findOne(id);
 
-    const newAbono = project.abono + paymentDto.monto;
+    // Asegurar que los valores son números y convertir explícitamente
+    const currentAbono = Number(project.abono) || 0;
+    const newPayment = Number(paymentDto.monto) || 0;
+    const newAbono = currentAbono + newPayment;
 
-    if (newAbono > project.costoServicio) {
+    console.log('Payment Debug:', {
+      projectId: id,
+      currentAbono: currentAbono,
+      newPayment: newPayment,
+      newAbono: newAbono,
+      costoServicio: Number(project.costoServicio),
+    });
+
+    if (newAbono > Number(project.costoServicio)) {
       throw new BadRequestException(
         'El abono total no puede ser mayor al costo del servicio',
       );
     }
 
+    // Asegurar que se asigne como número
     project.abono = newAbono;
 
     if (paymentDto.metodoDePago) {
       project.metodoDePago = paymentDto.metodoDePago;
-    }
-
-    // Si el proyecto está completamente pagado, cambiar estado
-    if (newAbono === project.costoServicio) {
+    } // Si el proyecto está completamente pagado, cambiar estado
+    if (newAbono >= Number(project.costoServicio)) {
       project.estado = ProjectStatus.COMPLETADO;
     }
 
