@@ -79,17 +79,13 @@ export class CreateCompanyExpenseDto {
   @Type(() => Number)
   @Min(0)
   salud?: number = 0;
-
   @ApiPropertyOptional({
-    description: 'Other expenses',
-    example: 200000,
-    minimum: 0,
+    description: 'Other expenses as JSON object',
+    example: { otro: 50000, varios: 25000 },
+    type: 'object',
   })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  @Min(0)
-  otros_campos?: number = 0;
+  otros_campos?: any;
 }
 
 export class UpdateCompanyExpenseDto extends PartialType(
