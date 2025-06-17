@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Like, FindOptionsOrder } from 'typeorm';
 import { Project, ProjectStatus } from './entities/project.entity';
+import { ProjectExpense } from './entities/project-expense.entity';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -35,8 +36,9 @@ export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    @InjectRepository(ProjectExpense)
+    private projectExpenseRepository: Repository<ProjectExpense>,
   ) {}
-
   async create(createProjectDto: CreateProjectDto): Promise<Project> {
     // Validar que el abono no sea mayor al costo del servicio
     if (createProjectDto.abono > createProjectDto.costoServicio) {
@@ -45,8 +47,28 @@ export class ProjectsService {
       );
     }
 
-    const project = this.projectRepository.create(createProjectDto);
-    return this.projectRepository.save(project);
+    // Extraer los gastos del DTO
+    const { expenses, ...projectData } = createProjectDto;
+
+    // Crear el proyecto
+    const project = this.projectRepository.create(projectData);
+    const savedProject = await this.projectRepository.save(project);
+
+    // Si hay gastos, crearlos
+    if (expenses && expenses.length > 0) {
+      const projectExpenses = expenses.map(expense => {
+        const projectExpense = this.projectExpenseRepository.create({
+          ...expense,
+          proyectoId: savedProject.id,
+        });
+        return projectExpense;
+      });
+
+      await this.projectExpenseRepository.save(projectExpenses);
+    }
+
+    // Retornar el proyecto con los gastos incluidos
+    return this.findOne(savedProject.id);
   }
   async findAll(): Promise<Project[]> {
     return this.projectRepository.find({

@@ -6,9 +6,88 @@ import {
   IsEnum,
   IsDateString,
   Min,
+  IsArray,
+  ValidateNested,
+  IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { ProjectStatus, PaymentMethod } from '../entities/project.entity';
+
+// DTO para gastos de proyecto
+export class CreateProjectExpenseDto {
+  @ApiPropertyOptional({
+    description: 'Gasto en camioneta',
+    example: 50000,
+  })
+  @IsOptional()
+  @IsNumber()
+  camioneta?: number;
+
+  @ApiPropertyOptional({
+    description: 'Gastos de campo',
+    example: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  campo?: number;
+
+  @ApiPropertyOptional({
+    description: 'Gastos en obreros',
+    example: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  obreros?: number;
+
+  @ApiPropertyOptional({
+    description: 'Gastos en comidas',
+    example: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  comidas?: number;
+
+  @ApiPropertyOptional({
+    description: 'Otros gastos',
+    example: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  otros?: number;
+
+  @ApiPropertyOptional({
+    description: 'Gastos en peajes',
+    example: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  peajes?: number;
+
+  @ApiPropertyOptional({
+    description: 'Gastos en combustible',
+    example: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  combustible?: number;
+
+  @ApiPropertyOptional({
+    description: 'Gastos en hospedaje',
+    example: 150000,
+  })
+  @IsOptional()
+  @IsNumber()
+  hospedaje?: number;
+
+  @ApiPropertyOptional({
+    description: 'Otros campos adicionales (JSON)',
+    example: { test2: 50000 },
+  })
+  @IsOptional()
+  @IsObject()
+  otrosCampos?: any;
+}
 
 export class CreateProjectDto {
   @ApiProperty({
@@ -16,7 +95,6 @@ export class CreateProjectDto {
     example: '2025-05-28',
   })
   @IsDateString()
-  @IsNotEmpty()
   fecha: string;
 
   @ApiProperty({
@@ -24,7 +102,6 @@ export class CreateProjectDto {
     example: 'Juan Pérez',
   })
   @IsString()
-  @IsNotEmpty()
   solicitante: string;
 
   @ApiProperty({
@@ -32,7 +109,6 @@ export class CreateProjectDto {
     example: 'Construcción Edificio Central',
   })
   @IsString()
-  @IsNotEmpty()
   nombreProyecto: string;
 
   @ApiPropertyOptional({
@@ -48,7 +124,6 @@ export class CreateProjectDto {
     example: 'Carlos López',
   })
   @IsString()
-  @IsNotEmpty()
   obrero: string;
 
   @ApiProperty({
@@ -56,7 +131,6 @@ export class CreateProjectDto {
     example: 1500000,
   })
   @IsNumber()
-  @Min(0)
   costoServicio: number;
 
   @ApiProperty({
@@ -64,7 +138,6 @@ export class CreateProjectDto {
     example: 500000,
   })
   @IsNumber()
-  @Min(0)
   abono: number;
 
   @ApiPropertyOptional({
@@ -81,7 +154,6 @@ export class CreateProjectDto {
   })
   @IsOptional()
   @IsNumber()
-  @Min(0)
   valorRetencion?: number;
 
   @ApiPropertyOptional({
@@ -109,6 +181,31 @@ export class CreateProjectDto {
   @IsOptional()
   @IsString()
   otros_campos?: string;
+
+  @ApiPropertyOptional({
+    description: 'Gastos del proyecto',
+    type: [CreateProjectExpenseDto],
+    example: [
+      {
+        camioneta: 50000,
+        campo: 0,
+        obreros: 0,
+        comidas: 0,
+        otros: 0,
+        peajes: 0,
+        combustible: 0,
+        hospedaje: 150000,
+        otrosCampos: {
+          test2: 50000,
+        },
+      },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateProjectExpenseDto)
+  expenses?: CreateProjectExpenseDto[];
 }
 
 export class UpdateProjectDto {
@@ -126,7 +223,6 @@ export class UpdateProjectDto {
   })
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
   solicitante?: string;
 
   @ApiPropertyOptional({
@@ -135,7 +231,6 @@ export class UpdateProjectDto {
   })
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
   nombreProyecto?: string;
 
   @ApiPropertyOptional({
@@ -152,7 +247,6 @@ export class UpdateProjectDto {
   })
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
   obrero?: string;
 
   @ApiPropertyOptional({
@@ -161,7 +255,6 @@ export class UpdateProjectDto {
   })
   @IsOptional()
   @IsNumber()
-  @Min(0)
   costoServicio?: number;
 
   @ApiPropertyOptional({
@@ -170,7 +263,6 @@ export class UpdateProjectDto {
   })
   @IsOptional()
   @IsNumber()
-  @Min(0)
   abono?: number;
 
   @ApiPropertyOptional({
@@ -187,7 +279,6 @@ export class UpdateProjectDto {
   })
   @IsOptional()
   @IsNumber()
-  @Min(0)
   valorRetencion?: number;
 
   @ApiPropertyOptional({
@@ -207,14 +298,6 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsEnum(ProjectStatus)
   estado?: ProjectStatus;
-
-  @ApiPropertyOptional({
-    description: 'Otros campos adicionales (JSON)',
-    example: '{"campo1": "valor1", "campo2": "valor2"}',
-  })
-  @IsOptional()
-  @IsString()
-  otros_campos?: string;
 }
 
 export class PaymentDto {
@@ -223,7 +306,6 @@ export class PaymentDto {
     example: 200000,
   })
   @IsNumber()
-  @Min(0)
   monto: number;
 
   @ApiPropertyOptional({
