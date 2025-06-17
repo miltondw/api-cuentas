@@ -26,8 +26,11 @@ import {
   CreateProjectDto,
   UpdateProjectDto,
   PaymentDto,
+  CreateProjectExpenseDto,
+  UpdateProjectExpenseDto,
 } from './dto/project.dto';
 import { Project, ProjectStatus } from './entities/project.entity';
+import { ProjectExpense } from './entities/project-expense.entity';
 
 @ApiTags('Projects')
 @Controller('projects')
@@ -131,9 +134,9 @@ export class ProjectsController {
     @Query('limit') limit?: number,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
-  ): Promise<{data: Project[], total: number, page: number, limit: number}> {
+  ): Promise<{ data: Project[]; total: number; page: number; limit: number }> {
     const filters = {
-      status: status ? status as ProjectStatus : undefined,
+      status: status ? (status as ProjectStatus) : undefined,
       startDate,
       endDate,
       solicitante,
@@ -230,6 +233,113 @@ export class ProjectsController {
     @Body() paymentDto: PaymentDto,
   ): Promise<Project> {
     return this.projectsService.addPayment(id, paymentDto);
+  }
+
+  // Endpoints para manejar gastos de proyecto
+
+  @Post(':id/expenses')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Agregar gasto a un proyecto' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del proyecto',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Gasto agregado exitosamente',
+    type: ProjectExpense,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Proyecto no encontrado',
+  })
+  async addExpense(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() expenseDto: CreateProjectExpenseDto,
+  ): Promise<ProjectExpense> {
+    return this.projectsService.addExpenseToProject(id, expenseDto);
+  }
+
+  @Get(':id/expenses')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Obtener gastos de un proyecto' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del proyecto',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Gastos del proyecto',
+    type: [ProjectExpense],
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Proyecto no encontrado',
+  })
+  async getExpenses(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ProjectExpense[]> {
+    return this.projectsService.getProjectExpenses(id);
+  }
+
+  @Patch(':id/expenses/:expenseId')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Actualizar gasto específico de un proyecto' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del proyecto',
+    type: 'number',
+  })
+  @ApiParam({
+    name: 'expenseId',
+    description: 'ID del gasto',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Gasto actualizado exitosamente',
+    type: ProjectExpense,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Proyecto o gasto no encontrado',
+  })
+  async updateExpense(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('expenseId', ParseIntPipe) expenseId: number,
+    @Body() updateDto: UpdateProjectExpenseDto,
+  ): Promise<ProjectExpense> {
+    return this.projectsService.updateProjectExpense(id, expenseId, updateDto);
+  }
+
+  @Delete(':id/expenses/:expenseId')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Eliminar gasto específico de un proyecto' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del proyecto',
+    type: 'number',
+  })
+  @ApiParam({
+    name: 'expenseId',
+    description: 'ID del gasto',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Gasto eliminado exitosamente',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Proyecto o gasto no encontrado',
+  })
+  async removeExpense(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('expenseId', ParseIntPipe) expenseId: number,
+  ): Promise<void> {
+    return this.projectsService.deleteProjectExpense(id, expenseId);
   }
 
   @Delete(':id')

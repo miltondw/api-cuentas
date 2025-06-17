@@ -50,6 +50,32 @@ export class FinancialService {
     @InjectRepository(FinancialSummary)
     private financialSummaryRepository: Repository<FinancialSummary>,
   ) {}
+
+  // Helper method to transform CompanyExpense for API response
+  private transformCompanyExpenseForResponse(expense: CompanyExpense): any {
+    const transformed = {
+      id: expense.id,
+      mes: expense.mes,
+      salarios: expense.salarios,
+      luz: expense.luz,
+      agua: expense.agua,
+      arriendo: expense.arriendo,
+      internet: expense.internet,
+      salud: expense.salud,
+      otros_campos: expense.otrosCampos, // Transform field name for API
+      totalExpenses: expense.totalExpenses,
+    };
+    return transformed;
+  }
+
+  private transformCompanyExpensesArrayForResponse(
+    expenses: CompanyExpense[],
+  ): any[] {
+    return expenses.map(expense =>
+      this.transformCompanyExpenseForResponse(expense),
+    );
+  }
+
   // Company Expenses Methods
   async createCompanyExpense(
     createDto: CreateCompanyExpenseDto,
@@ -67,18 +93,24 @@ export class FinancialService {
         `Company expense for month ${createDto.mes} already exists`,
       );
     }
-
     const expense = this.companyExpenseRepository.create({
-      ...createDto,
       mes: mesDate,
+      salarios: createDto.salarios,
+      luz: createDto.luz,
+      agua: createDto.agua,
+      arriendo: createDto.arriendo,
+      internet: createDto.internet,
+      salud: createDto.salud,
+      otrosCampos: createDto.otros_campos, // Mapeo explícito del campo
     });
-    return this.companyExpenseRepository.save(expense);
+    const savedExpense = await this.companyExpenseRepository.save(expense);
+    return this.transformCompanyExpenseForResponse(savedExpense);
   }
-
-  async findAllCompanyExpenses(): Promise<CompanyExpense[]> {
-    return this.companyExpenseRepository.find({
+  async findAllCompanyExpenses(): Promise<any[]> {
+    const expenses = await this.companyExpenseRepository.find({
       order: { mes: 'DESC' },
     });
+    return this.transformCompanyExpensesArrayForResponse(expenses);
   }
   async findCompanyExpensesByYear(year: string): Promise<CompanyExpense[]> {
     // Create date range for the year
@@ -105,6 +137,11 @@ export class FinancialService {
     }
 
     return expense;
+  }
+
+  async findCompanyExpenseByMonthForAPI(mes: string): Promise<any> {
+    const expense = await this.findCompanyExpenseByMonth(mes);
+    return this.transformCompanyExpenseForResponse(expense);
   }
 
   async updateCompanyExpense(
@@ -134,9 +171,25 @@ export class FinancialService {
           );
         }
       }
-    }
+    } // Preparar datos de actualización con mapeo correcto
+    const updateData: any = {};
 
-    await this.companyExpenseRepository.update(id, updateDto);
+    if (updateDto.mes !== undefined) {
+      updateData.mes = new Date(`${updateDto.mes}-01`);
+    }
+    if (updateDto.salarios !== undefined)
+      updateData.salarios = updateDto.salarios;
+    if (updateDto.luz !== undefined) updateData.luz = updateDto.luz;
+    if (updateDto.agua !== undefined) updateData.agua = updateDto.agua;
+    if (updateDto.arriendo !== undefined)
+      updateData.arriendo = updateDto.arriendo;
+    if (updateDto.internet !== undefined)
+      updateData.internet = updateDto.internet;
+    if (updateDto.salud !== undefined) updateData.salud = updateDto.salud;
+    if (updateDto.otros_campos !== undefined)
+      updateData.otrosCampos = updateDto.otros_campos;
+
+    await this.companyExpenseRepository.update(id, updateData);
     return this.companyExpenseRepository.findOne({ where: { id } });
   }
 
@@ -352,7 +405,7 @@ export class FinancialService {
       queryBuilder = queryBuilder.andWhere('MONTH(expense.mes) = :month', {
         month: parseInt(filters.month),
       });
-    }    // Calcular el total de la suma de todas las propiedades numéricas excepto id
+    } // Calcular el total de la suma de todas las propiedades numéricas excepto id
     const totalExpenseSQL = `
       (IFNULL(expense.salarios, 0) +
        IFNULL(expense.luz, 0) +
@@ -360,13 +413,22 @@ export class FinancialService {
        IFNULL(expense.arriendo, 0) +
        IFNULL(expense.internet, 0) +
        IFNULL(expense.salud, 0))
-    `;    if (filters.minAmount !== undefined && filters.minAmount !== null && !isNaN(filters.minAmount)) {
+    `;
+    if (
+      filters.minAmount !== undefined &&
+      filters.minAmount !== null &&
+      !isNaN(filters.minAmount)
+    ) {
       queryBuilder = queryBuilder.andWhere(`${totalExpenseSQL} >= :minAmount`, {
         minAmount: filters.minAmount,
       });
     }
 
-    if (filters.maxAmount !== undefined && filters.maxAmount !== null && !isNaN(filters.maxAmount)) {
+    if (
+      filters.maxAmount !== undefined &&
+      filters.maxAmount !== null &&
+      !isNaN(filters.maxAmount)
+    ) {
       queryBuilder = queryBuilder.andWhere(`${totalExpenseSQL} <= :maxAmount`, {
         maxAmount: filters.maxAmount,
       });
@@ -445,25 +507,42 @@ export class FinancialService {
       queryBuilder = queryBuilder.andWhere('MONTH(summary.fecha) = :month', {
         month: parseInt(filters.month),
       });
-    }    if (filters.minIncome !== undefined && filters.minIncome !== null && !isNaN(filters.minIncome)) {
+    }
+    if (
+      filters.minIncome !== undefined &&
+      filters.minIncome !== null &&
+      !isNaN(filters.minIncome)
+    ) {
       queryBuilder = queryBuilder.andWhere('summary.ingresos >= :minIncome', {
         minIncome: filters.minIncome,
       });
     }
 
-    if (filters.maxIncome !== undefined && filters.maxIncome !== null && !isNaN(filters.maxIncome)) {
+    if (
+      filters.maxIncome !== undefined &&
+      filters.maxIncome !== null &&
+      !isNaN(filters.maxIncome)
+    ) {
       queryBuilder = queryBuilder.andWhere('summary.ingresos <= :maxIncome', {
         maxIncome: filters.maxIncome,
       });
     }
 
-    if (filters.minExpense !== undefined && filters.minExpense !== null && !isNaN(filters.minExpense)) {
+    if (
+      filters.minExpense !== undefined &&
+      filters.minExpense !== null &&
+      !isNaN(filters.minExpense)
+    ) {
       queryBuilder = queryBuilder.andWhere('summary.gastos >= :minExpense', {
         minExpense: filters.minExpense,
       });
     }
 
-    if (filters.maxExpense !== undefined && filters.maxExpense !== null && !isNaN(filters.maxExpense)) {
+    if (
+      filters.maxExpense !== undefined &&
+      filters.maxExpense !== null &&
+      !isNaN(filters.maxExpense)
+    ) {
       queryBuilder = queryBuilder.andWhere('summary.gastos <= :maxExpense', {
         maxExpense: filters.maxExpense,
       });

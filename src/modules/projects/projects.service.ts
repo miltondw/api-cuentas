@@ -11,6 +11,8 @@ import {
   CreateProjectDto,
   UpdateProjectDto,
   PaymentDto,
+  CreateProjectExpenseDto,
+  UpdateProjectExpenseDto,
 } from './dto/project.dto';
 
 // Definir los tipos para los filtros y la paginación
@@ -107,27 +109,127 @@ export class ProjectsService {
 
     return project;
   }
-
   async update(
     id: number,
     updateProjectDto: UpdateProjectDto,
   ): Promise<Project> {
     const project = await this.findOne(id);
 
-    // Validar que el abono no sea mayor al costo del servicio
-    const newCostoServicio =
-      updateProjectDto.costoServicio ?? project.costoServicio;
-    const newAbono = updateProjectDto.abono ?? project.abono;
+    // Extraer los gastos del DTO de actualización antes de la validación
+    const { expenses, ...projectData } = updateProjectDto;
 
-    if (newAbono > newCostoServicio) {
-      throw new BadRequestException(
-        'El abono no puede ser mayor al costo del servicio',
+    // Solo validar el abono si se están actualizando costoServicio o abono
+    if (
+      updateProjectDto.costoServicio !== undefined ||
+      updateProjectDto.abono !== undefined
+    ) {
+      const newCostoServicio =
+        updateProjectDto.costoServicio ?? project.costoServicio;
+      const newAbono = updateProjectDto.abono ?? project.abono;
+
+      if (newAbono > newCostoServicio) {
+        throw new BadRequestException(
+          'El abono no puede ser mayor al costo del servicio',
+        );
+      }
+    }
+
+    // Actualizar los datos del proyecto solo si hay datos para actualizar
+    if (Object.keys(projectData).length > 0) {
+      Object.assign(project, projectData);
+      await this.projectRepository.save(project);
+    }
+
+    // Si se proporcionan gastos, actualizar los gastos del proyecto
+    if (expenses !== undefined) {
+      // Eliminar todos los gastos existentes del proyecto
+      await this.projectExpenseRepository.delete({ proyectoId: id });
+
+      // Si hay nuevos gastos, crearlos
+      if (expenses && expenses.length > 0) {
+        const projectExpenses = expenses.map(expense => {
+          const projectExpense = this.projectExpenseRepository.create({
+            ...expense,
+            proyectoId: id,
+          });
+          return projectExpense;
+        });
+
+        await this.projectExpenseRepository.save(projectExpenses);
+      }
+    }
+
+    // Retornar el proyecto actualizado con los gastos incluidos
+    return this.findOne(id);
+  }
+
+  // Métodos para manejar gastos de proyecto individualmente
+  async addExpenseToProject(
+    projectId: number,
+    expenseData: CreateProjectExpenseDto,
+  ): Promise<ProjectExpense> {
+    // Verificar que el proyecto existe
+    await this.findOne(projectId);
+
+    const expense = this.projectExpenseRepository.create({
+      ...expenseData,
+      proyectoId: projectId,
+    });
+
+    return this.projectExpenseRepository.save(expense);
+  }
+
+  async updateProjectExpense(
+    projectId: number,
+    expenseId: number,
+    updateData: UpdateProjectExpenseDto,
+  ): Promise<ProjectExpense> {
+    // Verificar que el proyecto existe
+    await this.findOne(projectId);
+
+    // Verificar que el gasto existe y pertenece al proyecto
+    const expense = await this.projectExpenseRepository.findOne({
+      where: { id: expenseId, proyectoId: projectId },
+    });
+
+    if (!expense) {
+      throw new NotFoundException(
+        `Expense with ID ${expenseId} not found for project ${projectId}`,
       );
     }
 
-    Object.assign(project, updateProjectDto);
-    return this.projectRepository.save(project);
+    Object.assign(expense, updateData);
+    return this.projectExpenseRepository.save(expense);
   }
+
+  async deleteProjectExpense(
+    projectId: number,
+    expenseId: number,
+  ): Promise<void> {
+    // Verificar que el proyecto existe
+    await this.findOne(projectId);
+
+    const result = await this.projectExpenseRepository.delete({
+      id: expenseId,
+      proyectoId: projectId,
+    });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(
+        `Expense with ID ${expenseId} not found for project ${projectId}`,
+      );
+    }
+  }
+
+  async getProjectExpenses(projectId: number): Promise<ProjectExpense[]> {
+    // Verificar que el proyecto existe
+    await this.findOne(projectId);
+
+    return this.projectExpenseRepository.find({
+      where: { proyectoId: projectId },
+    });
+  }
+
   async addPayment(id: number, paymentDto: PaymentDto): Promise<Project> {
     const project = await this.findOne(id);
 
