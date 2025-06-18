@@ -213,3 +213,29 @@ export class ApiqueResponseDto {
   @ApiProperty()
   updatedAt: Date;
 }
+
+export class ProjectWithApiquesResponseDto {
+  @ApiProperty({ example: 1 })
+  proyecto_id: number;
+
+  @ApiProperty({ example: 'Construcción Edificio Central' })
+  nombre_proyecto: string;
+
+  @ApiProperty({ example: 'Juan Pérez' })
+  solicitante: string;
+
+  @ApiProperty({ example: 'Carlos López' })
+  obrero: string;
+
+  @ApiProperty({ example: '2024-01-15' })
+  fecha: Date;
+
+  @ApiProperty({ example: 'activo' })
+  estado: string;
+
+  @ApiProperty({ example: 5 })
+  total_apiques: number;
+
+  @ApiProperty({ type: [ApiqueResponseDto] })
+  apiques: ApiqueResponseDto[];
+}

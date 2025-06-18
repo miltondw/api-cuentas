@@ -110,11 +110,10 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(registerDto);
   }
-
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Cerrar sesión' })
   @ApiHeader({
     name: 'Authorization',
@@ -144,11 +143,10 @@ export class AuthController {
       req,
     );
   }
-
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Renovar token de acceso' })
   @ApiResponse({
     status: 200,
@@ -165,11 +163,10 @@ export class AuthController {
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
     return this.authService.refreshToken(token, req);
   }
-
   @Patch('change-password')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Cambiar contraseña' })
   @ApiResponse({
     status: 200,
@@ -196,10 +193,9 @@ export class AuthController {
   ): Promise<{ message: string; sessionsRevoked: number }> {
     return this.authService.changePassword(req.user.id, changePasswordDto, req);
   }
-
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
   @ApiResponse({
     status: 200,
@@ -231,10 +227,9 @@ export class AuthController {
   async getProfile(@Req() req: AuthenticatedRequest): Promise<any> {
     return this.authService.getProfile(req.user.id);
   }
-
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Obtener sesiones activas del usuario' })
   @ApiQuery({ type: SessionQueryDto })
   @ApiResponse({
@@ -264,11 +259,10 @@ export class AuthController {
   ): Promise<any[]> {
     return this.authService.getActiveSessions(req.user.id);
   }
-
   @Delete('sessions/:sessionId')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Revocar una sesión específica' })
   @ApiParam({
     name: 'sessionId',
@@ -295,10 +289,9 @@ export class AuthController {
   ): Promise<{ message: string }> {
     return this.authService.revokeSession(req.user.id, sessionId, req);
   }
-
   @Get('logs')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Obtener logs de autenticación del usuario' })
   @ApiQuery({ type: AuthLogQueryDto })
   @ApiResponse({
@@ -315,10 +308,9 @@ export class AuthController {
   ): Promise<any[]> {
     return this.authLogService.getLogsByUser(req.user.email, query.limit || 50);
   }
-
   @Get('security/report')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Obtener reporte de seguridad (solo admin)',
     description: 'Endpoint disponible solo para administradores',
@@ -355,10 +347,9 @@ export class AuthController {
 
     return this.securityService.getSecurityReport();
   }
-
   @Get('security/stats')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Obtener estadísticas de login (solo admin)',
     description: 'Endpoint disponible solo para administradores',
@@ -394,11 +385,10 @@ export class AuthController {
 
     return this.authLogService.getLoginStats(days);
   }
-
   @Post('security/cleanup')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Limpiar logs antiguos (solo admin)',
     description:
@@ -438,10 +428,9 @@ export class AuthController {
       failedAttemptsDeleted,
     };
   }
-
   @Get('security/cleanup-stats')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Obtener estadísticas de limpieza (solo admin)',
     description:

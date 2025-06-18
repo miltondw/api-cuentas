@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Apique } from './entities/apique.entity';
 import { Layer } from './entities/layer.entity';
+import { Project } from '@/modules/projects/entities/project.entity';
 import { CreateApiqueDto, UpdateApiqueDto } from './dto/apique.dto';
 
 // Definir interfaces para filtros y paginación
@@ -33,6 +34,8 @@ export class ApiquesService {
     private apiqueRepository: Repository<Apique>,
     @InjectRepository(Layer)
     private layerRepository: Repository<Layer>,
+    @InjectRepository(Project)
+    private projectRepository: Repository<Project>,
     private dataSource: DataSource,
   ) {}
 
@@ -83,7 +86,8 @@ export class ApiquesService {
   async findAllByProject(projectId: number): Promise<Apique[]> {
     return this.apiqueRepository.find({
       where: { proyectoId: projectId },
-      relations: ['layers'],      order: {
+      relations: ['layers'],
+      order: {
         apique: 'ASC',
         layers: { layerNumber: 'ASC' },
       },
@@ -95,7 +99,8 @@ export class ApiquesService {
         proyectoId: projectId,
         id: apiqueId,
       },
-      relations: ['layers'],      order: {
+      relations: ['layers'],
+      order: {
         layers: { layerNumber: 'ASC' },
       },
     });
@@ -128,7 +133,7 @@ export class ApiquesService {
         throw new NotFoundException(
           `Apique with ID ${apiqueId} not found in project ${projectId}`,
         );
-      }      // Update apique data
+      } // Update apique data
       const updateData = {
         proyectoId: updateApiqueDto.proyecto_id || existingApique.proyectoId,
         apique: updateApiqueDto.apique,
@@ -136,7 +141,8 @@ export class ApiquesService {
         depth: updateApiqueDto.depth,
         date: updateApiqueDto.date
           ? new Date(updateApiqueDto.date)
-          : existingApique.date,        cbrUnaltered: updateApiqueDto.cbr_unaltered,
+          : existingApique.date,
+        cbrUnaltered: updateApiqueDto.cbr_unaltered,
         depthTomo: updateApiqueDto.depth_tomo,
         molde: updateApiqueDto.molde,
       };
@@ -145,13 +151,13 @@ export class ApiquesService {
         Apique,
         { proyectoId: projectId, id: apiqueId },
         updateData,
-      );      // Extract layers from updateApiqueDto
+      ); // Extract layers from updateApiqueDto
       const layersToUpdate = updateApiqueDto.layers;
 
       // Handle layers update if provided
       if (layersToUpdate !== undefined) {
         // Delete existing layers
-        await queryRunner.manager.delete(Layer, { apiqueId: apiqueId });        // Create new layers
+        await queryRunner.manager.delete(Layer, { apiqueId: apiqueId }); // Create new layers
         if (layersToUpdate.length > 0) {
           const newLayers = layersToUpdate.map(layerData =>
             this.layerRepository.create({
@@ -281,10 +287,13 @@ export class ApiquesService {
     }
 
     if (filters.startDepth && filters.endDepth) {
-      queryBuilder = queryBuilder.andWhere('apique.depth BETWEEN :startDepth AND :endDepth', {
-        startDepth: filters.startDepth,
-        endDepth: filters.endDepth,
-      });
+      queryBuilder = queryBuilder.andWhere(
+        'apique.depth BETWEEN :startDepth AND :endDepth',
+        {
+          startDepth: filters.startDepth,
+          endDepth: filters.endDepth,
+        },
+      );
     } else if (filters.startDepth) {
       queryBuilder = queryBuilder.andWhere('apique.depth >= :startDepth', {
         startDepth: filters.startDepth,
@@ -321,13 +330,14 @@ export class ApiquesService {
     } else if (sortBy === 'location') {
       queryBuilder = queryBuilder.orderBy('apique.location', sortOrder);
     } else {
-      queryBuilder = queryBuilder.orderBy('apique.created_at', sortOrder as any);
+      queryBuilder = queryBuilder.orderBy(
+        'apique.created_at',
+        sortOrder as any,
+      );
     }
 
     // Aplicar paginación
-    queryBuilder = queryBuilder
-      .skip(skip)
-      .take(limit);
+    queryBuilder = queryBuilder.skip(skip).take(limit);
 
     // Ejecutar consulta
     const [data, total] = await queryBuilder.getManyAndCount();
@@ -338,5 +348,41 @@ export class ApiquesService {
       page,
       limit,
     };
+  }
+
+  async findAllProjectsWithApiques(): Promise<any[]> {
+    const projects = await this.projectRepository.find({
+      relations: ['apiques', 'apiques.layers'],
+      order: {
+        id: 'DESC',
+        apiques: {
+          apique: 'ASC',
+          layers: { layerNumber: 'ASC' },
+        },
+      },
+    });
+
+    // Transform the data to include a summary for each project
+    return projects.map(project => ({
+      proyecto_id: project.id,
+      nombre_proyecto: project.nombreProyecto,
+      solicitante: project.solicitante,
+      obrero: project.obrero,
+      fecha: project.fecha,
+      estado: project.estado,
+      total_apiques: project.apiques.length,
+      apiques: project.apiques.map(apique => ({
+        apique_id: apique.id,
+        apique: apique.apique,
+        location: apique.location,
+        depth: apique.depth,
+        date: apique.date,
+        cbr_unaltered: apique.cbrUnaltered,
+        depth_tomo: apique.depthTomo,
+        molde: apique.molde,
+        total_layers: apique.layers.length,
+        layers: apique.layers,
+      })),
+    }));
   }
 }

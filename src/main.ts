@@ -9,6 +9,7 @@ import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
+import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -111,9 +112,11 @@ async function bootstrap() {
     exposedHeaders: ['X-Total-Count'],
     preflightContinue: false,
     optionsSuccessStatus: 204,
-  });
-  // Global exception filter
+  }); // Global exception filter
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Global request logging interceptor
+  app.useGlobalInterceptors(new RequestLoggingInterceptor());
 
   // Global validation pipe
   app.useGlobalPipes(
