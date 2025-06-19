@@ -109,11 +109,6 @@ export class LabProjectsService {
         'project.solicitante as project_solicitante',
         'project.nombreProyecto as project_nombre_proyecto',
         'project.obrero as project_obrero',
-        'project.costoServicio as project_costo_servicio',
-        'project.abono as project_abono',
-        'project.factura as project_factura',
-        'project.valorRetencion as project_valor_retencion',
-        'project.metodoDePago as project_metodo_de_pago',
         'project.estado as project_estado',
         'project.created_at as project_created_at',
         'COUNT(DISTINCT apiques.id) as apiques_count',
@@ -286,15 +281,11 @@ export class LabProjectsService {
       obrero: project.obrero,
       fecha: project.fecha,
       estado: project.estado,
-      costoServicio: project.costoServicio,
-      abono: project.abono,
-      metodoDePago: project.metodoDePago,
       total_apiques: parseInt(project.apiques_count) || 0,
       total_profiles: parseInt(project.profiles_count) || 0,
       created_at: project.created_at,
     };
   }
-
   private transformRawToLabProjectDto(raw: any): LabProjectDto {
     return {
       proyecto_id: raw.project_id,
@@ -303,9 +294,6 @@ export class LabProjectsService {
       obrero: raw.project_obrero,
       fecha: raw.project_fecha,
       estado: raw.project_estado,
-      costoServicio: raw.project_costo_servicio,
-      abono: raw.project_abono,
-      metodoDePago: raw.project_metodo_de_pago,
       total_apiques: parseInt(raw.apiques_count) || 0,
       total_profiles: parseInt(raw.profiles_count) || 0,
       created_at: raw.project_created_at,

@@ -213,15 +213,6 @@ export class LabProjectDto {
   @ApiProperty({ description: 'Project status', enum: ProjectStatus })
   estado: ProjectStatus;
 
-  @ApiProperty({ description: 'Service cost' })
-  costoServicio: string;
-
-  @ApiProperty({ description: 'Payment amount' })
-  abono: string;
-
-  @ApiProperty({ description: 'Payment method' })
-  metodoDePago: string;
-
   @ApiProperty({ description: 'Total number of apiques in this project' })
   total_apiques: number;
 
