@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from './modules/auth/decorators/public.decorator';
 
 @ApiTags('Root')
-@Controller()
+@Controller('root') // Changed from empty to 'root' to avoid conflict
 @Public()
 export class AppController {
   @Get()
@@ -23,7 +23,8 @@ export class AppController {
         environment: { type: 'string', example: 'production' },
         timestamp: { type: 'string', example: '2025-06-09T20:05:33.000Z' },
         status: { type: 'string', example: 'running' },
-        docs: { type: 'string', example: '/api-docs' },        endpoints: {
+        docs: { type: 'string', example: '/api-docs' },
+        endpoints: {
           type: 'object',
           properties: {
             auth: { type: 'string', example: '/api/auth' },
@@ -42,13 +43,17 @@ export class AppController {
           properties: {
             port: { type: 'string', example: '10000' },
             nodeEnv: { type: 'string', example: 'production' },
-            renderUrl: { type: 'string', example: 'https://api-cuentas-zlut.onrender.com' },
+            renderUrl: {
+              type: 'string',
+              example: 'https://api-cuentas-zlut.onrender.com',
+            },
             isProduction: { type: 'boolean', example: true },
           },
         },
       },
     },
-  })  getRoot(): {
+  })
+  getRoot(): {
     name: string;
     version: string;
     description: string;
@@ -73,7 +78,7 @@ export class AppController {
   } {
     const isProduction = process.env.NODE_ENV === 'production';
     const renderUrl = process.env.RENDER_EXTERNAL_URL || 'Not configured';
-    
+
     return {
       name: 'API Ingeocimyc',
       version: process.env.npm_package_version || '1.0.0',
