@@ -16,10 +16,23 @@ const rateLimiters = {
     standardHeaders: true,
     legacyHeaders: false,
     skip: req => {
-      // Skip rate limiting for health checks
-      return (
-        req.path === '/health' || req.path === '/' || req.path === '/api/health'
+      // Skip rate limiting for health checks and monitoring endpoints
+      const healthPaths = ['/health', '/', '/api/health', '/info', '/api/info'];
+
+      // Skip for Render health checks (common user agents)
+      const renderUserAgents = [
+        'render-health-check',
+        'HealthCheck',
+        'health-check',
+        'Render',
+      ];
+
+      const userAgent = req.get('User-Agent') || '';
+      const isRenderHealthCheck = renderUserAgents.some(agent =>
+        userAgent.toLowerCase().includes(agent.toLowerCase()),
       );
+
+      return healthPaths.includes(req.path) || isRenderHealthCheck;
     },
   }),
 

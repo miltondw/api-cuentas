@@ -27,8 +27,8 @@ import { ClientModule } from './modules/client/client.module';
 import { PDFModule } from './modules/pdf/pdf.module';
 //SERVICES
 import { ServicesModule } from './modules/services/services.module';
-//HEALTH
-import { HealthModule } from './modules/health/health.module';
+//HEALTH - Handled by SimpleRootController
+// import { HealthModule } from './modules/health/health.module';
 
 @Module({
   controllers: [AppController, SimpleRootController],
@@ -119,7 +119,7 @@ import { HealthModule } from './modules/health/health.module';
     ClientModule,
     PDFModule,
     ServicesModule,
-    HealthModule,
+    // HealthModule, // Removed - handled by SimpleRootController
     ResumenModule,
     ApiquesModule,
     ProfilesModule,
