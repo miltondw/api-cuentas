@@ -12,10 +12,9 @@ export class ServicesService {
     @InjectRepository(ServiceCategory)
     private serviceCategoryRepository: Repository<ServiceCategory>,
   ) {}
-
   async findAllServices(): Promise<Service[]> {
     return this.serviceRepository.find({
-      relations: ['category'],
+      relations: ['category', 'additionalFields'],
       order: { category: { id: 'ASC' }, id: 'ASC' },
     });
   }
@@ -26,19 +25,17 @@ export class ServicesService {
       order: { id: 'ASC' },
     });
   }
-
   async findServicesByCategory(categoryId: number): Promise<Service[]> {
     return this.serviceRepository.find({
       where: { categoryId },
-      relations: ['category'],
+      relations: ['category', 'additionalFields'],
       order: { id: 'ASC' },
     });
   }
-
   async findServiceById(id: number): Promise<Service> {
     const service = await this.serviceRepository.findOne({
       where: { id },
-      relations: ['category'],
+      relations: ['category', 'additionalFields'],
     });
 
     if (!service) {

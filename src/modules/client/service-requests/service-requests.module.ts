@@ -7,6 +7,7 @@ import { SelectedService } from './entities/selected-service.entity';
 import { ServiceInstance } from './entities/service-instance.entity';
 import { ServiceInstanceValue } from './entities/service-instance-value.entity';
 import { Service } from '@/modules/services/entities/service.entity';
+import { ServiceAdditionalValue } from '@/modules/services/entities/service-additional-value.entity';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { Service } from '@/modules/services/entities/service.entity';
       ServiceInstance,
       ServiceInstanceValue,
       Service,
+      ServiceAdditionalValue,
     ]),
   ],
   controllers: [ServiceRequestsController],

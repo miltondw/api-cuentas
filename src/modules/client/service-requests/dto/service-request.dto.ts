@@ -13,6 +13,24 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ServiceRequestStatus } from '../entities/service-request.entity';
 
+export class ServiceAdditionalValueDto {
+  @ApiProperty({
+    description: 'Nombre del campo adicional',
+    example: 'numero_muestras',
+  })
+  @IsString()
+  @IsNotEmpty()
+  fieldName: string;
+
+  @ApiProperty({
+    description: 'Valor del campo adicional',
+    example: '25',
+  })
+  @IsString()
+  @IsNotEmpty()
+  fieldValue: string;
+}
+
 export class SelectedServiceDto {
   @ApiProperty({
     description: 'ID del servicio',
@@ -29,6 +47,16 @@ export class SelectedServiceDto {
   @IsInt()
   @Min(1)
   quantity: number;
+
+  @ApiPropertyOptional({
+    description: 'Valores de campos adicionales del servicio',
+    type: [ServiceAdditionalValueDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ServiceAdditionalValueDto)
+  additionalValues?: ServiceAdditionalValueDto[];
 }
 
 export class CreateServiceRequestDto {
@@ -161,6 +189,7 @@ export class UpdateServiceRequestDto {
   @IsString()
   @IsNotEmpty()
   description?: string;
+
   @ApiPropertyOptional({
     description: 'Estado de la solicitud',
     enum: ServiceRequestStatus,

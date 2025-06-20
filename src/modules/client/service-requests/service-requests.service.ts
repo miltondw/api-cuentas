@@ -15,6 +15,7 @@ import {
   UpdateServiceRequestDto,
 } from './dto/service-request.dto';
 import { Service } from '@/modules/services/entities/service.entity';
+import { ServiceAdditionalValue } from '@/modules/services/entities/service-additional-value.entity';
 
 // Definir los tipos para los filtros y la paginación
 interface ServiceRequestFilters {
@@ -44,6 +45,8 @@ export class ServiceRequestsService {
     private selectedServiceRepository: Repository<SelectedService>,
     @InjectRepository(Service)
     private serviceRepository: Repository<Service>,
+    @InjectRepository(ServiceAdditionalValue)
+    private serviceAdditionalValueRepository: Repository<ServiceAdditionalValue>,
     private dataSource: DataSource,
   ) {}
 
@@ -78,9 +81,7 @@ export class ServiceRequestsService {
         description: createServiceRequestDto.description,
       });
 
-      const savedRequest = await queryRunner.manager.save(serviceRequest);
-
-      // Crear los servicios seleccionados
+      const savedRequest = await queryRunner.manager.save(serviceRequest); // Crear los servicios seleccionados
       const selectedServices = createServiceRequestDto.selectedServices.map(
         selectedService =>
           queryRunner.manager.create(SelectedService, {
@@ -90,7 +91,35 @@ export class ServiceRequestsService {
           }),
       );
 
-      await queryRunner.manager.save(selectedServices);
+      const savedSelectedServices =
+        await queryRunner.manager.save(selectedServices);
+
+      // Crear los valores adicionales si existen
+      for (
+        let i = 0;
+        i < createServiceRequestDto.selectedServices.length;
+        i++
+      ) {
+        const selectedServiceDto = createServiceRequestDto.selectedServices[i];
+        const savedSelectedService = savedSelectedServices[i];
+        if (
+          selectedServiceDto.additionalValues &&
+          selectedServiceDto.additionalValues.length > 0
+        ) {
+          const additionalValues = selectedServiceDto.additionalValues.map(
+            valueDto =>
+              queryRunner.manager.create(ServiceAdditionalValue, {
+                selectedServiceId: savedSelectedService.id,
+                fieldName: valueDto.fieldName,
+                fieldValue: valueDto.fieldValue,
+              }),
+          );
+          await queryRunner.manager.save(
+            ServiceAdditionalValue,
+            additionalValues,
+          );
+        }
+      }
       await queryRunner.commitTransaction();
 
       // Retornar la solicitud con las relaciones
