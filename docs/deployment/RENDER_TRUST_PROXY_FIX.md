@@ -43,6 +43,21 @@
 - Logs de CORS solo se muestran en modo desarrollo
 - Reducido ruido en consola de producción
 
+### 4. Error 404 con método HEAD ❌
+
+**Error**: `❌ Error 404: NotFoundException: Cannot HEAD /`
+
+**Causa**:
+
+- Render hace health checks usando método HTTP HEAD además de GET
+- El `RootHealthController` solo manejaba métodos GET
+
+**Solución**:
+
+- Agregado método `@Head()` para manejar `HEAD /`
+- Agregado método `@Head('health')` para manejar `HEAD /health`
+- Los métodos HEAD no retornan body, solo headers con status 200
+
 ## 🛠️ Cambios Realizados
 
 ### 📁 Archivos Modificados:
@@ -64,8 +79,38 @@
 
 4. **`src/root-health.controller.ts`** (NUEVO):
    - ✅ Controller para manejar rutas sin prefijo `/api`
-   - ✅ Endpoint `/` que retorna información básica de la API
-   - ✅ Endpoint `/health` para health checks
+   - ✅ Endpoint `/` que retorna información básica de la API (GET)
+   - ✅ Endpoint `/health` para health checks (GET)
+   - ✅ Soporte para método HEAD en `/` y `/health` para health checks de Render
+
+## 🎨 Página de Presentación
+
+### ✨ Nueva Funcionalidad Agregada:
+
+**Página de Presentación Profesional**: Se ha creado una página de bienvenida moderna y atractiva para la ruta raíz `/`.
+
+**Características**:
+
+- 🎨 Diseño moderno con gradientes y efectos visuales
+- 📱 Completamente responsive (adaptable a móviles)
+- 🏢 Logo e identidad corporativa de INGEOCIMYC
+- 📊 Información en tiempo real del sistema
+- 🔗 Enlaces directos a documentación y health checks
+- ⚡ Optimizada para carga rápida
+
+**Endpoints de Presentación**:
+
+- `GET /` - Página de presentación HTML
+- `GET /info` - Información de la API en formato JSON
+- `HEAD /` - Health check para Render (sin contenido)
+
+### 🎯 Beneficios:
+
+1. **Profesionalismo**: Primera impresión profesional para visitantes
+2. **Información Clara**: Estado del sistema y enlaces útiles
+3. **Marca Corporativa**: Presenta la identidad de INGEOCIMYC
+4. **Usabilidad**: Fácil navegación a recursos importantes
+5. **SEO Friendly**: Contenido estructurado y descriptivo
 
 ## 🎯 Resultados Esperados
 
@@ -74,11 +119,15 @@
 1. **Trust Proxy Error**: Eliminado el error de validación de express-rate-limit
 2. **404 Error**: La ruta raíz `/` ahora responde correctamente
 3. **CORS Spam**: Reducidos los logs excesivos en producción
+4. **HEAD 404 Error**: Ahora el método HEAD es manejado correctamente
 
 ### 📊 Endpoints Disponibles:
 
-- `/` - Información básica de la API (sin prefijo)
-- `/health` - Health check simple (sin prefijo)
+- `GET /` - **Página de presentación HTML** (nueva funcionalidad)
+- `GET /info` - **Información de la API en formato JSON** (nuevo endpoint)
+- `HEAD /` - Health check para Render (sin contenido)
+- `GET /health` - Health check simple (sin prefijo)
+- `HEAD /health` - Health check HEAD para Render (sin prefijo)
 - `/api/*` - Todos los endpoints de la API (con prefijo)
 - `/api/health` - Health check completo (con prefijo)
 - `/api-docs` - Documentación Swagger
@@ -92,19 +141,29 @@
 ## 📝 Notas Técnicas
 
 - **Trust Proxy**: En Render, `trust proxy: 1` es la configuración correcta
-- **Health Checks**: Render prefiere endpoints simples para health checks
+- **Health Checks**: Render usa métodos GET y HEAD para health checks
 - **Rate Limiting**: Los health checks están excluidos para evitar bloqueos
+- **Métodos HEAD**: No retornan body, solo headers con status code
 
 ## 🔍 Verificación
 
 Para verificar que todo funciona correctamente:
 
 ```bash
-# Verificar endpoint raíz
+# Verificar la nueva página de presentación
 curl https://api-cuentas-zlut.onrender.com/
 
-# Verificar health check
+# Verificar información de la API en JSON
+curl https://api-cuentas-zlut.onrender.com/info
+
+# Verificar endpoint raíz con HEAD
+curl -I https://api-cuentas-zlut.onrender.com/
+
+# Verificar health check con GET
 curl https://api-cuentas-zlut.onrender.com/health
+
+# Verificar health check con HEAD
+curl -I https://api-cuentas-zlut.onrender.com/health
 
 # Verificar API normal
 curl https://api-cuentas-zlut.onrender.com/api/health
