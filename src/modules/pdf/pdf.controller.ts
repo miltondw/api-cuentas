@@ -111,9 +111,8 @@ export class PDFController {
       throw new BadRequestException(`Failed to generate PDF: ${error.message}`);
     }
   }
-
   @Get('service-request/:id/preview')
-  @Roles('admin', 'user', 'viewer')
+  @Public()
   @ApiOperation({ summary: 'Preview service request PDF content as HTML' })
   @ApiParam({ name: 'id', description: 'Service Request ID', type: 'number' })
   @ApiResponse({
@@ -128,27 +127,21 @@ export class PDFController {
     },
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Service request not found' })
   async previewServiceRequestPDF(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
   ): Promise<void> {
     try {
-      // This would require implementing an HTML preview method in the service
-      // For now, we'll return a simple message
-      res.setHeader('Content-Type', 'text/html');
-      res.send(`
-        <html>
-          <body>
-            <h1>PDF Preview</h1>
-            <p>PDF preview functionality for Service Request ID: ${id}</p>
-            <p>This feature is under development.</p>
-            <p><a href="/api/pdf/service-request/${id}" target="_blank">Download PDF</a></p>
-          </body>
-        </html>
-      `);
+      const htmlContent =
+        await this.pdfService.generateServiceRequestPreview(id);
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
+      res.send(htmlContent);
     } catch (error) {
       throw new BadRequestException(
         `Failed to generate preview: ${error.message}`,
@@ -201,6 +194,94 @@ export class PDFController {
         success: false,
         message: `Failed to regenerate PDF: ${error.message}`,
       };
+    }
+  }
+
+  @Get('service-request/:id/editor')
+  @Public()
+  @ApiOperation({ summary: 'Open PDF editor with live preview' })
+  @ApiParam({ name: 'id', description: 'Service Request ID', type: 'number' })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF editor interface',
+    content: {
+      'text/html': {
+        schema: {
+          type: 'string',
+        },
+      },
+    },
+  })
+  async openPDFEditor(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const editorHTML = await this.pdfService.generatePDFEditor(id);
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+      res.send(editorHTML);
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to open PDF editor: ${error.message}`,
+      );
+    }
+  }
+  @Get('service-request/:id/preview-with-styles')
+  @Public()
+  @ApiOperation({ summary: 'Preview with custom styles' })
+  @ApiParam({ name: 'id', description: 'Service Request ID', type: 'number' })
+  @ApiQuery({
+    name: 'styles',
+    description: 'Custom CSS styles',
+    required: true,
+  })
+  async previewWithStyles(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('styles') styles: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const decodedStyles = decodeURIComponent(styles);
+      const updatedHTML =
+        await this.pdfService.generateServiceRequestPreviewWithStyles(
+          id,
+          decodedStyles,
+        );
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(updatedHTML);
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to update styles: ${error.message}`,
+      );
+    }
+  }
+
+  @Post('service-request/:id/update-styles')
+  @Public()
+  @ApiOperation({ summary: 'Update PDF styles and get updated preview' })
+  @ApiParam({ name: 'id', description: 'Service Request ID', type: 'number' })
+  async updatePDFStyles(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('styles') styles: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const updatedHTML =
+        await this.pdfService.generateServiceRequestPreviewWithStyles(
+          id,
+          styles,
+        );
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(updatedHTML);
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to update styles: ${error.message}`,
+      );
     }
   }
 }
