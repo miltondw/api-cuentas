@@ -15,7 +15,11 @@ export class ServicesService {
   async findAllServices(): Promise<Service[]> {
     return this.serviceRepository.find({
       relations: ['category', 'additionalFields'],
-      order: { category: { id: 'ASC' }, id: 'ASC' },
+      order: {
+        category: { id: 'ASC' },
+        id: 'ASC',
+        additionalFields: { displayOrder: 'ASC' },
+      },
     });
   }
 
@@ -29,13 +33,19 @@ export class ServicesService {
     return this.serviceRepository.find({
       where: { categoryId },
       relations: ['category', 'additionalFields'],
-      order: { id: 'ASC' },
+      order: {
+        id: 'ASC',
+        additionalFields: { displayOrder: 'ASC' },
+      },
     });
   }
   async findServiceById(id: number): Promise<Service> {
     const service = await this.serviceRepository.findOne({
       where: { id },
       relations: ['category', 'additionalFields'],
+      order: {
+        additionalFields: { displayOrder: 'ASC' },
+      },
     });
 
     if (!service) {

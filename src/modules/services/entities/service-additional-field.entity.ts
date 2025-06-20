@@ -46,9 +46,11 @@ export class ServiceAdditionalField {
     nullable: true,
   })
   dependsOnValue?: string;
-
   @Column({ type: 'varchar', length: 255, nullable: true })
   label?: string;
+
+  @Column({ name: 'display_order', type: 'int', default: 0 })
+  displayOrder: number;
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
