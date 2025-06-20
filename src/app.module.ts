@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 // Controllers
 import { AppController } from './app.controller';
+import { RootHealthController } from './root-health.controller';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -30,7 +31,7 @@ import { ServicesModule } from './modules/services/services.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
-  controllers: [AppController],
+  controllers: [AppController, RootHealthController],
   imports: [
     // Environment configuration
     ConfigModule.forRoot({

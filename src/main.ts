@@ -13,12 +13,17 @@ import { RequestLoggingInterceptor } from './common/interceptors/request-logging
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const configService = app.get(ConfigService);
-  // Trust proxy configuration - for development, we disable it
-  // In production behind a load balancer, this should be configured properly
+  const configService = app.get(ConfigService); // Trust proxy configuration for production behind Render's load balancer
   const expressInstance = app.getHttpAdapter().getInstance();
-  const trustProxy = configService.get('TRUST_PROXY') === 'true';
-  expressInstance.set('trust proxy', trustProxy);
+  const isProduction = configService.get('NODE_ENV') === 'production';
+
+  if (isProduction) {
+    // In production on Render, we need to trust the first proxy
+    expressInstance.set('trust proxy', 1);
+  } else {
+    // In development, don't trust proxy
+    expressInstance.set('trust proxy', false);
+  }
   // Custom rate limiting middleware for specific paths
   const rateLimitMiddleware = new RateLimitMiddleware();
   app.use((req, res, next) => rateLimitMiddleware.use(req, res, next));
@@ -26,7 +31,7 @@ async function bootstrap() {
   // Security middlewares
   app.use(helmet());
   app.use(compression());
-  app.use(cookieParser()); // CORS configuration - more permissive for development
+  // CORS configuration - more permissive for development
   const corsOrigins = configService.get('CORS_ORIGINS');
   const allowedOrigins = corsOrigins
     ? corsOrigins.split(',').map(origin => origin.trim())
@@ -63,17 +68,24 @@ async function bootstrap() {
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, Postman, etc.)
       if (!origin) {
-        console.log('🌐 CORS: Allowing request with no origin');
+        // Only log this in development to avoid console spam in production
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🌐 CORS: Allowing request with no origin');
+        }
         return callback(null, true);
       }
 
-      // Log the origin for debugging
-      console.log(`🌐 CORS: Checking origin: ${origin}`);
-      console.log(`🌐 CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
+      // Log the origin for debugging (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🌐 CORS: Checking origin: ${origin}`);
+        console.log(`🌐 CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
+      }
 
       // Allow if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
-        console.log(`✅ CORS: Origin ${origin} is allowed`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`✅ CORS: Origin ${origin} is allowed`);
+        }
         return callback(null, true);
       }
 
@@ -130,7 +142,6 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Configuración de URLs según el entorno
-  const isProduction = configService.get('NODE_ENV') === 'production';
   const productionUrl =
     configService.get('RENDER_EXTERNAL_URL') ||
     'https://api-cuentas-zlut.onrender.com';

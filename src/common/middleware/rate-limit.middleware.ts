@@ -17,7 +17,9 @@ const rateLimiters = {
     legacyHeaders: false,
     skip: req => {
       // Skip rate limiting for health checks
-      return req.path === '/health' || req.path === '/';
+      return (
+        req.path === '/health' || req.path === '/' || req.path === '/api/health'
+      );
     },
   }),
 
