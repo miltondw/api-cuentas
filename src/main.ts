@@ -137,9 +137,10 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
     }),
-  );
-  // API prefix
-  app.setGlobalPrefix('api');
+  ); // API prefix - con exclusión para controladores específicos
+  app.setGlobalPrefix('api', {
+    exclude: ['/', 'health', 'info'], // Excluir rutas principales del prefijo global
+  });
 
   // Configuración de URLs según el entorno
   const productionUrl =
