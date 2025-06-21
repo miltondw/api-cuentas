@@ -2,6 +2,94 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 
+/**
+ * Centralized function to determine if rate limiting should be skipped
+ */
+function shouldSkipRateLimit(req: Request): boolean {
+  // 1. Always skip in development environment
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🚀 Rate limiting skipped: Development environment');
+    return true;
+  }
+
+  // 2. Get client IP address from various sources
+  const clientIP =
+    req.ip ||
+    req.connection?.remoteAddress ||
+    req.socket?.remoteAddress ||
+    req.headers['x-forwarded-for'] ||
+    req.headers['x-real-ip'] ||
+    'unknown';
+  // 3. Get whitelist from environment
+  const envWhitelist =
+    process.env.DEV_IP_WHITELIST?.split(',')
+      .map(ip => ip.trim())
+      .filter(Boolean) || [];
+
+  // 4. Skip for development and local IPs
+  const developmentIPs = [
+    '127.0.0.1',
+    '::1',
+    'localhost',
+    '::ffff:127.0.0.1',
+    '192.168.1.1',
+    ...envWhitelist, // Agregar IPs de la variable de entorno
+  ];
+
+  const isLocalIP = developmentIPs.some(ip => {
+    if (typeof clientIP === 'string') {
+      // Comparación exacta o si contiene la IP (para casos como ::ffff:192.168.1.14)
+      return clientIP === ip || clientIP.includes(ip);
+    }
+    return false;
+  });
+
+  if (isLocalIP) {
+    console.log(
+      `🏠 Rate limiting skipped: Whitelisted IP detected (${clientIP})`,
+    );
+    return true;
+  }
+
+  // 4. Skip for health check and public endpoints
+  const publicPaths = ['/health', '/', '/api/health', '/info', '/api/info'];
+  if (publicPaths.includes(req.path)) {
+    console.log(
+      `🏥 Rate limiting skipped: Health check endpoint (${req.path})`,
+    );
+    return true;
+  }
+
+  // 5. Skip for Render health checks and monitoring services
+  const userAgent = req.get('User-Agent') || '';
+  const renderUserAgents = [
+    'render-health-check',
+    'healthcheck',
+    'health-check',
+    'render',
+    'pingdom',
+    'uptimerobot',
+    'monitor',
+  ];
+
+  const isMonitoringService = renderUserAgents.some(agent =>
+    userAgent.toLowerCase().includes(agent.toLowerCase()),
+  );
+
+  if (isMonitoringService) {
+    console.log(
+      `🤖 Rate limiting skipped: Monitoring service detected (${userAgent})`,
+    );
+    return true;
+  }
+
+  // 6. Log when rate limiting is applied
+  console.log(
+    `⚡ Rate limiting applied for IP: ${clientIP}, Path: ${req.path}, User-Agent: ${userAgent}`,
+  );
+  return false;
+}
+
 // Rate limiting configurations for different endpoints
 const rateLimiters = {
   // General API rate limiting
@@ -15,25 +103,7 @@ const rateLimiters = {
     },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: req => {
-      // Skip rate limiting for health checks and monitoring endpoints
-      const healthPaths = ['/health', '/', '/api/health', '/info', '/api/info'];
-
-      // Skip for Render health checks (common user agents)
-      const renderUserAgents = [
-        'render-health-check',
-        'HealthCheck',
-        'health-check',
-        'Render',
-      ];
-
-      const userAgent = req.get('User-Agent') || '';
-      const isRenderHealthCheck = renderUserAgents.some(agent =>
-        userAgent.toLowerCase().includes(agent.toLowerCase()),
-      );
-
-      return healthPaths.includes(req.path) || isRenderHealthCheck;
-    },
+    skip: shouldSkipRateLimit,
   }),
 
   // Strict rate limiting for authentication endpoints
@@ -47,6 +117,7 @@ const rateLimiters = {
     },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: shouldSkipRateLimit,
   }),
 
   // Moderate rate limiting for password reset
@@ -60,6 +131,7 @@ const rateLimiters = {
     },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: shouldSkipRateLimit,
   }),
 };
 

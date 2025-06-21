@@ -21,6 +21,9 @@
     "test:pdf-preview": "npx ts-node src/scripts/test-pdf-preview.ts",
     "test:pdf-services": "npx ts-node src/scripts/test-pdf-services.ts",
     "test:pdf-pagination": "npx ts-node src/scripts/test-pdf-pagination.ts",
+    "test:cascade-deletion": "node scripts/testing/run-cascade-deletion-tests.js",
+    "test:cascade-db": "node scripts/testing/test-cascade-deletion.js",
+    "test:cascade-api": "node scripts/testing/test-api-cascade-deletion.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
