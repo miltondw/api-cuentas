@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-import { Layer } from './layer.entity';
+import { Layer } from '@/modules/lab/apiques/entities/layer.entity';
 import { Project } from '@/modules/projects/entities/project.entity';
 
 @Entity('apiques')

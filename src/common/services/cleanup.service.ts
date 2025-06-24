@@ -1,145 +1,202 @@
-import { AuthLogService } from '@/modules/auth/services/auth-log.service';
-import { SecurityService } from '@/modules/auth/services/security.service';
-import { SessionService } from '@/modules/auth/services/session.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, LessThan } from 'typeorm';
+import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
+import { AuthLog } from '@modules/auth/entities/auth-log.entity';
+import { FailedLoginAttempt } from '@modules/auth/entities/failed-login-attempt.entity';
+import { UserSession } from '@modules/auth/entities/user-session.entity';
 
 @Injectable()
 export class CleanupService {
   private readonly logger = new Logger(CleanupService.name);
 
   constructor(
-    private readonly authLogService: AuthLogService,
-    private readonly sessionService: SessionService,
-    private readonly securityService: SecurityService,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepository: Repository<RefreshToken>,
+    @InjectRepository(AuthLog)
+    private authLogRepository: Repository<AuthLog>,
+    @InjectRepository(FailedLoginAttempt)
+    private failedLoginRepository: Repository<FailedLoginAttempt>,
+    @InjectRepository(UserSession)
+    private userSessionRepository: Repository<UserSession>,
   ) {}
 
-  // Ejecutar limpieza diaria a las 2:00 AM
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
-  async handleDailyCleanup() {
-    this.logger.log('🧹 Iniciando limpieza diaria de datos...');
-
+  async cleanupExpiredTokens() {
     try {
-      // Limpiar sesiones expiradas
-      const expiredSessions = await this.sessionService.revokeExpiredSessions();
-      this.logger.log(`✅ Sesiones expiradas revocadas: ${expiredSessions}`);
+      this.logger.log('🧹 Iniciando limpieza de tokens expirados...');
 
-      // Limpiar logs antiguos (más de 90 días)
-      const oldLogs = await this.authLogService.cleanOldLogs(90);
-      this.logger.log(`✅ Logs antiguos eliminados: ${oldLogs}`);
+      const result = await this.refreshTokenRepository.delete({
+        expiresAt: LessThan(new Date()),
+      });
 
-      // Limpiar sesiones antiguas (más de 30 días)
-      const oldSessions = await this.sessionService.cleanOldSessions(30);
-      this.logger.log(`✅ Sesiones antiguas eliminadas: ${oldSessions}`);
-
-      // Limpiar intentos fallidos antiguos (más de 30 días)
-      const oldFailedAttempts =
-        await this.securityService.cleanOldFailedAttempts(30);
-      this.logger.log(
-        `✅ Intentos fallidos antiguos eliminados: ${oldFailedAttempts}`,
-      );
-
-      this.logger.log('🎉 Limpieza diaria completada exitosamente');
+      this.logger.log(`✅ Tokens expirados eliminados: ${result.affected}`);
     } catch (error) {
-      this.logger.error('❌ Error durante la limpieza diaria:', error);
+      this.logger.error('❌ Error al limpiar tokens expirados:', error);
     }
   }
 
-  // Ejecutar limpieza de sesiones expiradas cada hora
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanupOldAuthLogs() {
+    try {
+      this.logger.log('🧹 Iniciando limpieza de logs antiguos...');
+
+      // Mantener logs por 90 días
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 90);
+
+      const result = await this.authLogRepository.delete({
+        createdAt: LessThan(cutoffDate),
+      });
+
+      this.logger.log(`✅ Logs antiguos eliminados: ${result.affected}`);
+    } catch (error) {
+      this.logger.error('❌ Error al limpiar logs antiguos:', error);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  async cleanupOldFailedAttempts() {
+    try {
+      this.logger.log('🧹 Iniciando limpieza de intentos fallidos antiguos...');
+
+      // Mantener intentos fallidos por 30 días
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+
+      const result = await this.failedLoginRepository.delete({
+        createdAt: LessThan(cutoffDate),
+      });
+
+      this.logger.log(`✅ Intentos fallidos eliminados: ${result.affected}`);
+    } catch (error) {
+      this.logger.error('❌ Error al limpiar intentos fallidos:', error);
+    }
+  }
+
   @Cron(CronExpression.EVERY_HOUR)
-  async handleHourlySessionCleanup() {
+  async cleanupInactiveSessions() {
     try {
-      const expiredSessions = await this.sessionService.revokeExpiredSessions();
-      if (expiredSessions > 0) {
-        this.logger.log(
-          `🕐 Limpieza horaria: ${expiredSessions} sesiones expiradas revocadas`,
-        );
-      }
-    } catch (error) {
-      this.logger.error(
-        '❌ Error durante limpieza horaria de sesiones:',
-        error,
+      this.logger.log('🧹 Iniciando limpieza de sesiones inactivas...');
+
+      // Marcar sesiones como inactivas si la última actividad fue hace más de 24 horas
+      const cutoffDate = new Date();
+      cutoffDate.setHours(cutoffDate.getHours() - 24);
+
+      const result = await this.userSessionRepository.update(
+        {
+          isActive: true,
+          lastActivity: LessThan(cutoffDate),
+        },
+        {
+          isActive: false,
+        },
       );
+
+      this.logger.log(`✅ Sesiones marcadas inactivas: ${result.affected}`);
+    } catch (error) {
+      this.logger.error('❌ Error al limpiar sesiones inactivas:', error);
     }
   }
 
-  // Ejecutar limpieza semanal profunda los domingos a las 3:00 AM
-  @Cron('0 3 * * 0') // Domingos a las 3:00 AM
-  async handleWeeklyDeepCleanup() {
-    this.logger.log('🔄 Iniciando limpieza semanal profunda...');
-
+  @Cron('0 0 1 * *') // Primer día de cada mes
+  async generateCleanupReport() {
     try {
-      // Limpiar logs muy antiguos (más de 180 días)
-      const veryOldLogs = await this.authLogService.cleanOldLogs(180);
-      this.logger.log(`✅ Logs muy antiguos eliminados: ${veryOldLogs}`);
+      this.logger.log('📊 Generando reporte mensual...');
 
-      // Limpiar sesiones muy antiguas (más de 60 días)
-      const veryOldSessions = await this.sessionService.cleanOldSessions(60);
-      this.logger.log(
-        `✅ Sesiones muy antiguas eliminadas: ${veryOldSessions}`,
-      );
+      const now = new Date();
+      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      // Limpiar intentos fallidos muy antiguos (más de 60 días)
-      const veryOldFailedAttempts =
-        await this.securityService.cleanOldFailedAttempts(60);
-      this.logger.log(
-        `✅ Intentos fallidos muy antiguos eliminados: ${veryOldFailedAttempts}`,
-      );
+      const [
+        activeTokens,
+        totalAuthLogs,
+        recentFailedAttempts,
+        activeSessions,
+      ] = await Promise.all([
+        this.refreshTokenRepository.count({
+          where: { isRevoked: false },
+        }),
+        this.authLogRepository.count({
+          where: {
+            createdAt: LessThan(thisMonth),
+          },
+        }),
+        this.failedLoginRepository.count({
+          where: {
+            createdAt: LessThan(thisMonth),
+          },
+        }),
+        this.userSessionRepository.count({
+          where: { isActive: true },
+        }),
+      ]);
 
-      this.logger.log('🎉 Limpieza semanal profunda completada');
+      this.logger.log(`📊 Reporte mensual:
+        - Tokens activos: ${activeTokens}
+        - Logs antiguos: ${totalAuthLogs}
+        - Intentos fallidos antiguos: ${recentFailedAttempts}
+        - Sesiones activas: ${activeSessions}
+      `);
     } catch (error) {
-      this.logger.error('❌ Error durante limpieza semanal:', error);
+      this.logger.error('❌ Error al generar reporte:', error);
     }
   }
 
-  // Método manual para limpieza on-demand
-  async performManualCleanup(days: number = 30): Promise<{
-    authLogsDeleted: number;
-    sessionsDeleted: number;
-    failedAttemptsDeleted: number;
-    expiredSessionsRevoked: number;
+  async performFullCleanup(): Promise<{
+    expiredTokens: number;
+    oldLogs: number;
+    oldAttempts: number;
+    inactiveSessions: number;
   }> {
-    this.logger.log(`🧹 Iniciando limpieza manual (${days} días)...`);
-
-    const authLogsDeleted = await this.authLogService.cleanOldLogs(days);
-    const sessionsDeleted = await this.sessionService.cleanOldSessions(days);
-    const failedAttemptsDeleted =
-      await this.securityService.cleanOldFailedAttempts(days);
-    const expiredSessionsRevoked =
-      await this.sessionService.revokeExpiredSessions();
-
-    const result = {
-      authLogsDeleted,
-      sessionsDeleted,
-      failedAttemptsDeleted,
-      expiredSessionsRevoked,
+    const results = {
+      expiredTokens: 0,
+      oldLogs: 0,
+      oldAttempts: 0,
+      inactiveSessions: 0,
     };
 
-    this.logger.log('✅ Limpieza manual completada:', result);
-    return result;
-  }
-
-  // Obtener estadísticas de limpieza
-  async getCleanupStats(): Promise<{
-    totalActiveSessions: number;
-    totalAuthLogs: number;
-    totalFailedAttempts: number;
-    lastCleanupInfo: string;
-  }> {
     try {
-      // Obtener estadísticas generales
-      const sessionStats = await this.sessionService.getSessionStats();
-      const loginStats = await this.authLogService.getLoginStats(30);
-      const securityStats = await this.securityService.getSecurityReport();
+      // Limpieza de tokens expirados
+      const expiredTokensResult = await this.refreshTokenRepository.delete({
+        expiresAt: LessThan(new Date()),
+      });
+      results.expiredTokens = expiredTokensResult.affected || 0;
 
-      return {
-        totalActiveSessions: sessionStats.activeSessions,
-        totalAuthLogs: loginStats.successfulLogins + loginStats.failedLogins,
-        totalFailedAttempts: securityStats.totalFailedAttempts,
-        lastCleanupInfo: 'Datos de los últimos 30 días',
-      };
+      // Limpieza de logs antiguos (90+ días)
+      const cutoffDate90 = new Date();
+      cutoffDate90.setDate(cutoffDate90.getDate() - 90);
+      const oldLogsResult = await this.authLogRepository.delete({
+        createdAt: LessThan(cutoffDate90),
+      });
+      results.oldLogs = oldLogsResult.affected || 0;
+
+      // Limpieza de intentos fallidos (30+ días)
+      const cutoffDate30 = new Date();
+      cutoffDate30.setDate(cutoffDate30.getDate() - 30);
+      const oldAttemptsResult = await this.failedLoginRepository.delete({
+        createdAt: LessThan(cutoffDate30),
+      });
+      results.oldAttempts = oldAttemptsResult.affected || 0;
+
+      // Limpieza de sesiones inactivas (24+ horas)
+      const cutoffDate24 = new Date();
+      cutoffDate24.setHours(cutoffDate24.getHours() - 24);
+      const inactiveSessionsResult = await this.userSessionRepository.update(
+        {
+          isActive: true,
+          lastActivity: LessThan(cutoffDate24),
+        },
+        {
+          isActive: false,
+        },
+      );
+      results.inactiveSessions = inactiveSessionsResult.affected || 0;
+
+      this.logger.log('✅ Limpieza completa realizada:', results);
+      return results;
     } catch (error) {
-      this.logger.error('❌ Error obteniendo estadísticas de limpieza:', error);
+      this.logger.error('❌ Error en limpieza completa:', error);
       throw error;
     }
   }

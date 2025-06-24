@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { ServiceInstance } from './service-instance.entity';
+import { ServiceInstance } from '@/modules/client/service-requests/entities/service-instance.entity';
 
 @Entity('service_instance_values')
 export class ServiceInstanceValue {

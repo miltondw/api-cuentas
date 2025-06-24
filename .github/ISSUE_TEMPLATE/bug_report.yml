@@ -1,0 +1,65 @@
+name: Bug Report
+description: Reportar un error en la API
+title: '[BUG] '
+labels: ['bug', 'needs-triage']
+assignees:
+  - octocat
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar este error. Por favor proporciona la información solicitada.
+  - type: input
+    id: contact
+    attributes:
+      label: Información de Contacto
+      description: ¿Cómo podemos contactarte si necesitamos más información?
+      placeholder: ej. email@example.com
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: ¿Qué pasó?
+      description: Describe el error que encontraste
+      placeholder: Describe el error...
+      value: 'Un error ocurrió!'
+    validations:
+      required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: Versión
+      description: ¿Qué versión de la API estás usando?
+      options:
+        - 0.0.1 (Desarrollo)
+        - 0.0.1 (Producción)
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: ¿Qué herramienta usaste?
+      description: Selecciona las herramientas donde encontraste el error
+      multiple: true
+      options:
+        - Postman
+        - cURL
+        - Frontend Web
+        - Mobile App
+        - Swagger UI
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs Relevantes
+      description: Por favor copia y pega cualquier log relevante. Esto será formateado automáticamente como código.
+      render: shell
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Código de Conducta
+      description: Al enviar este issue, aceptas seguir nuestro [Código de Conducta](https://example.com)
+      options:
+        - label: Acepto seguir el Código de Conducta de este proyecto
+          required: true

@@ -20,7 +20,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { ApiquesService } from './apiques.service';
+import { ApiquesService } from '@/modules/lab/apiques/apiques.service';
 import {
   CreateApiqueDto,
   UpdateApiqueDto,

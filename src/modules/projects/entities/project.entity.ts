@@ -6,7 +6,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 
-import { ProjectExpense } from './project-expense.entity';
+import { ProjectExpense } from '@/modules/projects/entities/project-expense.entity';
 import { Apique } from '@/modules/lab/apiques/entities/apique.entity';
 import { Profile } from '@/modules/lab/profiles/entities/profile.entity';
 

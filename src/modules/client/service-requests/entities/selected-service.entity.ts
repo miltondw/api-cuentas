@@ -7,10 +7,10 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { ServiceRequest } from './service-request.entity';
-import { ServiceInstance } from './service-instance.entity';
-import { Service } from '@/modules/services/entities/service.entity';
-import { ServiceAdditionalValue } from '@/modules/services/entities/service-additional-value.entity';
+import { ServiceRequest } from '@/modules/client/service-requests/entities/service-request.entity';
+import { ServiceInstance } from '@/modules/client/service-requests/entities/service-instance.entity';
+import { Service } from '@modules/services/entities/service.entity';
+import { ServiceAdditionalValue } from '@modules/services/entities/service-additional-value.entity';
 
 @Entity('selected_services')
 export class SelectedService {

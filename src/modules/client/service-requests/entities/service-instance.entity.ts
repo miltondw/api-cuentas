@@ -7,8 +7,8 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { SelectedService } from './selected-service.entity';
-import { ServiceInstanceValue } from './service-instance-value.entity';
+import { SelectedService } from '@/modules/client/service-requests/entities/selected-service.entity';
+import { ServiceInstanceValue } from '@/modules/client/service-requests/entities/service-instance-value.entity';
 
 @Entity('service_instances')
 export class ServiceInstance {

@@ -1,9 +1,9 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { Public } from '../auth/decorators/public.decorator';
-import { ServicesService } from './services.service';
-import { Service } from './entities/service.entity';
-import { ServiceCategory } from './entities/service-category.entity';
+import { Public } from '@/modules/auth/decorators/public.decorator';
+import { ServicesService } from '@/modules/services/services.service';
+import { Service } from '@/modules/services/entities/service.entity';
+import { ServiceCategory } from '@/modules/services/entities/service-category.entity';
 
 @ApiTags('Services')
 @Controller('services')

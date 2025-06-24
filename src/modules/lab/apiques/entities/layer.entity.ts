@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Apique } from './apique.entity';
+import { Apique } from '@/modules/lab/apiques/entities/apique.entity';
 
 @Entity('layers')
 export class Layer {

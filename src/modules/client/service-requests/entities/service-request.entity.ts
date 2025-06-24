@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { SelectedService } from './selected-service.entity';
+import { SelectedService } from '@/modules/client/service-requests/entities/selected-service.entity';
 
 export enum ServiceRequestStatus {
   PENDIENTE = 'pendiente',

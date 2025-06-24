@@ -50,13 +50,15 @@ function shouldSkipRateLimit(req: Request): boolean {
     );
     return true;
   }
-
   // 4. Skip for health check and public endpoints
   const publicPaths = ['/health', '/', '/api/health', '/info', '/api/info'];
   if (publicPaths.includes(req.path)) {
-    console.log(
-      `🏥 Rate limiting skipped: Health check endpoint (${req.path})`,
-    );
+    // Solo log en desarrollo para reducir noise en producción
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `🏥 Rate limiting skipped: Health check endpoint (${req.path})`,
+      );
+    }
     return true;
   }
 
@@ -75,11 +77,13 @@ function shouldSkipRateLimit(req: Request): boolean {
   const isMonitoringService = renderUserAgents.some(agent =>
     userAgent.toLowerCase().includes(agent.toLowerCase()),
   );
-
   if (isMonitoringService) {
-    console.log(
-      `🤖 Rate limiting skipped: Monitoring service detected (${userAgent})`,
-    );
+    // Solo log en desarrollo para reducir noise en producción
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `🤖 Rate limiting skipped: Monitoring service detected (${userAgent})`,
+      );
+    }
     return true;
   }
 

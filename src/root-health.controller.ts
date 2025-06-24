@@ -1,6 +1,6 @@
 import { Controller, Get, Head, Res } from '@nestjs/common';
 import { Response } from 'express';
-import { Public } from './modules/auth/decorators/public.decorator';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 
 /**
  * Root Health Controller

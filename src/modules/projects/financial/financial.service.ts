@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
-import { CompanyExpense } from './entities/company-expense.entity';
-import { FinancialSummary } from './entities/financial-summary.entity';
+import { CompanyExpense } from '@/modules/projects/financial/entities/company-expense.entity';
+import { FinancialSummary } from '@/modules/projects/financial/entities/financial-summary.entity';
 import {
   CreateCompanyExpenseDto,
   UpdateCompanyExpenseDto,

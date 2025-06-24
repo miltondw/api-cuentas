@@ -8,9 +8,9 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { ServiceCategory } from './service-category.entity';
-import { SelectedService } from '../../client/service-requests/entities/selected-service.entity';
-import { ServiceAdditionalField } from './service-additional-field.entity';
+import { ServiceCategory } from '@/modules/services/entities/service-category.entity';
+import { SelectedService } from '@/modules/client/service-requests/entities/selected-service.entity';
+import { ServiceAdditionalField } from '@/modules/services/entities/service-additional-field.entity';
 
 @Entity('services')
 export class Service {

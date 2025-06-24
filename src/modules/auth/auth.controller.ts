@@ -23,11 +23,12 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Request } from 'express';
-import { AuthService } from './auth.service';
-import { AuthLogService } from './services/auth-log.service';
-import { SessionService } from './services/session.service';
-import { SecurityService } from './services/security.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthService } from '@/modules/auth/auth.service';
+import { AuthLogService } from '@/modules/auth/services/auth-log.service';
+import { SessionService } from '@/modules/auth/services/session.service';
+import { SecurityService } from '@/modules/auth/services/security.service';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 import {
   LoginDto,
   RegisterDto,
@@ -38,8 +39,9 @@ import {
   SessionQueryDto,
   SecurityReportDto,
 } from './dto/auth.dto';
-import { User } from './entities/user.entity';
-import { CleanupService } from '@/common/services/cleanup.service';
+import { ResponseDto } from '@/common/dto/response.dto';
+import { User } from '@/modules/auth/entities/user.entity';
+import { CleanupService } from '@common/services/cleanup.service';
 
 interface AuthenticatedRequest extends Request {
   user: User;
@@ -123,29 +125,28 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Sesión cerrada exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string' },
-        sessionsRevoked: { type: 'number' },
-      },
-    },
+    type: ResponseDto,
   })
   async logout(
     @Body() logoutDto: LogoutDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<{ message: string; sessionsRevoked: number }> {
+  ): Promise<ResponseDto<{ message: string; sessionsRevoked: number }>> {
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-    return this.authService.logout(
+    const result = await this.authService.logout(
       token,
-      logoutDto.logoutAll || false,
-      logoutDto.reason || 'user_logout',
+      logoutDto.logoutAllDevices || false,
+      'user_logout',
       req,
     );
+    return {
+      success: true,
+      data: result,
+      message: 'Logged out successfully',
+    };
   }
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @Public() // Endpoint público - no requiere JWT válido
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Renovar token de acceso' })
   @ApiResponse({
@@ -171,13 +172,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Contraseña cambiada exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string' },
-        sessionsRevoked: { type: 'number' },
-      },
-    },
+    type: ResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -190,8 +185,17 @@ export class AuthController {
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<{ message: string; sessionsRevoked: number }> {
-    return this.authService.changePassword(req.user.id, changePasswordDto, req);
+  ): Promise<ResponseDto<{ message: string; sessionsRevoked: number }>> {
+    const result = await this.authService.changePassword(
+      req.user.id,
+      changePasswordDto,
+      req,
+    );
+    return {
+      success: true,
+      data: result,
+      message: 'Password changed successfully',
+    };
   }
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -200,32 +204,17 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Perfil del usuario',
-    schema: {
-      type: 'object',
-      properties: {
-        user: {
-          type: 'object',
-          properties: {
-            id: { type: 'number' },
-            name: { type: 'string' },
-            email: { type: 'string' },
-            role: { type: 'string' },
-            createdAt: { type: 'string', format: 'date-time' },
-            lastLogin: { type: 'string', format: 'date-time' },
-            lastLoginIp: { type: 'string' },
-            loginCount: { type: 'number' },
-            twoFactorEnabled: { type: 'boolean' },
-            isActive: { type: 'boolean' },
-            lastPasswordChange: { type: 'string', format: 'date-time' },
-          },
-        },
-        sessionStats: { type: 'object' },
-        recentSessions: { type: 'array' },
-      },
-    },
+    type: ResponseDto,
   })
-  async getProfile(@Req() req: AuthenticatedRequest): Promise<any> {
-    return this.authService.getProfile(req.user.id);
+  async getProfile(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ResponseDto<any>> {
+    const profile = await this.authService.getProfile(req.user.id);
+    return {
+      success: true,
+      data: profile,
+      message: 'Profile retrieved successfully',
+    };
   }
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
@@ -235,29 +224,18 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Lista de sesiones activas',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'number' },
-          ipAddress: { type: 'string' },
-          deviceInfo: { type: 'object' },
-          country: { type: 'string' },
-          city: { type: 'string' },
-          isRememberMe: { type: 'boolean' },
-          lastActivity: { type: 'string', format: 'date-time' },
-          createdAt: { type: 'string', format: 'date-time' },
-          isCurrent: { type: 'boolean' },
-        },
-      },
-    },
+    type: ResponseDto,
   })
   async getActiveSessions(
     @Req() req: AuthenticatedRequest,
     @Query() _query: SessionQueryDto,
-  ): Promise<any[]> {
-    return this.authService.getActiveSessions(req.user.id);
+  ): Promise<ResponseDto<any[]>> {
+    const sessions = await this.authService.getActiveSessions(req.user.id);
+    return {
+      success: true,
+      data: sessions,
+      message: 'Active sessions retrieved successfully',
+    };
   }
   @Delete('sessions/:sessionId')
   @HttpCode(HttpStatus.OK)
@@ -272,12 +250,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Sesión revocada exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string' },
-      },
-    },
+    type: ResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -286,8 +259,17 @@ export class AuthController {
   async revokeSession(
     @Param('sessionId', ParseIntPipe) sessionId: number,
     @Req() req: AuthenticatedRequest,
-  ): Promise<{ message: string }> {
-    return this.authService.revokeSession(req.user.id, sessionId, req);
+  ): Promise<ResponseDto<{ message: string }>> {
+    const result = await this.authService.revokeSession(
+      req.user.id,
+      sessionId,
+      req,
+    );
+    return {
+      success: true,
+      data: result,
+      message: 'Session revoked successfully',
+    };
   }
   @Get('logs')
   @UseGuards(JwtAuthGuard)
@@ -297,16 +279,21 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Lista de logs de autenticación',
-    schema: {
-      type: 'array',
-      items: { $ref: '#/components/schemas/AuthLog' },
-    },
+    type: ResponseDto,
   })
   async getAuthLogs(
     @Req() req: AuthenticatedRequest,
     @Query() query: AuthLogQueryDto,
-  ): Promise<any[]> {
-    return this.authLogService.getLogsByUser(req.user.email, query.limit || 50);
+  ): Promise<ResponseDto<any[]>> {
+    const logs = await this.authLogService.getLogsByUser(
+      req.user.email,
+      query.limit || 50,
+    );
+    return {
+      success: true,
+      data: logs,
+      message: 'Auth logs retrieved successfully',
+    };
   }
   @Get('security/report')
   @UseGuards(JwtAuthGuard)
@@ -454,6 +441,6 @@ export class AuthController {
       throw new Error('Access denied - Admin only');
     }
 
-    return this.cleanupService.getCleanupStats();
+    return this.cleanupService.performFullCleanup();
   }
 }

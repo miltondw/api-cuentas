@@ -1,6 +1,40 @@
-# 🏗️ API Cuentas INGEOCIMYC - NestJS
+# 🏗️ API Cuentas - Ingeocimyc
 
-API moderna para gestión de proyectos y servicios de ingeniería civil desarrollada con NestJS.
+**Versión:** 0.0.1  
+**Framework:** NestJS + TypeScript  
+**Base de Datos:** MySQL  
+**Puerto Local:** 5051
+
+API REST para la gestión integral del sistema de cuentas de Ingeocimyc, especializada en servicios de ingeniería geotécnica.
+
+## ⚡ Quick Start
+
+```bash
+# Instalar dependencias
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env
+
+# Iniciar en desarrollo
+npm run start:dev
+
+# Analizar base de datos
+npm run db:analyze
+```
+
+La API estará disponible en: `http://localhost:5051`
+
+## 📚 Documentación Completa
+
+| Documento                                       | Descripción                        |
+| ----------------------------------------------- | ---------------------------------- |
+| [📖 Documentación Principal](./docs/README.md)  | Información detallada del proyecto |
+| [🏗️ Módulos](./docs/MODULES.md)                 | Arquitectura y módulos del sistema |
+| [⭐ Buenas Prácticas](./docs/BEST_PRACTICES.md) | Estándares de desarrollo           |
+| [🌐 API Reference](./docs/API_REFERENCE.md)     | Documentación de endpoints         |
+| [🚀 Deployment](./docs/DEPLOYMENT.md)           | Guía de despliegue                 |
+| [📋 Índice Completo](./docs/INDEX.md)           | Navegación de documentación        |
 
 ## 🚀 Inicio Rápido
 
@@ -203,48 +237,114 @@ Una vez que la aplicación esté corriendo, puedes acceder a la documentación S
 http://localhost:5050/api-docs
 ```
 
-## 🔧 Scripts Disponibles
+## 🛠️ Scripts Disponibles
+
+### Desarrollo
 
 ```bash
-npm run start:dev      # Modo desarrollo con hot-reload
+npm run start:dev      # Servidor con hot reload
 npm run start:debug    # Modo debug
-npm run build          # Compilar TypeScript
-npm run start:prod     # Modo producción
-npm run migrate:data   # Migrar datos desde Express
-npm run lint           # Linter
-npm run test           # Tests
+npm run build          # Build para producción
+npm run lint           # Linting y formato
+npm test              # Ejecutar tests
 ```
 
-## 🚦 Estado de Migración
+### Base de Datos
 
-| Módulo           | Express | Nest.js | Estado    |
-| ---------------- | ------- | ------- | --------- |
-| Autenticación    | ✅      | ✅      | Migrado   |
-| Service Requests | ✅      | ✅      | Migrado   |
-| Services         | ✅      | ✅      | Migrado   |
-| Proyectos        | ✅      | 🚧      | Pendiente |
-| Perfiles         | ✅      | 🚧      | Pendiente |
-| Finanzas         | ✅      | 🚧      | Pendiente |
-| PDFs             | ✅      | 🚧      | Pendiente |
+```bash
+npm run db:analyze      # Analizar estructura de BD
+npm run db:analyze:file # Generar JSON con estructura
+```
 
-## 🔐 Autenticación
+### Testing
 
-### Novedades en el Sistema de Autenticación (Junio 2025)
+```bash
+npm run test:watch     # Tests en modo watch
+npm run test:cov       # Coverage report
+npm run test:e2e       # Tests end-to-end
+```
 
-Hemos actualizado el sistema de autenticación con importantes mejoras:
+## 🏗️ Arquitectura
 
-- **Tablas de Seguridad** - Nombres actualizados a formato plural
-- **Gestión de Sesiones** - Control de múltiples sesiones activas
-- **Logs de Autenticación** - Registro detallado de actividades
-- **Protección Avanzada** - Contra intentos de fuerza bruta
+### Módulos Principales
 
-📄 Documentación detallada:
+```
+📁 src/modules/
+├── 🔐 auth/           # Autenticación JWT, roles, sesiones
+├── 👨‍💼 admin/          # Panel administrativo
+├── 🧪 lab/            # Laboratorio (apiques, perfiles)
+├── 📋 projects/       # Gestión de proyectos
+├── 🛠️ services/       # Catálogo de servicios
+├── 👥 client/         # Portal del cliente
+├── 📄 pdf/           # Generación de documentos
+└── ❤️ health/        # Monitoreo del sistema
+```
 
-- [AUTH_SYSTEM_UPDATE_2025.md](./docs/api/AUTH_SYSTEM_UPDATE_2025.md) - Descripción del sistema
-- [AUTH_ENDPOINTS_REFERENCE.md](./docs/api/AUTH_ENDPOINTS_REFERENCE.md) - Referencia de endpoints
-- [FRONTEND_AUTH_GUIDE_2025.md](./docs/development/FRONTEND_AUTH_GUIDE_2025.md) - Guía para frontend
-- [TABLES_UPDATE_2025.md](./docs/security/TABLES_UPDATE_2025.md) - Detalles técnicos de cambios
+### Tecnologías
 
-## 📞 Soporte
+- **Backend:** NestJS, TypeScript, Express
+- **Base de Datos:** MySQL + TypeORM
+- **Autenticación:** JWT + Passport
+- **Documentación:** Swagger/OpenAPI
+- **Testing:** Jest
+- **PDF:** PDFKit + Puppeteer
 
-Para cualquier duda sobre la migración, revisa la documentación de Nest.js o contacta al equipo de desarrollo.
+## 📊 Estado de la Base de Datos
+
+**Última análisis:** Ejecutado exitosamente ✅
+
+```
+📊 Base de datos: ingeocim_form
+🗂️  Total de tablas: 21
+🔗 Total de relaciones: 8
+🌐 Host: 162.241.61.244:3306
+```
+
+### Tablas Principales
+
+- **usuarios** (19 registros) - Gestión de usuarios
+- **proyectos** (13 registros) - Proyectos de ingeniería
+- **services** (49 registros) - Catálogo de servicios
+- **auth_logs** (71 registros) - Auditoría de autenticación
+- **user_sessions** (60 registros) - Sesiones activas
+
+### Relaciones Clave
+
+- `gastos_proyectos` → `proyectos`
+- `profiles` → `proyectos`
+- `selected_services` → `service_requests`
+- `user_sessions` → `usuarios`
+
+## 🔐 Seguridad Implementada
+
+- JWT con expiración configurable ✅
+- Rate limiting inteligente ✅
+- Validación estricta de datos (DTOs) ✅
+- Headers de seguridad (Helmet) ✅
+- Hashing seguro de contraseñas (bcrypt) ✅
+- Auditoría completa de accesos ✅
+- Control de sesiones activas ✅
+
+## 📱 Swagger/OpenAPI
+
+Documentación interactiva disponible en:
+
+- **Local:** http://localhost:5051/api-docs
+- **Producción:** https://tu-dominio.com/api-docs
+
+## 🤝 Contribuir
+
+1. Lee [CONTRIBUTING.md](./CONTRIBUTING.md)
+2. Revisa [Buenas Prácticas](./docs/BEST_PRACTICES.md)
+3. Ejecuta análisis: `npm run db:analyze`
+4. Desarrolla tu feature siguiendo estándares
+5. Ejecuta tests: `npm test`
+6. Crea un Pull Request
+
+---
+
+**¡Bienvenido al proyecto API Cuentas de Ingeocimyc!** 🚀
+
+Para comenzar, revisa la [📋 documentación completa](./docs/INDEX.md)
+
+_Última actualización: Junio 2025_

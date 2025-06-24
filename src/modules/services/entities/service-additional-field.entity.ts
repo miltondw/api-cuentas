@@ -8,8 +8,8 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { Service } from '../../services/entities/service.entity';
-import { ServiceAdditionalValue } from './service-additional-value.entity';
+import { Service } from '@/modules/services/entities/service.entity';
+import { ServiceAdditionalValue } from '@/modules/services/entities/service-additional-value.entity';
 
 @Entity('service_additional_fields')
 export class ServiceAdditionalField {

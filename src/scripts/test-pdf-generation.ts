@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../app.module';
-import { PDFService } from '../modules/pdf/pdf.service';
-import { ServiceRequestsService } from '../modules/client/service-requests/service-requests.service';
+import { AppModule } from '@/app.module';
+import { PDFService } from '@/modules/pdf/pdf.service';
+import { ServiceRequestsService } from '@/modules/client/service-requests/service-requests.service';
 import { DataSource } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';

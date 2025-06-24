@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ProjectsModule } from '../projects.module';
-import { FinancialModule } from '../financial/financial.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
+import { FinancialModule } from '@/modules/projects/financial/financial.module';
 
 @Module({
   imports: [ProjectsModule, FinancialModule],

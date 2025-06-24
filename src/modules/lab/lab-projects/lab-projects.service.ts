@@ -5,8 +5,8 @@ import {
   Project,
   ProjectStatus as ProjectEntityStatus,
 } from '../../projects/entities/project.entity';
-import { Apique } from '../apiques/entities/apique.entity';
-import { Profile } from '../profiles/entities/profile.entity';
+import { Apique } from '@/modules/lab/apiques/entities/apique.entity';
+import { Profile } from '@/modules/lab/profiles/entities/profile.entity';
 import {
   LabProjectsQueryDto,
   LabProjectsResponseDto,

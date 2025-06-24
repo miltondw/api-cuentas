@@ -18,11 +18,11 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Response } from 'express';
-import { PDFService, PDFGenerationOptions } from './pdf.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Public } from '../auth/decorators/public.decorator';
+import { PDFService, PDFGenerationOptions } from '@/modules/pdf/pdf.service';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 
 @ApiTags('PDF Generation')
 @ApiBearerAuth('JWT-auth')

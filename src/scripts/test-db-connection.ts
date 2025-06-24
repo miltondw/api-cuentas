@@ -1,9 +1,9 @@
 import { DataSource } from 'typeorm';
-import { ServiceRequest } from '../modules/client/service-requests/entities/service-request.entity';
-import { SelectedService } from '../modules/client/service-requests/entities/selected-service.entity';
-import { ServiceInstance } from '../modules/client/service-requests/entities/service-instance.entity';
-import { ServiceInstanceValue } from '../modules/client/service-requests/entities/service-instance-value.entity';
-import { Service } from '../modules/services/entities/service.entity';
+import { ServiceRequest } from '@/modules/client/service-requests/entities/service-request.entity';
+import { SelectedService } from '@/modules/client/service-requests/entities/selected-service.entity';
+import { ServiceInstance } from '@/modules/client/service-requests/entities/service-instance.entity';
+import { ServiceInstanceValue } from '@/modules/client/service-requests/entities/service-instance-value.entity';
+import { Service } from '@/modules/services/entities/service.entity';
 
 async function testDatabaseConnection() {
   console.log('🔍 Verificando conexión a la base de datos...');

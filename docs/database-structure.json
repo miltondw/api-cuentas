@@ -1,0 +1,2794 @@
+{
+  "database": "ingeocim_form",
+  "generatedAt": "2025-06-24T19:37:16.915Z",
+  "summary": {
+    "totalTables": 21,
+    "totalRelations": 8
+  },
+  "tables": {
+    "apiques": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 0,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-28T15:53:13.000Z",
+        "updated": "2025-06-18T23:27:48.000Z"
+      },
+      "columns": [
+        {
+          "name": "apique_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "apique",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": "Número identificador del apique"
+        },
+        {
+          "name": "proyecto_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "depth",
+          "type": "DECIMAL(5,2)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": "Profundidad total en metros"
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "cbr_unaltered",
+          "type": "TINYINT(3,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": "Indica si tiene CBR inalterado"
+        },
+        {
+          "name": "depth_tomo",
+          "type": "DECIMAL(5,2)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": "Profundidad de toma de muestra"
+        },
+        {
+          "name": "molde",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "apique_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ]
+      }
+    },
+    "auth_logs": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 71,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-06-11T23:59:47.000Z",
+        "updated": null
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "eventType",
+          "type": "ENUM(19)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "userEmail",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "userId",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "ipAddress",
+          "type": "VARCHAR(45)",
+          "nullable": true,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "userAgent",
+          "type": "TEXT(65535)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "country",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "city",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "success",
+          "type": "TINYINT(3,0)",
+          "nullable": false,
+          "default": "1",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "errorMessage",
+          "type": "TEXT(65535)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "sessionDuration",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "createdAt",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "idx_auth_logs_event_type": [
+          {
+            "INDEX_NAME": "idx_auth_logs_event_type",
+            "COLUMN_NAME": "eventType",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 4
+          }
+        ],
+        "idx_auth_logs_ip": [
+          {
+            "INDEX_NAME": "idx_auth_logs_ip",
+            "COLUMN_NAME": "ipAddress",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 7
+          }
+        ],
+        "idx_auth_logs_timestamp": [
+          {
+            "INDEX_NAME": "idx_auth_logs_timestamp",
+            "COLUMN_NAME": "createdAt",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 68
+          }
+        ],
+        "idx_auth_logs_user_email": [
+          {
+            "INDEX_NAME": "idx_auth_logs_user_email",
+            "COLUMN_NAME": "userEmail",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 2
+          }
+        ],
+        "idx_auth_logs_user_id": [
+          {
+            "INDEX_NAME": "idx_auth_logs_user_id",
+            "COLUMN_NAME": "userId",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 4
+          }
+        ],
+        "idx_email_created": [
+          {
+            "INDEX_NAME": "idx_email_created",
+            "COLUMN_NAME": "userEmail",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 2
+          },
+          {
+            "INDEX_NAME": "idx_email_created",
+            "COLUMN_NAME": "createdAt",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 68
+          }
+        ],
+        "idx_event_created": [
+          {
+            "INDEX_NAME": "idx_event_created",
+            "COLUMN_NAME": "eventType",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 4
+          },
+          {
+            "INDEX_NAME": "idx_event_created",
+            "COLUMN_NAME": "createdAt",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 68
+          }
+        ],
+        "idx_ip_created": [
+          {
+            "INDEX_NAME": "idx_ip_created",
+            "COLUMN_NAME": "ipAddress",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 7
+          },
+          {
+            "INDEX_NAME": "idx_ip_created",
+            "COLUMN_NAME": "createdAt",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 68
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 71
+          }
+        ]
+      }
+    },
+    "blows": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 56,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-28T15:53:13.000Z",
+        "updated": "2025-06-18T23:53:23.000Z"
+      },
+      "columns": [
+        {
+          "name": "blow_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "profile_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "depth",
+          "type": "DECIMAL(4,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "blows6",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "blows12",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "blows18",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "n",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "observation",
+          "type": "TEXT(65535)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "blow_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 56
+          }
+        ]
+      }
+    },
+    "failed_login_attempts": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 0,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-06-11T23:57:33.000Z",
+        "updated": null
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "ipAddress",
+          "type": "VARCHAR(45)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "userAgent",
+          "type": "TEXT(65535)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "attemptCount",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": "1",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "blocked",
+          "type": "TINYINT(3,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "blockedUntil",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "createdAt",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "idx_email_created": [
+          {
+            "INDEX_NAME": "idx_email_created",
+            "COLUMN_NAME": "email",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          },
+          {
+            "INDEX_NAME": "idx_email_created",
+            "COLUMN_NAME": "createdAt",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ],
+        "idx_failed_login_blocked": [
+          {
+            "INDEX_NAME": "idx_failed_login_blocked",
+            "COLUMN_NAME": "blocked",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ],
+        "idx_failed_login_email": [
+          {
+            "INDEX_NAME": "idx_failed_login_email",
+            "COLUMN_NAME": "email",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ],
+        "idx_failed_login_ip": [
+          {
+            "INDEX_NAME": "idx_failed_login_ip",
+            "COLUMN_NAME": "ipAddress",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ],
+        "idx_failed_login_time": [
+          {
+            "INDEX_NAME": "idx_failed_login_time",
+            "COLUMN_NAME": "createdAt",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ],
+        "idx_ip_created": [
+          {
+            "INDEX_NAME": "idx_ip_created",
+            "COLUMN_NAME": "ipAddress",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          },
+          {
+            "INDEX_NAME": "idx_ip_created",
+            "COLUMN_NAME": "createdAt",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ]
+      }
+    },
+    "gastos_empresa": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 3,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-02-14T20:34:04.000Z",
+        "updated": null
+      },
+      "columns": [
+        {
+          "name": "gasto_empresa_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "mes",
+          "type": "DATE",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "salarios",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "luz",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "agua",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "arriendo",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "internet",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "salud",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "otros_campos",
+          "type": "JSON",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "gasto_empresa_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 3
+          }
+        ]
+      }
+    },
+    "gastos_proyectos": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 15,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-02-20T01:33:55.000Z",
+        "updated": "2025-06-21T16:51:14.000Z"
+      },
+      "columns": [
+        {
+          "name": "gasto_proyecto_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "proyecto_id",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "camioneta",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "campo",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "obreros",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "comidas",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "otros",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "peajes",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "combustible",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "hospedaje",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "otros_campos",
+          "type": "JSON",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "proyecto_id",
+          "referencedTable": "proyectos",
+          "referencedColumn": "proyecto_id",
+          "updateRule": "RESTRICT",
+          "deleteRule": "CASCADE"
+        }
+      ],
+      "indexes": {
+        "fk_proyecto": [
+          {
+            "INDEX_NAME": "fk_proyecto",
+            "COLUMN_NAME": "proyecto_id",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 15
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "gasto_proyecto_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 15
+          }
+        ]
+      }
+    },
+    "layers": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 4,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-28T15:53:13.000Z",
+        "updated": "2025-06-18T23:27:48.000Z"
+      },
+      "columns": [
+        {
+          "name": "layer_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "apique_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "layer_number",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "thickness",
+          "type": "DECIMAL(5,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": "Espesor en metros"
+        },
+        {
+          "name": "sample_id",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "observation",
+          "type": "TEXT(65535)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "layer_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 4
+          }
+        ]
+      }
+    },
+    "perfiles": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 0,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-28T15:53:13.000Z",
+        "updated": null
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "project_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "profile_date",
+          "type": "DATE",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "samples_number",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "sounding_number",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "description",
+          "type": "TEXT(65535)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "latitude",
+          "type": "DECIMAL(8,6)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "longitude",
+          "type": "DECIMAL(9,6)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "depth",
+          "type": "DECIMAL(8,2)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "water_level",
+          "type": "DECIMAL(8,2)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "observations",
+          "type": "TEXT(65535)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "profile_data",
+          "type": "JSON",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(6)",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(6)",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP(6)",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ]
+      }
+    },
+    "profiles": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 3,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-04-29T15:03:54.000Z",
+        "updated": "2025-06-19T14:46:53.000Z"
+      },
+      "columns": [
+        {
+          "name": "profile_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "project_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "sounding_number",
+          "type": "VARCHAR(10)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "water_level",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "profile_date",
+          "type": "DATE",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "samples_number",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "project_id",
+          "referencedTable": "proyectos",
+          "referencedColumn": "proyecto_id",
+          "updateRule": "RESTRICT",
+          "deleteRule": "CASCADE"
+        }
+      ],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "profile_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 3
+          }
+        ],
+        "unique_sounding": [
+          {
+            "INDEX_NAME": "unique_sounding",
+            "COLUMN_NAME": "project_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 2
+          },
+          {
+            "INDEX_NAME": "unique_sounding",
+            "COLUMN_NAME": "sounding_number",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 3
+          }
+        ]
+      }
+    },
+    "proyectos": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 13,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-30T01:59:22.000Z",
+        "updated": "2025-06-21T16:51:14.000Z"
+      },
+      "columns": [
+        {
+          "name": "proyecto_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "fecha",
+          "type": "DATE",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "solicitante",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "nombre_proyecto",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "obrero",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "costo_servicio",
+          "type": "DECIMAL(15,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "abono",
+          "type": "DECIMAL(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "factura",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "valor_retencion",
+          "type": "DECIMAL(10,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "metodo_de_pago",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "estado",
+          "type": "ENUM(10)",
+          "nullable": false,
+          "default": "activo",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "proyecto_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 13
+          }
+        ]
+      }
+    },
+    "resumen_financiero": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 0,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-28T15:53:14.000Z",
+        "updated": null
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "mes",
+          "type": "VARCHAR(7)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "ingresos_totales",
+          "type": "DECIMAL(10,2)",
+          "nullable": false,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "gastos_totales",
+          "type": "DECIMAL(10,2)",
+          "nullable": false,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "utilidad_bruta",
+          "type": "DECIMAL(10,2)",
+          "nullable": false,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "utilidad_neta",
+          "type": "DECIMAL(10,2)",
+          "nullable": false,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "margen_utilidad",
+          "type": "DECIMAL(10,2)",
+          "nullable": false,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(6)",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updatedAt",
+          "type": "DATETIME",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP(6)",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP(6)",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ]
+      }
+    },
+    "selected_services": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 25,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-06-21T14:46:04.000Z",
+        "updated": "2025-06-22T23:38:21.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "request_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "service_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "quantity",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "request_id",
+          "referencedTable": "service_requests",
+          "referencedColumn": "id",
+          "updateRule": "RESTRICT",
+          "deleteRule": "CASCADE"
+        }
+      ],
+      "indexes": {
+        "fk_selected_services_request": [
+          {
+            "INDEX_NAME": "fk_selected_services_request",
+            "COLUMN_NAME": "request_id",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 2
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 25
+          }
+        ]
+      }
+    },
+    "services": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 49,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-28T15:53:13.000Z",
+        "updated": "2025-06-20T21:05:29.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "category_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(10)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 49
+          }
+        ]
+      }
+    },
+    "service_additional_fields": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 24,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-06-20T19:31:33.000Z",
+        "updated": "2025-06-20T22:48:58.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "service_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "field_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "required",
+          "type": "TINYINT(3,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "options",
+          "type": "JSON",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "depends_on_field",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "depends_on_value",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "label",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "display_order",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "service_id",
+          "referencedTable": "services",
+          "referencedColumn": "id",
+          "updateRule": "RESTRICT",
+          "deleteRule": "CASCADE"
+        }
+      ],
+      "indexes": {
+        "idx_service_additional_fields_display_order": [
+          {
+            "INDEX_NAME": "idx_service_additional_fields_display_order",
+            "COLUMN_NAME": "service_id",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 9
+          },
+          {
+            "INDEX_NAME": "idx_service_additional_fields_display_order",
+            "COLUMN_NAME": "display_order",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 24
+          }
+        ],
+        "idx_service_additional_fields_service_id": [
+          {
+            "INDEX_NAME": "idx_service_additional_fields_service_id",
+            "COLUMN_NAME": "service_id",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 9
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 24
+          }
+        ],
+        "service_id": [
+          {
+            "INDEX_NAME": "service_id",
+            "COLUMN_NAME": "service_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 9
+          },
+          {
+            "INDEX_NAME": "service_id",
+            "COLUMN_NAME": "field_name",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 24
+          }
+        ]
+      }
+    },
+    "service_additional_values": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 23,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-04-22T22:19:02.000Z",
+        "updated": "2025-06-22T23:38:21.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "selected_service_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "field_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "field_value",
+          "type": "TEXT(65535)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "selected_service_id",
+          "referencedTable": "selected_services",
+          "referencedColumn": "id",
+          "updateRule": "RESTRICT",
+          "deleteRule": "CASCADE"
+        }
+      ],
+      "indexes": {
+        "idx_selected_service_id": [
+          {
+            "INDEX_NAME": "idx_selected_service_id",
+            "COLUMN_NAME": "selected_service_id",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 5
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 23
+          }
+        ]
+      }
+    },
+    "service_categories": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 8,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-28T15:53:12.000Z",
+        "updated": "2025-06-20T20:39:33.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(10)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 8
+          }
+        ]
+      }
+    },
+    "service_instances": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 0,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-24T13:19:32.000Z",
+        "updated": "2025-06-21T15:54:38.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "selected_service_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "instance_number",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "selected_service_id",
+          "referencedTable": "selected_services",
+          "referencedColumn": "id",
+          "updateRule": "RESTRICT",
+          "deleteRule": "CASCADE"
+        }
+      ],
+      "indexes": {
+        "fk_service_instance_selected_service": [
+          {
+            "INDEX_NAME": "fk_service_instance_selected_service",
+            "COLUMN_NAME": "selected_service_id",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ]
+      }
+    },
+    "service_instance_values": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 0,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-24T13:19:42.000Z",
+        "updated": "2025-06-21T15:54:38.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "service_instance_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "field_name",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "field_value",
+          "type": "TEXT(65535)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "service_instance_id",
+          "referencedTable": "service_instances",
+          "referencedColumn": "id",
+          "updateRule": "RESTRICT",
+          "deleteRule": "CASCADE"
+        }
+      ],
+      "indexes": {
+        "fk_service_instance_values_instance": [
+          {
+            "INDEX_NAME": "fk_service_instance_values_instance",
+            "COLUMN_NAME": "service_instance_id",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 0
+          }
+        ]
+      }
+    },
+    "service_requests": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 1,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-05-28T15:53:21.000Z",
+        "updated": "2025-06-22T23:38:21.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "name_project",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "identification",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "description",
+          "type": "TEXT(65535)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "status",
+          "type": "ENUM(10)",
+          "nullable": true,
+          "default": "pendiente",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 1
+          }
+        ]
+      }
+    },
+    "user_sessions": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 60,
+        "size": 49152,
+        "comment": "",
+        "created": "2025-06-12T00:09:26.000Z",
+        "updated": "2025-06-24T16:54:19.000Z"
+      },
+      "columns": [
+        {
+          "name": "id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "token",
+          "type": "VARCHAR(500)",
+          "nullable": false,
+          "default": null,
+          "key": "UNI",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "userId",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "ipAddress",
+          "type": "VARCHAR(45)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "userAgent",
+          "type": "TEXT(65535)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "deviceInfo",
+          "type": "JSON",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "isActive",
+          "type": "TINYINT(3,0)",
+          "nullable": true,
+          "default": "1",
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "isRememberMe",
+          "type": "TINYINT(3,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "expiresAt",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "MUL",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        },
+        {
+          "name": "lastActivity",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "country",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "city",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "loggedOutAt",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "logoutReason",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "createdAt",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updatedAt",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "userId",
+          "referencedTable": "usuarios",
+          "referencedColumn": "usuario_id",
+          "updateRule": "RESTRICT",
+          "deleteRule": "CASCADE"
+        }
+      ],
+      "indexes": {
+        "idx_userid_active": [
+          {
+            "INDEX_NAME": "idx_userid_active",
+            "COLUMN_NAME": "userId",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 3
+          },
+          {
+            "INDEX_NAME": "idx_userid_active",
+            "COLUMN_NAME": "isActive",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 5
+          }
+        ],
+        "idx_user_sessions_active": [
+          {
+            "INDEX_NAME": "idx_user_sessions_active",
+            "COLUMN_NAME": "isActive",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 2
+          }
+        ],
+        "idx_user_sessions_expires": [
+          {
+            "INDEX_NAME": "idx_user_sessions_expires",
+            "COLUMN_NAME": "expiresAt",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 20
+          }
+        ],
+        "idx_user_sessions_token": [
+          {
+            "INDEX_NAME": "idx_user_sessions_token",
+            "COLUMN_NAME": "token",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 60
+          }
+        ],
+        "idx_user_sessions_user_id": [
+          {
+            "INDEX_NAME": "idx_user_sessions_user_id",
+            "COLUMN_NAME": "userId",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 3
+          }
+        ],
+        "PRIMARY": [
+          {
+            "INDEX_NAME": "PRIMARY",
+            "COLUMN_NAME": "id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 60
+          }
+        ],
+        "token": [
+          {
+            "INDEX_NAME": "token",
+            "COLUMN_NAME": "token",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 60
+          }
+        ]
+      }
+    },
+    "usuarios": {
+      "info": {
+        "engine": "InnoDB",
+        "rows": 19,
+        "size": 16384,
+        "comment": "",
+        "created": "2025-06-12T19:25:40.000Z",
+        "updated": "2025-06-24T16:54:20.000Z"
+      },
+      "columns": [
+        {
+          "name": "usuario_id",
+          "type": "INT(10,0)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "auto_increment",
+          "comment": ""
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "password",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "role",
+          "type": "ENUM(6)",
+          "nullable": true,
+          "default": "client",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "failed_attempts",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "last_failed_attempt",
+          "type": "DATETIME",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "account_locked_until",
+          "type": "DATETIME",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "password_reset_token",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "password_reset_expires",
+          "type": "DATETIME",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "last_password_change",
+          "type": "DATETIME",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "last_login",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "last_login_ip",
+          "type": "VARCHAR(45)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "login_count",
+          "type": "INT(10,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "two_factor_enabled",
+          "type": "TINYINT(3,0)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "two_factor_secret",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "is_active",
+          "type": "TINYINT(3,0)",
+          "nullable": true,
+          "default": "1",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "idx_email": [
+          {
+            "INDEX_NAME": "idx_email",
+            "COLUMN_NAME": "email",
+            "NON_UNIQUE": 1,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 19
+          }
+        ],
+        "usuario_id": [
+          {
+            "INDEX_NAME": "usuario_id",
+            "COLUMN_NAME": "usuario_id",
+            "NON_UNIQUE": 0,
+            "INDEX_TYPE": "BTREE",
+            "CARDINALITY": 19
+          }
+        ]
+      }
+    }
+  },
+  "relations": [
+    {
+      "source_table": "gastos_proyectos",
+      "source_column": "proyecto_id",
+      "target_table": "proyectos",
+      "target_column": "proyecto_id",
+      "CONSTRAINT_NAME": "fk_proyecto",
+      "UPDATE_RULE": "RESTRICT",
+      "DELETE_RULE": "CASCADE"
+    },
+    {
+      "source_table": "profiles",
+      "source_column": "project_id",
+      "target_table": "proyectos",
+      "target_column": "proyecto_id",
+      "CONSTRAINT_NAME": "profiles_ibfk_1",
+      "UPDATE_RULE": "RESTRICT",
+      "DELETE_RULE": "CASCADE"
+    },
+    {
+      "source_table": "selected_services",
+      "source_column": "request_id",
+      "target_table": "service_requests",
+      "target_column": "id",
+      "CONSTRAINT_NAME": "fk_selected_services_request",
+      "UPDATE_RULE": "RESTRICT",
+      "DELETE_RULE": "CASCADE"
+    },
+    {
+      "source_table": "service_additional_fields",
+      "source_column": "service_id",
+      "target_table": "services",
+      "target_column": "id",
+      "CONSTRAINT_NAME": "service_additional_fields_ibfk_1",
+      "UPDATE_RULE": "RESTRICT",
+      "DELETE_RULE": "CASCADE"
+    },
+    {
+      "source_table": "service_additional_values",
+      "source_column": "selected_service_id",
+      "target_table": "selected_services",
+      "target_column": "id",
+      "CONSTRAINT_NAME": "service_additional_values_ibfk_1",
+      "UPDATE_RULE": "RESTRICT",
+      "DELETE_RULE": "CASCADE"
+    },
+    {
+      "source_table": "service_instances",
+      "source_column": "selected_service_id",
+      "target_table": "selected_services",
+      "target_column": "id",
+      "CONSTRAINT_NAME": "fk_service_instance_selected_service",
+      "UPDATE_RULE": "RESTRICT",
+      "DELETE_RULE": "CASCADE"
+    },
+    {
+      "source_table": "service_instance_values",
+      "source_column": "service_instance_id",
+      "target_table": "service_instances",
+      "target_column": "id",
+      "CONSTRAINT_NAME": "fk_service_instance_values_instance",
+      "UPDATE_RULE": "RESTRICT",
+      "DELETE_RULE": "CASCADE"
+    },
+    {
+      "source_table": "user_sessions",
+      "source_column": "userId",
+      "target_table": "usuarios",
+      "target_column": "usuario_id",
+      "CONSTRAINT_NAME": "user_sessions_ibfk_1",
+      "UPDATE_RULE": "RESTRICT",
+      "DELETE_RULE": "CASCADE"
+    }
+  ]
+}

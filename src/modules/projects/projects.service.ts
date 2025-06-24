@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Like, FindOptionsOrder } from 'typeorm';
-import { Project, ProjectStatus } from './entities/project.entity';
-import { ProjectExpense } from './entities/project-expense.entity';
+import { Project, ProjectStatus } from '@/modules/projects/entities/project.entity';
+import { ProjectExpense } from '@/modules/projects/entities/project-expense.entity';
 import {
   CreateProjectDto,
   UpdateProjectDto,

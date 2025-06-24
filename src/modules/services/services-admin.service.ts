@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Service } from './entities/service.entity';
-import { ServiceCategory } from './entities/service-category.entity';
-import { ServiceAdditionalField } from './entities/service-additional-field.entity';
+import { Service } from '@/modules/services/entities/service.entity';
+import { ServiceCategory } from '@/modules/services/entities/service-category.entity';
+import { ServiceAdditionalField } from '@/modules/services/entities/service-additional-field.entity';
 import {
   CreateServiceCategoryDto,
   UpdateServiceCategoryDto,

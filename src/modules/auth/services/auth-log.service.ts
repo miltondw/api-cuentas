@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan } from 'typeorm';
-import { AuthLog, AuthEventType } from '../entities/auth-log.entity';
+import { AuthLog, AuthEventType } from '@/modules/auth/entities/auth-log.entity';
 import { Request } from 'express';
 import { UAParser } from 'ua-parser-js';
 

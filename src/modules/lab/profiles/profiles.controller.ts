@@ -20,16 +20,16 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { ProfilesService } from './profiles.service';
+import { ProfilesService } from '@/modules/lab/profiles/profiles.service';
 import {
   CreateProfileDto,
   UpdateProfileDto,
   CreateBlowDto,
   UpdateBlowDto,
 } from './dto/profile.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
 
 @ApiTags('Perfiles - Lab')
 @ApiBearerAuth('JWT-auth')

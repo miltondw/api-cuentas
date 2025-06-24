@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan } from 'typeorm';
-import { UserSession } from '../entities/user-session.entity';
+import { UserSession } from '@/modules/auth/entities/user-session.entity';
 import { Request } from 'express';
 import { UAParser } from 'ua-parser-js';
 import * as crypto from 'crypto';
@@ -275,6 +275,20 @@ export class SessionService {
       where: { id: sessionId, userId },
       relations: ['user'],
     });
+  }
+
+  /**
+   * Verifica si un token JWT ha sido revocado
+   */
+  async isTokenRevoked(token: string): Promise<boolean> {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const session = await this.sessionRepository.findOne({
+      where: { token: tokenHash },
+    });
+
+    // Si no existe la sesión o está inactiva, el token ha sido revocado
+    return !session || !session.isActive;
   }
 
   private getRealIpAddress(req: Request): string {

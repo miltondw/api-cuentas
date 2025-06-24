@@ -8,7 +8,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Blow } from './blow.entity';
+import { Blow } from '@/modules/lab/profiles/entities/blow.entity';
 import { Project } from '@/modules/projects/entities/project.entity';
 
 @Entity('profiles')

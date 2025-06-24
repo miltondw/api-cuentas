@@ -12,7 +12,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ProjectStatus, PaymentMethod } from '../entities/project.entity';
+import { ProjectStatus, PaymentMethod } from '@/modules/projects/entities/project.entity';
 
 // DTO para gastos de proyecto
 export class CreateProjectExpenseDto {

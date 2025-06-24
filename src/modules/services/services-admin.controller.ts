@@ -18,10 +18,10 @@ import {
   ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { ServicesAdminService } from './services-admin.service';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { ServicesAdminService } from '@/modules/services/services-admin.service';
 import {
   CreateServiceCategoryDto,
   UpdateServiceCategoryDto,
@@ -31,9 +31,9 @@ import {
   UpdateServiceAdditionalFieldDto,
   CreateServiceWithFieldsDto,
 } from './dto/admin-services.dto';
-import { ServiceCategory } from './entities/service-category.entity';
-import { Service } from './entities/service.entity';
-import { ServiceAdditionalField } from './entities/service-additional-field.entity';
+import { ServiceCategory } from '@/modules/services/entities/service-category.entity';
+import { Service } from '@/modules/services/entities/service.entity';
+import { ServiceAdditionalField } from '@/modules/services/entities/service-additional-field.entity';
 
 @ApiTags('Services Administration')
 @ApiBearerAuth('JWT-auth')

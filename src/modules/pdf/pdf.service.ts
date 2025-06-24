@@ -8,11 +8,11 @@ import { Repository } from 'typeorm';
 import * as puppeteer from 'puppeteer';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { ServiceRequest } from '../client/service-requests/entities/service-request.entity';
-import { SelectedService } from '../client/service-requests/entities/selected-service.entity';
-import { ServiceInstance } from '../client/service-requests/entities/service-instance.entity';
-import { ServiceInstanceValue } from '../client/service-requests/entities/service-instance-value.entity';
-import { generateHorizontalInstancesContent } from './utils/format-utils';
+import { ServiceRequest } from '@/modules/client/service-requests/entities/service-request.entity';
+import { SelectedService } from '@/modules/client/service-requests/entities/selected-service.entity';
+import { ServiceInstance } from '@/modules/client/service-requests/entities/service-instance.entity';
+import { ServiceInstanceValue } from '@/modules/client/service-requests/entities/service-instance-value.entity';
+import { generateHorizontalInstancesContent } from '@/modules/pdf/utils/format-utils';
 
 export interface PDFGenerationOptions {
   returnBuffer?: boolean;
@@ -493,12 +493,11 @@ export class PDFService {
     }
   }
   private generateHeaderHTML(assets: Record<string, string>): string {
-    return `
-      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; width: 100%; display: flex; padding: 0; margin: 0; box-sizing: border-box; border-bottom: 3px solid #008D97; margin-bottom: 20px;">
-        <div style="flex: 0 0 15%; background-color: #ffffff; padding: 15px 20px; display: flex; align-items: center; justify-content: center;">
-          <img src="${assets.logo}" alt="INGEOCIMYC Logo" style="max-width: 250px; height: auto; object-fit: contain;">
+    return `      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; width: 100%; display: flex; padding: 0; margin: 0; margin-left:15px; box-sizing: border-box; border-bottom: 3px solid #008D97; margin-bottom: 20px;">
+        <div style="flex: 0 0 30%; background-color: #ffffff; padding: 15px 0px; display: flex; align-items: center; justify-content: flex-end; margin-right:20px;">
+          <img src="${assets.logo}" alt="INGEOCIMYC Logo" style="max-width: 250px; height: auto; object-fit: contain; margin-left: 10px;">
         </div>
-        <div style="flex: 0 0 62%; background-color: #008380; padding: 20px 25px; display: flex; align-items: center; justify-content: center;">
+        <div style="flex: 0 0 53%; background-color: #008380; padding: 10px 25px; display: flex; align-items: center; justify-content: center;">
           <div style="text-align: center; color: #ffffff; width: 100%;">
             <div style="font-weight: bold; font-size: 18px; margin-bottom: 8px; line-height: 1.2;">
               SOLICITUD DE SERVICIOS DE ENSAYO DE CONCRETOS EN LABORATORIO

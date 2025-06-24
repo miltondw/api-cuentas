@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { FailedLoginAttempt } from '../entities/failed-login-attempt.entity';
-import { AuthLogService } from './auth-log.service';
-import { AuthEventType } from '../entities/auth-log.entity';
+import { FailedLoginAttempt } from '@/modules/auth/entities/failed-login-attempt.entity';
+import { AuthLogService } from '@/modules/auth/services/auth-log.service';
+import { AuthEventType } from '@/modules/auth/entities/auth-log.entity';
 import { Request } from 'express';
 
 export interface SecurityCheckResult {

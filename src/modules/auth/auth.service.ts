@@ -11,17 +11,18 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import * as bcrypt from 'bcryptjs';
-import { User, UserRole } from './entities/user.entity';
+import { User, UserRole } from '@/modules/auth/entities/user.entity';
 import {
   LoginDto,
   RegisterDto,
   ChangePasswordDto,
   AuthResponseDto,
 } from './dto/auth.dto';
-import { AuthLogService } from './services/auth-log.service';
-import { SessionService } from './services/session.service';
-import { SecurityService } from './services/security.service';
-import { AuthEventType } from './entities/auth-log.entity';
+import { AuthLogService } from '@/modules/auth/services/auth-log.service';
+import { SessionService } from '@/modules/auth/services/session.service';
+import { SecurityService } from '@/modules/auth/services/security.service';
+import { RefreshTokenService } from '@/modules/auth/services/refresh-token.service';
+import { AuthEventType } from '@/modules/auth/entities/auth-log.entity';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,7 @@ export class AuthService {
     private authLogService: AuthLogService,
     private sessionService: SessionService,
     private securityService: SecurityService,
+    private refreshTokenService: RefreshTokenService,
   ) {} // Add validateUser method that's required by the JWT strategy
   async validateUser(email: string): Promise<any> {
     try {
@@ -198,6 +200,13 @@ export class AuthService {
       req,
     });
 
+    // Generar refresh token
+    const refreshToken = await this.refreshTokenService.createRefreshToken(
+      user,
+      ipAddress,
+      req?.headers['user-agent'] || 'unknown',
+    );
+
     // Limpiar intentos fallidos exitosos
     await this.securityService.clearFailedAttempts(email, ipAddress); // Actualizar datos del usuario
     await this.userRepository.update(user.id, {
@@ -224,42 +233,36 @@ export class AuthService {
 
     const response: AuthResponseDto = {
       accessToken,
+      refreshToken: refreshToken,
+      tokenType: 'Bearer',
       user: {
+        id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
+        twoFactorEnabled: user.two_factor_enabled,
       },
       expiresIn: rememberMe ? 86400 : 28800, // seconds
-      sessionInfo: {
-        isRememberMe: rememberMe,
-        expiresAt: expiresAt.toISOString(),
-        isNewDevice: suspiciousCheck.suspicious,
-        deviceInfo: suspiciousCheck.suspicious ? null : undefined,
-      },
     };
 
     return response;
   }
   async register(registerDto: RegisterDto) {
-    const { email, password, name, firstName, lastName, role, jwt2 } =
-      registerDto;
+    const { email, password, name, confirmPassword, role } = registerDto;
 
-    // Construct the full name from firstName + lastName or use name directly
-    const fullName =
-      name ||
-      (firstName && lastName
-        ? `${firstName} ${lastName}`
-        : firstName || lastName || 'User');
-    // Determine the role - default to USUARIO
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Las contraseñas no coinciden');
+    }
+    // Determine the role - default to CLIENT
     const userRole = role || UserRole.CLIENT;
 
-    // Validate admin registration
+    // Validate admin registration - require special authorization
     if (userRole === UserRole.ADMIN) {
-      if (!jwt2 || jwt2 !== process.env.JWT_SECRET_2) {
-        throw new ForbiddenException(
-          'Código de autorización inválido para crear cuenta de administrador',
-        );
-      }
+      // For now, only allow admin creation through specific process
+      throw new ForbiddenException(
+        'La creación de cuentas de administrador requiere autorización especial',
+      );
     }
 
     // Verificar si el usuario ya existe
@@ -276,11 +279,20 @@ export class AuthService {
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
-      name: fullName,
+      name,
       role: userRole,
     });
 
-    const savedUser = await this.userRepository.save(user); // Generar token JWT
+    const savedUser = await this.userRepository.save(user);
+
+    // Generar refresh token
+    const refreshToken = await this.refreshTokenService.createRefreshToken(
+      savedUser,
+      'unknown', // No tenemos IP en el registro
+      'unknown', // No tenemos user agent en el registro
+    );
+
+    // Generar token JWT
     const payload = {
       sub: savedUser.id,
       userId: savedUser.id,
@@ -291,7 +303,10 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken: refreshToken,
+      tokenType: 'Bearer',
       user: {
+        id: savedUser.id,
         email: savedUser.email,
         name: savedUser.name,
         role: savedUser.role,
@@ -317,6 +332,9 @@ export class AuthService {
           undefined,
           reason,
         );
+
+        // Revocar todos los refresh tokens del usuario
+        await this.refreshTokenService.revokeUserTokens(decoded.userId);
       } catch (error) {
         this.logger.warn('Invalid token provided for logout all');
       }
@@ -324,6 +342,15 @@ export class AuthService {
       // Cerrar solo la sesión actual
       const revoked = await this.sessionService.revokeSession(token, reason);
       sessionsRevoked = revoked ? 1 : 0;
+
+      // Revocar refresh tokens asociados a esta sesión (opcional - podríamos mantenerlos)
+      // Por seguridad, es mejor revocarlos en logout individual también
+      try {
+        const decoded = this.jwtService.verify(token);
+        await this.refreshTokenService.revokeUserTokens(decoded.userId);
+      } catch (error) {
+        this.logger.warn('Could not revoke refresh tokens on logout');
+      }
     }
 
     // Log del logout
@@ -354,27 +381,28 @@ export class AuthService {
     };
   }
 
-  async refreshToken(token: string, req?: Request): Promise<AuthResponseDto> {
+  async refreshToken(
+    refreshTokenValue: string,
+    req?: Request,
+  ): Promise<AuthResponseDto> {
     try {
-      // Verificar que el token sea válido
-      const decoded = this.jwtService.verify(token);
+      // Validar y obtener el refresh token
+      const refreshTokenData =
+        await this.refreshTokenService.validateRefreshToken(refreshTokenValue);
 
-      // Verificar que la sesión exista y esté activa
-      const session = await this.sessionService.validateSession(token);
-      if (!session) {
-        throw new UnauthorizedException('Invalid session');
+      if (!refreshTokenData) {
+        throw new UnauthorizedException('Invalid or expired refresh token');
       }
 
-      // Buscar el usuario
-      const user = await this.userRepository.findOne({
-        where: { id: decoded.userId },
-      });
+      const user = refreshTokenData.user;
 
-      if (!user || !user.is_active) {
-        throw new UnauthorizedException('User not found or inactive');
+      // Verificar que el usuario esté activo
+      if (!user.is_active) {
+        await this.refreshTokenService.revokeToken(refreshTokenValue);
+        throw new UnauthorizedException('User account is deactivated');
       }
 
-      // Generar nuevo token
+      // Generar nuevo access token
       const payload = {
         sub: user.id,
         userId: user.id,
@@ -383,21 +411,27 @@ export class AuthService {
         iat: Math.floor(Date.now() / 1000),
       };
 
-      const expiresIn = session.isRememberMe ? '24h' : '8h';
-      const newAccessToken = this.jwtService.sign(payload, { expiresIn });
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '8h' });
 
-      // Revocar la sesión anterior y crear nueva
-      await this.sessionService.revokeSession(token, 'token_refresh');
-
-      const expiresAt = new Date();
-      expiresAt.setHours(
-        expiresAt.getHours() + (session.isRememberMe ? 24 : 8),
+      // Generar nuevo refresh token
+      const ipAddress = this.getClientIp(req);
+      const newRefreshToken = await this.refreshTokenService.createRefreshToken(
+        user,
+        ipAddress,
+        req?.headers['user-agent'] || 'unknown',
       );
+
+      // Revocar el refresh token anterior
+      await this.refreshTokenService.revokeToken(refreshTokenValue);
+
+      // Crear nueva sesión
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 8);
 
       await this.sessionService.createSession({
         userId: user.id,
-        token: newAccessToken,
-        isRememberMe: session.isRememberMe,
+        token: accessToken,
+        isRememberMe: false,
         expiresAt,
         req,
       });
@@ -409,28 +443,28 @@ export class AuthService {
         userId: user.id,
         success: true,
         metadata: {
-          previousTokenExpiry: session.expiresAt.toISOString(),
+          refreshTokenUsed: true,
           newTokenExpiry: expiresAt.toISOString(),
         },
         req,
       });
 
       return {
-        accessToken: newAccessToken,
+        accessToken,
+        refreshToken: newRefreshToken,
+        tokenType: 'Bearer',
         user: {
+          id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          twoFactorEnabled: user.two_factor_enabled,
         },
-        expiresIn: session.isRememberMe ? 86400 : 28800,
-        sessionInfo: {
-          isRememberMe: session.isRememberMe,
-          expiresAt: expiresAt.toISOString(),
-          isNewDevice: false,
-        },
+        expiresIn: 28800, // 8 hours
       };
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired token');
+      this.logger.error('Refresh token error:', error.message);
+      throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
 
@@ -439,11 +473,13 @@ export class AuthService {
     changePasswordDto: ChangePasswordDto,
     req?: Request,
   ): Promise<{ message: string; sessionsRevoked: number }> {
-    const {
-      currentPassword,
-      newPassword,
-      logoutOtherSessions = true,
-    } = changePasswordDto;
+    const { currentPassword, newPassword, confirmNewPassword } =
+      changePasswordDto;
+
+    // Validate password confirmation
+    if (newPassword !== confirmNewPassword) {
+      throw new BadRequestException('Las contraseñas no coinciden');
+    }
 
     // Buscar el usuario
     const user = await this.userRepository.findOne({
@@ -490,6 +526,9 @@ export class AuthService {
     });
 
     let sessionsRevoked = 0;
+    // Always logout other sessions when password changes for security
+    const logoutOtherSessions = true;
+
     if (logoutOtherSessions) {
       sessionsRevoked = await this.sessionService.revokeUserSessions(
         userId,

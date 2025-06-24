@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ServiceRequestsService } from './service-requests.service';
-import { ServiceRequestsController } from './service-requests.controller';
-import { ServiceRequest } from './entities/service-request.entity';
-import { SelectedService } from './entities/selected-service.entity';
-import { ServiceInstance } from './entities/service-instance.entity';
-import { ServiceInstanceValue } from './entities/service-instance-value.entity';
+import { ServiceRequestsService } from '@/modules/client/service-requests/service-requests.service';
+import { ServiceRequestsController } from '@/modules/client/service-requests/service-requests.controller';
+import { ServiceRequest } from '@/modules/client/service-requests/entities/service-request.entity';
+import { SelectedService } from '@/modules/client/service-requests/entities/selected-service.entity';
+import { ServiceInstance } from '@/modules/client/service-requests/entities/service-instance.entity';
+import { ServiceInstanceValue } from '@/modules/client/service-requests/entities/service-instance-value.entity';
 import { Service } from '@/modules/services/entities/service.entity';
 import { ServiceAdditionalValue } from '@/modules/services/entities/service-additional-value.entity';
 

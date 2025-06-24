@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Profile } from './entities/profile.entity';
-import { Blow } from './entities/blow.entity';
+import { Profile } from '@/modules/lab/profiles/entities/profile.entity';
+import { Blow } from '@/modules/lab/profiles/entities/blow.entity';
 import {
   CreateProfileDto,
   UpdateProfileDto,

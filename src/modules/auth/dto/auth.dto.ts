@@ -11,8 +11,12 @@ import {
   IsObject,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserRole } from '../entities/user.entity';
-import { AuthEventType } from '../entities/auth-log.entity';
+import { UserRole } from '@/modules/auth/entities/user.entity';
+import { AuthEventType } from '@/modules/auth/entities/auth-log.entity';
+import {
+  IsStrongPassword,
+  IsValidName,
+} from '@common/validators/custom.validators';
 
 export class LoginDto {
   @ApiProperty({
@@ -45,7 +49,7 @@ export class LoginDto {
     example: {
       browser: 'Chrome',
       os: 'Windows',
-      device: 'Desktop'
+      device: 'Desktop',
     },
     required: false,
   })
@@ -63,65 +67,56 @@ export class LoginDto {
 export class RegisterDto {
   @ApiProperty({
     description: 'Nombre completo del usuario',
-    example: 'Juan Pérez',
-    required: false,
+    example: 'Juan Pérez García',
   })
   @IsString()
-  @IsOptional()
-  name?: string;
-
-  @ApiProperty({
-    description: 'Primer nombre del usuario',
-    example: 'Juan',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  firstName?: string;
-
-  @ApiProperty({
-    description: 'Apellido del usuario',
-    example: 'Pérez',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  lastName?: string;
+  @IsNotEmpty()
+  @IsValidName()
+  name: string;
 
   @ApiProperty({
     description: 'Correo electrónico del usuario',
-    example: 'juan.perez@ingeocimyc.com',
+    example: 'juan.perez@ejemplo.com',
   })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @ApiProperty({
-    description: 'Contraseña del usuario (mínimo 6 caracteres)',
-    example: 'password123',
+    description: 'Contraseña segura del usuario',
+    example: 'MySecureP@ssw0rd!',
   })
   @IsString()
   @IsNotEmpty()
-  @MinLength(6)
+  @IsStrongPassword()
   password: string;
+
+  @ApiProperty({
+    description: 'Confirmación de contraseña',
+    example: 'MySecureP@ssw0rd!',
+  })
+  @IsString()
+  @IsNotEmpty()
+  confirmPassword: string;
+
   @ApiProperty({
     description: 'Rol del usuario',
     enum: UserRole,
     example: UserRole.CLIENT,
-    required: false,
   })
   @IsEnum(UserRole)
   @IsOptional()
-  role?: UserRole;
+  role?: UserRole = UserRole.CLIENT;
+}
 
+export class RefreshTokenDto {
   @ApiProperty({
-    description: 'JWT2 code for admin registration',
-    example: 'secret-admin-code',
-    required: false,
+    description: 'Refresh token para renovar el access token',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   @IsString()
-  @IsOptional()
-  jwt2?: string;
+  @IsNotEmpty()
+  refreshToken: string;
 }
 
 export class AuthResponseDto {
@@ -130,89 +125,109 @@ export class AuthResponseDto {
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   accessToken: string;
-  @ApiProperty({
-    description: 'Información del usuario autenticado',
-  })
-  user: {
-    email: string;
-    name: string;
-    role: string;
-  };
 
   @ApiProperty({
-    description: 'Tiempo de expiración del token en segundos',
-    example: 86400,
+    description: 'Refresh token para renovar la sesión',
+    example: 'a1b2c3d4e5f6...',
+  })
+  refreshToken: string;
+
+  @ApiProperty({
+    description: 'Tipo de token',
+    example: 'Bearer',
+  })
+  tokenType: string = 'Bearer';
+
+  @ApiProperty({
+    description: 'Tiempo de expiración del access token en segundos',
+    example: 900,
   })
   expiresIn: number;
 
   @ApiProperty({
-    description: 'Información de la sesión',
-    required: false,
+    description: 'Información del usuario autenticado',
   })
-  sessionInfo?: {
-    isRememberMe: boolean;
-    expiresAt: string;
-    isNewDevice: boolean;
-    deviceInfo?: any;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: UserRole;
+    twoFactorEnabled?: boolean;
   };
-}
-
-export class LogoutDto {
-  @ApiProperty({
-    description: 'Cerrar todas las sesiones del usuario',
-    example: false,
-    required: false,
-  })
-  @IsBoolean()
-  @IsOptional()
-  logoutAll?: boolean;
-
-  @ApiProperty({
-    description: 'Razón del logout',
-    example: 'user_request',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  reason?: string;
-}
-
-export class RefreshTokenDto {
-  @ApiProperty({
-    description: 'Token de actualización',
-    example: 'refresh_token_here',
-  })
-  @IsString()
-  @IsNotEmpty()
-  refreshToken: string;
 }
 
 export class ChangePasswordDto {
   @ApiProperty({
     description: 'Contraseña actual',
-    example: 'oldpassword123',
+    example: 'OldP@ssw0rd!',
   })
   @IsString()
   @IsNotEmpty()
   currentPassword: string;
 
   @ApiProperty({
-    description: 'Nueva contraseña (mínimo 6 caracteres)',
-    example: 'newpassword123',
+    description: 'Nueva contraseña segura',
+    example: 'NewSecureP@ssw0rd!',
   })
   @IsString()
   @IsNotEmpty()
-  @MinLength(6)
+  @IsStrongPassword()
   newPassword: string;
 
   @ApiProperty({
-    description: 'Cerrar otras sesiones después del cambio',
-    example: true,
-    required: false,
+    description: 'Confirmación de la nueva contraseña',
+    example: 'NewSecureP@ssw0rd!',
   })
-  @IsBoolean()
-  @IsOptional()
-  logoutOtherSessions?: boolean;
+  @IsString()
+  @IsNotEmpty()
+  confirmNewPassword: string;
+}
+
+export class ForgotPasswordDto {
+  @ApiProperty({
+    description: 'Correo electrónico del usuario',
+    example: 'user@ejemplo.com',
+  })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({
+    description: 'Token de restablecimiento de contraseña',
+    example: 'abc123def456...',
+  })
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @ApiProperty({
+    description: 'Nueva contraseña segura',
+    example: 'NewSecureP@ssw0rd!',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsStrongPassword()
+  newPassword: string;
+
+  @ApiProperty({
+    description: 'Confirmación de la nueva contraseña',
+    example: 'NewSecureP@ssw0rd!',
+  })
+  @IsString()
+  @IsNotEmpty()
+  confirmNewPassword: string;
+}
+
+export class Enable2FADto {
+  @ApiProperty({
+    description: 'Código de verificación del authenticator',
+    example: '123456',
+  })
+  @IsString()
+  @IsNotEmpty()
+  verificationCode: string;
 }
 
 export class AuthLogQueryDto {
@@ -309,4 +324,15 @@ export class SecurityReportDto {
   @IsBoolean()
   @IsOptional()
   includeSuspiciousIps?: boolean;
+}
+
+export class LogoutDto {
+  @ApiProperty({
+    description: 'Cerrar sesión en todos los dispositivos',
+    example: false,
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  logoutAllDevices?: boolean = false;
 }

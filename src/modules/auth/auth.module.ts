@@ -5,21 +5,29 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { User } from './entities/user.entity';
-import { AuthLog } from './entities/auth-log.entity';
-import { UserSession } from './entities/user-session.entity';
-import { FailedLoginAttempt } from './entities/failed-login-attempt.entity';
-import { AuthLogService } from './services/auth-log.service';
-import { SessionService } from './services/session.service';
-import { SecurityService } from './services/security.service';
-import { CleanupService } from '../../common/services/cleanup.service'; // Temporarily disabled due to path alias issues
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { AuthService } from '@/modules/auth/auth.service';
+import { AuthController } from '@/modules/auth/auth.controller';
+import { User } from '@/modules/auth/entities/user.entity';
+import { AuthLog } from '@/modules/auth/entities/auth-log.entity';
+import { UserSession } from '@/modules/auth/entities/user-session.entity';
+import { FailedLoginAttempt } from '@/modules/auth/entities/failed-login-attempt.entity';
+import { RefreshToken } from '@/modules/auth/entities/refresh-token.entity';
+import { AuthLogService } from '@/modules/auth/services/auth-log.service';
+import { SessionService } from '@/modules/auth/services/session.service';
+import { SecurityService } from '@/modules/auth/services/security.service';
+import { RefreshTokenService } from '@/modules/auth/services/refresh-token.service';
+import { CleanupService } from '@/common/services/cleanup.service';
+import { JwtStrategy } from '@/modules/auth/strategies/jwt.strategy';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, AuthLog, UserSession, FailedLoginAttempt]),
+    TypeOrmModule.forFeature([
+      User,
+      AuthLog,
+      UserSession,
+      FailedLoginAttempt,
+      RefreshToken, // Now enabled after migration
+    ]),
     PassportModule,
     CacheModule.register({
       ttl: 300, // 5 minutes default
@@ -49,7 +57,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     AuthLogService,
     SessionService,
     SecurityService,
-    CleanupService, // Temporarily disabled due to path alias issues
+    RefreshTokenService,
+    CleanupService,
     JwtStrategy,
   ],
   exports: [
@@ -57,7 +66,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     AuthLogService,
     SessionService,
     SecurityService,
-    CleanupService, // Temporarily disabled due to path alias issues
+    RefreshTokenService,
+    CleanupService,
   ],
 })
 export class AuthModule {}

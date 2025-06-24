@@ -9,7 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { User } from './user.entity';
+import { User } from '@/modules/auth/entities/user.entity';
 
 @Entity('user_sessions')
 @Index(['userId', 'isActive'])

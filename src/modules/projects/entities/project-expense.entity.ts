@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Project } from '../../projects/entities/project.entity';
+import { Project } from '@/modules/projects/entities/project.entity';
 
 @Entity('gastos_proyectos')
 export class ProjectExpense {

@@ -17,7 +17,7 @@ import {
   ApiResponse,
   ApiQuery,
 } from '@nestjs/swagger';
-import { FinancialService } from './financial.service';
+import { FinancialService } from '@/modules/projects/financial/financial.service';
 import {
   CreateCompanyExpenseDto,
   UpdateCompanyExpenseDto,
@@ -25,9 +25,9 @@ import {
   UpdateFinancialSummaryDto,
   YearQueryDto,
 } from './dto/financial.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
 
 @ApiTags('Gastos Empresa')
 @ApiBearerAuth('JWT-auth')

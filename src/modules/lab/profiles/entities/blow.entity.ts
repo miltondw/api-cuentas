@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Profile } from './profile.entity';
+import { Profile } from '@/modules/lab/profiles/entities/profile.entity';
 
 @Entity('blows')
 export class Blow {

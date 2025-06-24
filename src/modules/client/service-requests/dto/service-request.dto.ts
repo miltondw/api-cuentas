@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ServiceRequestStatus } from '../entities/service-request.entity';
+import { ServiceRequestStatus } from '@/modules/client/service-requests/entities/service-request.entity';
 
 export class ServiceAdditionalValueDto {
   @ApiProperty({

@@ -1,0 +1,76 @@
+name: Feature Request
+description: Solicitar una nueva funcionalidad
+title: '[FEATURE] '
+labels: ['enhancement', 'needs-review']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por sugerir una nueva funcionalidad. Por favor describe tu idea en detalle.
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué problema resuelve esta funcionalidad?
+      description: Describe el problema o necesidad que esta funcionalidad abordaría
+      placeholder: 'Como usuario, tengo el problema de...'
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solución Propuesta
+      description: Describe la solución que te gustaría ver
+      placeholder: 'Me gustaría que...'
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas Consideradas
+      description: Describe cualquier solución alternativa o funcionalidad que hayas considerado
+      placeholder: 'También consideré...'
+    validations:
+      required: false
+  - type: dropdown
+    id: module
+    attributes:
+      label: Módulo Afectado
+      description: ¿Qué módulo de la API estaría involucrado?
+      options:
+        - Auth (Autenticación)
+        - Projects (Proyectos)
+        - Lab (Laboratorio)
+        - Services (Servicios)
+        - PDF (Generación PDF)
+        - Admin (Administración)
+        - Client (Cliente)
+        - Health (Monitoreo)
+        - Otro
+      default: 8
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      description: ¿Qué tan importante es esta funcionalidad?
+      options:
+        - Baja - Nice to have
+        - Media - Útil para el negocio
+        - Alta - Necesaria para operaciones
+        - Crítica - Bloqueante
+      default: 0
+    validations:
+      required: true
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impacto Esperado
+      description: ¿Qué áreas se verían beneficiadas?
+      options:
+        - label: Experiencia de Usuario
+        - label: Performance
+        - label: Seguridad
+        - label: Mantenibilidad
+        - label: Escalabilidad
+        - label: Integración con terceros

@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Apique } from './entities/apique.entity';
-import { Layer } from './entities/layer.entity';
+import { Apique } from '@/modules/lab/apiques/entities/apique.entity';
+import { Layer } from '@/modules/lab/apiques/entities/layer.entity';
 import { Project } from '@/modules/projects/entities/project.entity';
-import { CreateApiqueDto, UpdateApiqueDto } from './dto/apique.dto';
+import { CreateApiqueDto, UpdateApiqueDto } from '@/modules/lab/apiques/dto/apique.dto';
 
 // Definir interfaces para filtros y paginación
 interface ApiqueFilters {

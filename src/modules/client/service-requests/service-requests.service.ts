@@ -9,7 +9,7 @@ import {
   ServiceRequest,
   ServiceRequestStatus,
 } from './entities/service-request.entity';
-import { SelectedService } from './entities/selected-service.entity';
+import { SelectedService } from '@/modules/client/service-requests/entities/selected-service.entity';
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,

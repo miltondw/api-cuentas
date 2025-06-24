@@ -18,10 +18,10 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { ProjectsService } from './projects.service';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { ProjectsService } from '@/modules/projects/projects.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -29,8 +29,8 @@ import {
   CreateProjectExpenseDto,
   UpdateProjectExpenseDto,
 } from './dto/project.dto';
-import { Project, ProjectStatus } from './entities/project.entity';
-import { ProjectExpense } from './entities/project-expense.entity';
+import { Project, ProjectStatus } from '@/modules/projects/entities/project.entity';
+import { ProjectExpense } from '@/modules/projects/entities/project-expense.entity';
 
 @ApiTags('Projects')
 @Controller('projects')

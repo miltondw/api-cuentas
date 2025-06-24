@@ -21,11 +21,11 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
-import { Public } from '../../auth/decorators/public.decorator';
-import { ServiceRequestsService } from './service-requests.service';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { Public } from '@/modules/auth/decorators/public.decorator';
+import { ServiceRequestsService } from '@/modules/client/service-requests/service-requests.service';
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,

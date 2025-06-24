@@ -1,4 +1,4 @@
-// import 'tsconfig-paths/register'; // Commented out to fix build issues - paths handled in start.js
+import 'tsconfig-paths/register'; // Enable path aliases resolution
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -6,10 +6,10 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
-import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
-import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
+import { AppModule } from '@/app.module';
+import { AllExceptionsFilter } from '@/common/filters/all-exceptions.filter';
+import { RateLimitMiddleware } from '@/common/middleware/rate-limit.middleware';
+import { RequestLoggingInterceptor } from '@/common/interceptors/request-logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
