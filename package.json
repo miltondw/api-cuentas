@@ -19,19 +19,11 @@
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typecheck": "tsc --noEmit",
-    "db:analyze": "node scripts/structure_db.js",
-    "db:analyze:file": "node scripts/structure_db.js --file",
-    "db:document": "node scripts/add-table-comments.js",
-    "migration:run": "npm run build && node -e \"require('./dist/migrations/1700000005-CreateRefreshTokenTable').CreateRefreshTokenTable1700000005\"",
     "migration:create": "npx typeorm migration:create",
     "migration:generate": "npx typeorm migration:generate",
     "migration:revert": "npx typeorm migration:revert",
     "db:cleanup": "node scripts/cleanup-database.js",
-    "db:backup": "node scripts/backup-database.js",
-    "security:audit": "npm audit && npm audit fix",
-    "performance:analyze": "node scripts/analyze-performance.js",
-    "docs:serve": "echo 'Documentación disponible en ./docs/INDEX.md'",
-    "health:check": "curl -f http://localhost:3000/health || exit 1"
+    "security:audit": "npm audit && npm audit fix"
   },
   "dependencies": {
     "@nestjs/cache-manager": "^3.0.1",
