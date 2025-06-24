@@ -10,16 +10,16 @@ npm ci
 
 echo "🔨 Building application..."
 echo "Path: $PATH"
-echo "Which nest: $(npx which nest || echo 'Nest CLI not found via npx')" # Mejorar la salida para depuración
 
-# Intentar construir con npx nest build primero, que es la forma recomendada para usar CLIs locales
-if npx nest build; then
-    echo "✅ Build successful with local NestJS CLI"
-elif npm run build; then # Fallback a npm run build si npx nest build falla
-    echo "✅ Build successful with npm run build"
+# Esto es solo para depuración. No afectará el resultado si falla.
+echo "Which nest: $(./node_modules/.bin/which nest || echo 'Nest CLI not found via direct path')"
+
+# Intenta construir usando la ruta directa al binario de NestJS CLI
+if ./node_modules/.bin/nest build; then
+    echo "✅ Build successful using direct path to NestJS CLI"
 else
-    echo "❌ All build methods failed"
-    # Debug information
+    echo "❌ Build failed. Attempting to diagnose..."
+    # Si la construcción falla con el path directo, muestra información de depuración
     echo "📑 Debug information:"
     echo "package.json scripts:"
     cat package.json | grep -A 15 '"scripts"'
