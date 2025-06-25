@@ -83,6 +83,7 @@ export class CreateCompanyExpenseDto {
     description: 'Other expenses as JSON object',
     example: { otro: 50000, varios: 25000 },
     type: 'object',
+    additionalProperties: { type: 'number' },
   })
   @IsOptional()
   otros_campos?: any;
