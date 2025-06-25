@@ -58,6 +58,9 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto, req?: Request): Promise<AuthResponseDto> {
+    if (process.env.NODE_ENV === 'production') {
+      this.logger.log('[LOGIN] loginDto recibido:', JSON.stringify(loginDto));
+    }
     const { email, password, rememberMe = false } = loginDto;
     const ipAddress = this.getClientIp(req);
 
