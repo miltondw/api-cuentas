@@ -39,6 +39,9 @@ module.exports = (options, webpack) => {
         '@config': path.resolve(__dirname, './src/config'),
       },
     },
+    optimization: {
+      minimize: false, // Desactiva la minificación para evitar problemas de nombres en producción
+    },
     plugins: [
       ...options.plugins,
       new webpack.HotModuleReplacementPlugin(),
