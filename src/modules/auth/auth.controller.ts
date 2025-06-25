@@ -63,11 +63,33 @@ export class AuthController {
   ) {}
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Iniciar sesión' })
+  @ApiOperation({
+    summary: 'Iniciar sesión',
+    description:
+      'Permite a un usuario autenticarse con email y contraseña. Devuelve un JWT y datos del usuario.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Inicio de sesión exitoso',
     type: AuthResponseDto,
+    examples: {
+      success: {
+        summary: 'Respuesta exitosa',
+        value: {
+          accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          refreshToken: 'a1b2c3d4e5f6...',
+          tokenType: 'Bearer',
+          expiresIn: 900,
+          user: {
+            id: 1,
+            name: 'Juan Pérez García',
+            email: 'admin@ingeocimyc.com',
+            role: 'ADMIN',
+            twoFactorEnabled: false,
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 401,
@@ -75,21 +97,60 @@ export class AuthController {
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string' },
-        remainingAttempts: { type: 'number' },
-        retryAfter: { type: 'string', format: 'date-time' },
-        blockDurationMinutes: { type: 'number' },
+        message: { type: 'string', example: 'Credenciales inválidas' },
+        remainingAttempts: { type: 'number', example: 2 },
+        retryAfter: {
+          type: 'string',
+          format: 'date-time',
+          example: '2025-06-25T12:00:00Z',
+        },
+        blockDurationMinutes: { type: 'number', example: 15 },
+      },
+    },
+    examples: {
+      invalid: {
+        summary: 'Credenciales incorrectas',
+        value: {
+          message: 'Credenciales inválidas',
+          remainingAttempts: 2,
+        },
+      },
+      blocked: {
+        summary: 'Cuenta bloqueada',
+        value: {
+          message: 'Cuenta bloqueada por múltiples intentos fallidos',
+          retryAfter: '2025-06-25T12:00:00Z',
+          blockDurationMinutes: 15,
+        },
       },
     },
   })
   @ApiResponse({
     status: 429,
     description: 'Demasiados intentos de login',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Demasiados intentos, intente más tarde.',
+        },
+      },
+    },
   })
   async login(
     @Body() loginDto: LoginDto,
     @Req() req: Request,
   ): Promise<AuthResponseDto> {
+    // Log para producción: request body y headers
+    if (process.env.NODE_ENV === 'production') {
+      // Solo loguear campos relevantes, nunca la contraseña
+      console.log('[LOGIN] email:', loginDto.email);
+      console.log('[LOGIN] headers:', JSON.stringify(req.headers));
+      if (loginDto.deviceInfo) {
+        console.log('[LOGIN] deviceInfo:', JSON.stringify(loginDto.deviceInfo));
+      }
+    }
     return this.authService.login(loginDto, req);
   }
 
