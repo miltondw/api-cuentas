@@ -152,7 +152,13 @@ export class SecurityService {
   }
 
   async checkEmailBlocking(email: string): Promise<SecurityCheckResult> {
+    this.logger.log(
+      `[SECURITY] checkEmailBlocking called with email: ${email}`,
+    );
     const recentAttempts = await this.getRecentFailedAttempts(email, 'email');
+    this.logger.log(
+      `[SECURITY] recentAttempts: ${JSON.stringify(recentAttempts)}`,
+    );
     const currentAttempts = recentAttempts.length;
 
     if (currentAttempts >= this.MAX_FAILED_ATTEMPTS) {
@@ -384,18 +390,37 @@ export class SecurityService {
     identifier: string,
     type: 'email' | 'ip',
   ): Promise<FailedLoginAttempt[]> {
+    this.logger.log(
+      `[SECURITY] getRecentFailedAttempts called with identifier: ${identifier}, type: ${type}`,
+    );
     const oneHourAgo = new Date();
     oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
-    const whereCondition =
-      type === 'email' ? { email: identifier } : { ipAddress: identifier };
-
-    return this.failedAttemptRepository.find({
-      where: {
-        ...whereCondition,
-        createdAt: MoreThan(oneHourAgo),
-      },
-      order: { createdAt: 'DESC' },
-    });
+    // Construimos la condición de la consulta de forma explícita y segura
+    const where: any = {
+      createdAt: MoreThan(oneHourAgo),
+    };
+    if (type === 'email') {
+      where.email = identifier;
+    } else {
+      where.ipAddress = identifier;
+    }
+    this.logger.log(`[SECURITY] whereCondition: ${JSON.stringify(where)}`);
+    try {
+      const result = await this.failedAttemptRepository.find({
+        where, // Usamos directamente el objeto 'where' que construimos
+        order: { createdAt: 'DESC' },
+      });
+      this.logger.log(
+        `[SECURITY] failedAttemptRepository.find result: ${JSON.stringify(result)}`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `[SECURITY] Error in failedAttemptRepository.find:`,
+        error,
+      );
+      throw error;
+    }
   }
 }
