@@ -4,6 +4,15 @@ echo "🚀 Starting Render Build Process..."
 echo "Node version: $(node --version)"
 echo "NPM version: $(npm --version)"
 
+# Elimina archivo dist si existe (y no es un directorio)
+if [ -f "dist" ]; then
+  echo "⚠️  dist existe como archivo, eliminando..."
+  rm -f dist
+fi
+
+# Limpia la carpeta dist antes de construir (evita errores EEXIST)
+rm -rf dist
+
 # Install dependencies
 echo "📦 Installing dependencies..."
 npm ci
@@ -11,15 +20,11 @@ npm ci
 echo "🔨 Building application..."
 echo "Path: $PATH"
 
-# Esto es solo para depuración. No afectará el resultado si falla.
-echo "Which nest: $(./node_modules/.bin/which nest || echo 'Nest CLI not found via direct path')"
-
-# Intenta construir usando la ruta directa al binario de NestJS CLI
+# Usa el binario local de NestJS CLI para evitar problemas de PATH
 if ./node_modules/.bin/nest build; then
     echo "✅ Build successful using direct path to NestJS CLI"
 else
     echo "❌ Build failed. Attempting to diagnose..."
-    # Si la construcción falla con el path directo, muestra información de depuración
     echo "📑 Debug information:"
     echo "package.json scripts:"
     cat package.json | grep -A 15 '"scripts"'
@@ -28,7 +33,7 @@ else
     exit 1
 fi
 
-# Verify build output
+# Verifica la salida del build
 echo "📋 Build verification:"
 if [ -d "dist" ]; then
     echo "✅ dist/ directory exists"
