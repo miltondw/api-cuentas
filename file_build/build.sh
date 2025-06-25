@@ -17,12 +17,12 @@ rm -rf dist
 echo "📦 Installing dependencies..."
 npm ci
 
+# Usa npx para ejecutar el build de NestJS CLI, compatible con entornos donde solo está en devDependencies
 echo "🔨 Building application..."
 echo "Path: $PATH"
 
-# Usa el binario local de NestJS CLI para evitar problemas de PATH
-if ./node_modules/.bin/nest build; then
-    echo "✅ Build successful using direct path to NestJS CLI"
+if npx nest build; then
+    echo "✅ Build successful using npx nest build"
 else
     echo "❌ Build failed. Attempting to diagnose..."
     echo "📑 Debug information:"
