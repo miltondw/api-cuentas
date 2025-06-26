@@ -12,6 +12,7 @@ import {
   HttpCode,
   UseGuards,
   Logger,
+  Put,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -62,7 +63,8 @@ export class ServiceRequestsController {
     @Body() createServiceRequestDto: CreateServiceRequestDto,
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.create(createServiceRequestDto);
-  }  @Get()
+  }
+  @Get()
   @Roles('admin', 'client', 'lab') // Allow multiple roles to access
   @ApiOperation({ summary: 'Obtener todas las solicitudes de servicio' })
   @ApiQuery({
@@ -121,7 +123,8 @@ export class ServiceRequestsController {
   @ApiQuery({
     name: 'sortBy',
     required: false,
-    description: 'Campo por el cual ordenar (ej. created_at, name, nameProject)',
+    description:
+      'Campo por el cual ordenar (ej. created_at, name, nameProject)',
   })
   @ApiQuery({
     name: 'sortOrder',
@@ -147,10 +150,15 @@ export class ServiceRequestsController {
     @Query('limit') limit?: number,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
-  ): Promise<{ data: ServiceRequest[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: ServiceRequest[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const logger = new Logger('ServiceRequestsController');
     logger.log('Admin accessing service-requests findAll endpoint');
-    
+
     const filters = {
       status: status as ServiceRequestStatus,
       name,
@@ -192,7 +200,8 @@ export class ServiceRequestsController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.findOne(id);
-  }  @Patch(':id')
+  }
+  @Patch(':id')
   @Roles('admin', 'client', 'lab')
   @ApiOperation({ summary: 'Actualizar una solicitud de servicio' })
   @ApiParam({
@@ -214,7 +223,8 @@ export class ServiceRequestsController {
     @Body() updateServiceRequestDto: UpdateServiceRequestDto,
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.update(id, updateServiceRequestDto);
-  }  @Delete(':id')
+  }
+  @Delete(':id')
   @Roles('admin', 'lab')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar una solicitud de servicio' })
@@ -233,5 +243,79 @@ export class ServiceRequestsController {
   })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.serviceRequestsService.remove(id);
+  }
+
+  @Put(':id')
+  @Roles('admin', 'client', 'lab')
+  @ApiOperation({
+    summary: 'Reemplazar completamente una solicitud de servicio (PUT)',
+    description:
+      'Reemplaza todos los datos de la solicitud, incluyendo servicios seleccionados y valores adicionales. Útil para que el admin o cliente pueda modificar cualquier campo, agregar o quitar servicios, o actualizar valores adicionales.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la solicitud de servicio',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Solicitud de servicio reemplazada exitosamente',
+    type: ServiceRequest,
+    examples: {
+      ejemplo: {
+        summary: 'Ejemplo de respuesta',
+        value: {
+          id: 88,
+          name: 'milton estrada',
+          nameProject: 'nombre del proyecto',
+          location: 'asd jsajdajd adhs aksd aldh alsdh alhd alkh a',
+          identification: '29398836',
+          phone: '3002321421',
+          email: 'estradamilton2001@gmail.com',
+          description:
+            'ekajfkajdfhakbf a ajbf lkajhf lkajbf abfabf abfabfabfla lab f',
+          status: 'pendiente',
+          created_at: '2025-06-20T17:51:06.000Z',
+          updatedAt: '2025-06-25T17:18:22.000Z',
+          selectedServices: [
+            {
+              id: 360,
+              requestId: 88,
+              serviceId: 2,
+              quantity: 1,
+              created_at: '2025-06-20T17:51:06.000Z',
+              service: {
+                id: 2,
+                categoryId: 1,
+                code: 'SR-2',
+                name: 'Tamaños de las partículas de los suelos (tamizado)',
+                created_at: '2025-04-22T16:50:47.000Z',
+                updatedAt: '2025-04-22T16:50:47.000Z',
+                category: {
+                  id: 1,
+                  code: 'SR',
+                  name: 'SUELOS DE RELLENOS',
+                  created_at: '2025-04-22T16:47:58.000Z',
+                  updatedAt: '2025-04-22T16:47:58.000Z',
+                },
+                additionalFields: [],
+              },
+              serviceInstances: [],
+              additionalValues: [],
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Solicitud de servicio no encontrada',
+  })
+  async replace(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() createServiceRequestDto: CreateServiceRequestDto,
+  ): Promise<ServiceRequest> {
+    return this.serviceRequestsService.replace(id, createServiceRequestDto);
   }
 }

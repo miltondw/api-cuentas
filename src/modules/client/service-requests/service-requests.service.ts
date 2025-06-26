@@ -291,4 +291,85 @@ export class ServiceRequestsService {
       limit,
     };
   }
+
+  async replace(
+    id: number,
+    createServiceRequestDto: CreateServiceRequestDto,
+  ): Promise<ServiceRequest> {
+    // Reemplazo total: borra servicios seleccionados y valores adicionales, y crea nuevos
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      // Verificar existencia de la solicitud
+      const serviceRequest = await queryRunner.manager.findOne(ServiceRequest, {
+        where: { id },
+        relations: ['selectedServices', 'selectedServices.additionalValues'],
+      });
+      if (!serviceRequest) {
+        throw new NotFoundException(
+          `Solicitud de servicio con ID ${id} no encontrada`,
+        );
+      }
+      // Eliminar servicios seleccionados y valores adicionales previos
+      if (
+        serviceRequest.selectedServices &&
+        serviceRequest.selectedServices.length > 0
+      ) {
+        for (const sel of serviceRequest.selectedServices) {
+          await queryRunner.manager.delete('service_additional_values', {
+            selectedServiceId: sel.id,
+          });
+        }
+        await queryRunner.manager.delete('selected_services', {
+          requestId: id,
+        });
+      }
+      // Actualizar campos principales
+      Object.assign(serviceRequest, createServiceRequestDto);
+      await queryRunner.manager.save(serviceRequest);
+      // Crear nuevos servicios seleccionados y valores adicionales
+      const selectedServices = createServiceRequestDto.selectedServices.map(
+        sel =>
+          queryRunner.manager.create(SelectedService, {
+            requestId: id,
+            serviceId: sel.serviceId,
+            quantity: sel.quantity,
+          }),
+      );
+      const savedSelectedServices = await queryRunner.manager.save(
+        SelectedService,
+        selectedServices,
+      );
+      // Crear valores adicionales
+      for (
+        let i = 0;
+        i < createServiceRequestDto.selectedServices.length;
+        i++
+      ) {
+        const selDto = createServiceRequestDto.selectedServices[i];
+        const savedSel = savedSelectedServices[i] as SelectedService;
+        if (selDto.additionalValues && selDto.additionalValues.length > 0) {
+          const additionalValues = selDto.additionalValues.map(val =>
+            queryRunner.manager.create(ServiceAdditionalValue, {
+              selectedServiceId: savedSel.id,
+              fieldName: val.fieldName,
+              fieldValue: val.fieldValue,
+            }),
+          );
+          await queryRunner.manager.save(
+            ServiceAdditionalValue,
+            additionalValues,
+          );
+        }
+      }
+      await queryRunner.commitTransaction();
+      return this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 }
