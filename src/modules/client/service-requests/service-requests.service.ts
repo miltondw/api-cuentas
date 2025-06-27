@@ -296,7 +296,7 @@ export class ServiceRequestsService {
     id: number,
     createServiceRequestDto: CreateServiceRequestDto,
   ): Promise<ServiceRequest> {
-    // Reemplazo total: borra servicios seleccionados y valores adicionales, y crea nuevos
+    // Sincronización inteligente: solo elimina, crea o actualiza lo necesario
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -310,30 +310,16 @@ export class ServiceRequestsService {
           `Solicitud de servicio con ID ${id} no encontrada`,
         );
       }
-      // Eliminar TODOS los valores adicionales y servicios seleccionados asociados a la solicitud
-      // 1. Buscar todos los selected_services de la solicitud
-      const allSelectedServices = await queryRunner.manager.find(
+      // Obtener todos los selected_services y sus valores actuales
+      const dbSelectedServices = await queryRunner.manager.find(
         SelectedService,
         {
           where: { requestId: id },
+          relations: ['additionalValues'],
         },
       );
-      if (allSelectedServices.length > 0) {
-        const allSelectedServiceIds = allSelectedServices.map(s => s.id);
-        // 2. Eliminar todos los valores adicionales asociados a esos selected_services
-        if (allSelectedServiceIds.length > 0) {
-          await queryRunner.manager.delete(ServiceAdditionalValue, {
-            selectedServiceId: allSelectedServiceIds,
-          });
-        }
-        // 3. Eliminar todos los selected_services
-        await queryRunner.manager.delete(SelectedService, {
-          requestId: id,
-        });
-      }
-      // Validar y limpiar duplicados en selectedServices recibidos
+      // Validar duplicados en el payload
       const seen = new Set();
-      const uniqueSelectedServices = [];
       for (const sel of createServiceRequestDto.selectedServices) {
         if (seen.has(sel.serviceId)) {
           throw new BadRequestException(
@@ -341,44 +327,98 @@ export class ServiceRequestsService {
           );
         }
         seen.add(sel.serviceId);
-        uniqueSelectedServices.push(sel);
       }
-      // Actualizar campos principales
-      Object.assign(serviceRequest, createServiceRequestDto);
-      await queryRunner.manager.save(serviceRequest);
-      // Crear nuevos servicios seleccionados y valores adicionales SOLO con uniqueSelectedServices
-      const selectedServices = uniqueSelectedServices.map(sel =>
-        queryRunner.manager.create(SelectedService, {
-          requestId: id,
-          serviceId: sel.serviceId,
-          quantity: sel.quantity,
-        }),
+      // Mapear para acceso rápido
+      const dbMap = new Map(dbSelectedServices.map(s => [s.serviceId, s]));
+      const payloadMap = new Map(
+        createServiceRequestDto.selectedServices.map(s => [s.serviceId, s]),
       );
-      const savedSelectedServices = await queryRunner.manager.save(
-        SelectedService,
-        selectedServices,
-      );
-      // Crear valores adicionales
-      for (let i = 0; i < uniqueSelectedServices.length; i++) {
-        const selDto = uniqueSelectedServices[i];
-        const savedSel = savedSelectedServices[i] as SelectedService;
-        if (selDto.additionalValues && selDto.additionalValues.length > 0) {
-          const additionalValues = selDto.additionalValues.map(val =>
-            queryRunner.manager.create(ServiceAdditionalValue, {
-              selectedServiceId: savedSel.id,
-              fieldName: val.fieldName,
-              fieldValue: val.fieldValue,
-            }),
-          );
-          await queryRunner.manager.save(
-            ServiceAdditionalValue,
-            additionalValues,
-          );
+      // 1. Eliminar selected_services (y sus valores) que ya no están en el payload
+      for (const dbSel of dbSelectedServices) {
+        if (!payloadMap.has(dbSel.serviceId)) {
+          // Eliminar valores adicionales
+          await queryRunner.manager.delete(ServiceAdditionalValue, {
+            selectedServiceId: dbSel.id,
+          });
+          // Eliminar selected_service
+          await queryRunner.manager.delete(SelectedService, { id: dbSel.id });
         }
       }
+      // 2. Crear o actualizar los que están en el payload
+      for (const sel of createServiceRequestDto.selectedServices) {
+        const dbSel = dbMap.get(sel.serviceId);
+        if (!dbSel) {
+          // Crear nuevo selected_service
+          const newSel = await queryRunner.manager.save(
+            SelectedService,
+            queryRunner.manager.create(SelectedService, {
+              requestId: id,
+              serviceId: sel.serviceId,
+              quantity: sel.quantity,
+            }),
+          );
+          // Crear valores adicionales si existen
+          if (sel.additionalValues && sel.additionalValues.length > 0) {
+            const additionalValues = sel.additionalValues.map(val =>
+              queryRunner.manager.create(ServiceAdditionalValue, {
+                selectedServiceId: newSel.id,
+                fieldName: val.fieldName,
+                fieldValue: val.fieldValue,
+              }),
+            );
+            await queryRunner.manager.save(
+              ServiceAdditionalValue,
+              additionalValues,
+            );
+          }
+        } else {
+          // Actualizar cantidad si cambió
+          if (dbSel.quantity !== sel.quantity) {
+            dbSel.quantity = sel.quantity;
+            await queryRunner.manager.save(SelectedService, dbSel);
+          }
+          // Sincronizar valores adicionales
+          const dbValues = dbSel.additionalValues || [];
+          const dbValMap = new Map(dbValues.map(v => [v.fieldName, v]));
+          const payloadValMap = new Map(
+            (sel.additionalValues || []).map(v => [v.fieldName, v]),
+          );
+          // Eliminar valores que ya no están
+          for (const dbVal of dbValues) {
+            if (!payloadValMap.has(dbVal.fieldName)) {
+              await queryRunner.manager.delete(ServiceAdditionalValue, {
+                id: dbVal.id,
+              });
+            }
+          }
+          // Crear o actualizar los que están
+          for (const val of sel.additionalValues || []) {
+            const dbVal = dbValMap.get(val.fieldName);
+            if (!dbVal) {
+              // Crear nuevo
+              await queryRunner.manager.save(
+                ServiceAdditionalValue,
+                queryRunner.manager.create(ServiceAdditionalValue, {
+                  selectedServiceId: dbSel.id,
+                  fieldName: val.fieldName,
+                  fieldValue: val.fieldValue,
+                }),
+              );
+            } else if (dbVal.fieldValue !== val.fieldValue) {
+              // Actualizar valor
+              dbVal.fieldValue = val.fieldValue;
+              await queryRunner.manager.save(ServiceAdditionalValue, dbVal);
+            }
+          }
+        }
+      }
+      // Actualizar campos principales de la solicitud
+      Object.assign(serviceRequest, createServiceRequestDto);
+      await queryRunner.manager.save(serviceRequest);
       await queryRunner.commitTransaction();
-      // Obtener la solicitud actualizada y filtrar duplicados en selectedServices por serviceId
+      // Obtener la solicitud actualizada
       const updatedRequest = await this.findOne(id);
+      // Filtrar duplicados en selectedServices (por si acaso)
       if (
         updatedRequest.selectedServices &&
         updatedRequest.selectedServices.length > 0
