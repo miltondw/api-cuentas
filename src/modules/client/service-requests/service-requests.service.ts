@@ -326,17 +326,21 @@ export class ServiceRequestsService {
         });
       }
       // Validar y limpiar duplicados en selectedServices recibidos
-      const uniqueServicesMap = new Map();
+      const seen = new Set();
+      const uniqueSelectedServices = [];
       for (const sel of createServiceRequestDto.selectedServices) {
-        if (!uniqueServicesMap.has(sel.serviceId)) {
-          uniqueServicesMap.set(sel.serviceId, sel);
+        if (seen.has(sel.serviceId)) {
+          throw new BadRequestException(
+            `El servicio con serviceId ${sel.serviceId} está duplicado en la solicitud.`,
+          );
         }
+        seen.add(sel.serviceId);
+        uniqueSelectedServices.push(sel);
       }
-      const uniqueSelectedServices = Array.from(uniqueServicesMap.values());
       // Actualizar campos principales
       Object.assign(serviceRequest, createServiceRequestDto);
       await queryRunner.manager.save(serviceRequest);
-      // Crear nuevos servicios seleccionados y valores adicionales
+      // Crear nuevos servicios seleccionados y valores adicionales SOLO con uniqueSelectedServices
       const selectedServices = uniqueSelectedServices.map(sel =>
         queryRunner.manager.create(SelectedService, {
           requestId: id,
@@ -367,7 +371,23 @@ export class ServiceRequestsService {
         }
       }
       await queryRunner.commitTransaction();
-      return this.findOne(id);
+      // Obtener la solicitud actualizada y filtrar duplicados en selectedServices por serviceId
+      const updatedRequest = await this.findOne(id);
+      if (
+        updatedRequest.selectedServices &&
+        updatedRequest.selectedServices.length > 0
+      ) {
+        const filtered = [];
+        const seenIds = new Set();
+        for (const sel of updatedRequest.selectedServices) {
+          if (!seenIds.has(sel.serviceId)) {
+            filtered.push(sel);
+            seenIds.add(sel.serviceId);
+          }
+        }
+        updatedRequest.selectedServices = filtered;
+      }
+      return updatedRequest;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
