@@ -198,4 +198,14 @@ export class UpdateServiceRequestDto {
   @IsOptional()
   @IsEnum(ServiceRequestStatus)
   status?: ServiceRequestStatus;
+
+  @ApiPropertyOptional({
+    description: 'Servicios seleccionados',
+    type: [SelectedServiceDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SelectedServiceDto)
+  selectedServices?: SelectedServiceDto[];
 }
