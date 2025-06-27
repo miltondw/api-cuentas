@@ -325,29 +325,32 @@ export class ServiceRequestsService {
           requestId: id,
         });
       }
+      // Validar y limpiar duplicados en selectedServices recibidos
+      const uniqueServicesMap = new Map();
+      for (const sel of createServiceRequestDto.selectedServices) {
+        if (!uniqueServicesMap.has(sel.serviceId)) {
+          uniqueServicesMap.set(sel.serviceId, sel);
+        }
+      }
+      const uniqueSelectedServices = Array.from(uniqueServicesMap.values());
       // Actualizar campos principales
       Object.assign(serviceRequest, createServiceRequestDto);
       await queryRunner.manager.save(serviceRequest);
       // Crear nuevos servicios seleccionados y valores adicionales
-      const selectedServices = createServiceRequestDto.selectedServices.map(
-        sel =>
-          queryRunner.manager.create(SelectedService, {
-            requestId: id,
-            serviceId: sel.serviceId,
-            quantity: sel.quantity,
-          }),
+      const selectedServices = uniqueSelectedServices.map(sel =>
+        queryRunner.manager.create(SelectedService, {
+          requestId: id,
+          serviceId: sel.serviceId,
+          quantity: sel.quantity,
+        }),
       );
       const savedSelectedServices = await queryRunner.manager.save(
         SelectedService,
         selectedServices,
       );
       // Crear valores adicionales
-      for (
-        let i = 0;
-        i < createServiceRequestDto.selectedServices.length;
-        i++
-      ) {
-        const selDto = createServiceRequestDto.selectedServices[i];
+      for (let i = 0; i < uniqueSelectedServices.length; i++) {
+        const selDto = uniqueSelectedServices[i];
         const savedSel = savedSelectedServices[i] as SelectedService;
         if (selDto.additionalValues && selDto.additionalValues.length > 0) {
           const additionalValues = selDto.additionalValues.map(val =>
