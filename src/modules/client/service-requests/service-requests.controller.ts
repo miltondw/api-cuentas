@@ -318,4 +318,28 @@ export class ServiceRequestsController {
   ): Promise<ServiceRequest> {
     return this.serviceRequestsService.replace(id, createServiceRequestDto);
   }
+
+  @Patch(':id/status')
+  @Roles('admin', 'client', 'lab')
+  @ApiOperation({ summary: 'Actualizar solo el estado de la solicitud' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la solicitud de servicio',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Estado de la solicitud actualizado exitosamente',
+    type: ServiceRequest,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Solicitud de servicio no encontrada',
+  })
+  async updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: ServiceRequestStatus,
+  ): Promise<ServiceRequest> {
+    return this.serviceRequestsService.updateStatus(id, status);
+  }
 }

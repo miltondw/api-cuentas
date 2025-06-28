@@ -399,4 +399,24 @@ export class ServiceRequestsService {
     // Simplemente reutiliza el update, pero usando el DTO de creación
     return this.update(id, createDto as any);
   }
+
+  /**
+   * Actualizar solo el estado de la solicitud
+   */
+  async updateStatus(
+    id: number,
+    status: ServiceRequestStatus,
+  ): Promise<ServiceRequest> {
+    const serviceRequest = await this.serviceRequestRepository.findOne({
+      where: { id },
+    });
+    if (!serviceRequest) {
+      throw new NotFoundException(
+        `Solicitud de servicio con ID ${id} no encontrada`,
+      );
+    }
+    serviceRequest.status = status;
+    await this.serviceRequestRepository.save(serviceRequest);
+    return this.findOne(id);
+  }
 }
