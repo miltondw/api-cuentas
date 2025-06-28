@@ -27,7 +27,6 @@ export class ServiceAdditionalValueDto {
     example: '25',
   })
   @IsString()
-  @IsNotEmpty()
   fieldValue: string;
 }
 

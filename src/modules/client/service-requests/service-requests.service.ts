@@ -325,6 +325,7 @@ export class ServiceRequestsService {
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.selectedServices', 'selectedServices')
       .leftJoinAndSelect('selectedServices.service', 'service')
+      .leftJoinAndSelect('service.additionalFields', 'additionalFields')
       .leftJoinAndSelect(
         'selectedServices.additionalValues',
         'additionalValues',
@@ -370,7 +371,22 @@ export class ServiceRequestsService {
     }
     query.orderBy(`request.${sortBy}`, sortOrder).skip(skip).take(limit);
     const [data, total] = await query.getManyAndCount();
-    return { data, total, page, limit };
+    // Mapear para incluir additionalFields en cada servicio seleccionado
+    const mappedData = data.map(req => ({
+      ...req,
+      selectedServices: req.selectedServices.map(ss => ({
+        ...ss,
+        service: ss.service
+          ? {
+              ...ss.service,
+              additionalFields: Array.isArray(ss.service?.additionalFields)
+                ? ss.service.additionalFields
+                : [],
+            }
+          : undefined,
+      })),
+    }));
+    return { data: mappedData, total, page, limit };
   }
 
   /**
