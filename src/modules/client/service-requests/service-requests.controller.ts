@@ -1,4 +1,5 @@
 import {
+  Request,
   Controller,
   Get,
   Post,
@@ -31,6 +32,7 @@ import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
 } from './dto/service-request.dto';
+import { MineQueryDto } from './dto/mine-query.dto';
 import {
   ServiceRequest,
   ServiceRequestStatus,
@@ -178,6 +180,44 @@ export class ServiceRequestsController {
     };
 
     return this.serviceRequestsService.findAllWithFilters(filters, pagination);
+  }
+  @Get('mine')
+  @Roles('client', 'admin', 'lab')
+  @ApiOperation({ summary: 'Obtener las solicitudes del usuario autenticado' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Número de página para paginación',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Límite de resultados por página',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de solicitudes del usuario',
+    type: [ServiceRequest],
+  })
+  async findMine(
+    @Request() req,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ): Promise<{
+    data: ServiceRequest[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const userEmail = req.user?.email;
+    return this.serviceRequestsService.findByUserEmail(
+      userEmail,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10,
+    );
   }
   @Get(':id')
   @Roles('admin', 'client', 'lab')

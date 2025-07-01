@@ -419,4 +419,38 @@ export class ServiceRequestsService {
     await this.serviceRequestRepository.save(serviceRequest);
     return this.findOne(id);
   }
+
+  /**
+   * Obtener solicitudes por email de usuario autenticado
+   */
+  async findByUserEmail(
+    email: string,
+    page = 1,
+    limit = 10,
+  ): Promise<{
+    data: ServiceRequest[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    if (!email) {
+      throw new BadRequestException(
+        'No se pudo obtener el email del usuario autenticado',
+      );
+    }
+
+    const [data, total] = await this.serviceRequestRepository.findAndCount({
+      where: { email },
+      order: { created_at: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+      relations: [
+        'selectedServices',
+        'selectedServices.service',
+        'selectedServices.additionalValues',
+      ],
+    });
+
+    return { data, total, page, limit };
+  }
 }
