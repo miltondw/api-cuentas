@@ -16,7 +16,8 @@ export enum ServiceRequestStatus {
 }
 
 @Entity('service_requests')
-export class ServiceRequest {  @PrimaryGeneratedColumn()
+export class ServiceRequest {
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'varchar', length: 255 })
@@ -60,4 +61,7 @@ export class ServiceRequest {  @PrimaryGeneratedColumn()
     },
   )
   selectedServices: SelectedService[];
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  projectLink?: string;
 }

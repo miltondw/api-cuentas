@@ -123,6 +123,14 @@ export class CreateServiceRequestDto {
   @ValidateNested({ each: true })
   @Type(() => SelectedServiceDto)
   selectedServices: SelectedServiceDto[];
+
+  @ApiPropertyOptional({
+    description: 'Link del proyecto asociado a la solicitud',
+    example: 'https://miapp.com/proyectos/123',
+  })
+  @IsOptional()
+  @IsString()
+  projectLink?: string;
 }
 
 export class UpdateServiceRequestDto {
@@ -207,4 +215,12 @@ export class UpdateServiceRequestDto {
   @ValidateNested({ each: true })
   @Type(() => SelectedServiceDto)
   selectedServices?: SelectedServiceDto[];
+
+  @ApiPropertyOptional({
+    description: 'Link del proyecto asociado a la solicitud',
+    example: 'https://miapp.com/proyectos/123',
+  })
+  @IsOptional()
+  @IsString()
+  projectLink?: string;
 }
