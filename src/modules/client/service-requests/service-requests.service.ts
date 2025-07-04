@@ -56,6 +56,7 @@ export class ServiceRequestsService {
         phone: createDto.phone,
         email: createDto.email,
         description: createDto.description,
+        projectLink: createDto.projectLink,
       });
       const savedRequest = await queryRunner.manager.save(serviceRequest);
       // Crear servicios seleccionados y valores adicionales
@@ -232,6 +233,7 @@ export class ServiceRequestsService {
         'phone',
         'email',
         'description',
+        'projectLink',
       ];
       const serviceRequest = await queryRunner.manager.findOne(ServiceRequest, {
         where: { id },
